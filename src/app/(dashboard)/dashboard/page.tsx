@@ -16,19 +16,19 @@ export default async function DashboardPage() {
         <div className="card">
           <h2 className="font-medium">Usuarios y roles</h2>
           <p className="text-sm text-[var(--muted)] mt-2">
-            Administra cuentas, roles y permisos por módulo.
+            Administra cuentas, roles y permisos por módulo (Discovery §17).
           </p>
         </div>
         <div className="card">
           <h2 className="font-medium">Catálogos</h2>
           <p className="text-sm text-[var(--muted)] mt-2">
-            Servicios, periodicidades, condiciones de pago, ingresos, egresos y proveedores.
+            Servicios, periodicidades, condiciones de pago, ingresos, egresos y proveedores (Discovery §16).
           </p>
         </div>
         <div className="card">
-          <h2 className="font-medium">Planes de Desarrollo</h2>
+          <h2 className="font-medium">Auditoría</h2>
           <p className="text-sm text-[var(--muted)] mt-2">
-            Importa un archivo markdown para generar las fases de un proyecto.
+            Registro mínimo de creación, modificación y cancelación (Discovery §2).
           </p>
         </div>
       </div>

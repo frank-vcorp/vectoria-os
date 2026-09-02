@@ -1,6 +1,4 @@
 import "./load-env";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { createUser, findUserByEmail } from "@/server/services/users";
 import {
   createPeriodicity,
@@ -14,7 +12,6 @@ import {
 } from "@/server/services/catalogs";
 import { setRoleModules } from "@/server/services/permissions";
 import { DEFAULT_ROLE_MODULES } from "@/shared/modules";
-import { importDevelopmentPlan, listDevelopmentPlans } from "@/server/services/plans";
 import type { RoleKey } from "@/shared/modules";
 
 async function seed() {
@@ -66,23 +63,6 @@ async function seed() {
       basePrice: 0,
     }).catch(() => null);
     console.log("Servicios seed creados");
-  }
-
-  const existingPlans = await listDevelopmentPlans();
-  if (existingPlans.length === 0) {
-    const planPath = join(process.cwd(), "Docs/plan-desarrollo-vectoria-v1.0.md");
-    try {
-      const content = readFileSync(planPath, "utf-8");
-      await importDevelopmentPlan({
-        content,
-        fileName: "plan-desarrollo-vectoria-v1.0.md",
-      });
-      console.log("Plan de desarrollo v1.0 importado");
-    } catch (err) {
-      console.warn("Plan no importado:", err);
-    }
-  } else {
-    console.log("Planes de desarrollo ya existen, omitiendo import");
   }
 
   console.log("Seed completado");

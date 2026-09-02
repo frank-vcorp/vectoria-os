@@ -152,7 +152,7 @@ export function CatalogsManager() {
               ))}
             </select>
           )}
-          <input type="number" min={0} placeholder="Precio (centavos)" value={service.basePrice} onChange={(e) => setService({ ...service, basePrice: Number(e.target.value) })} className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2" />
+          <input type="number" min={0} placeholder="Precio base" value={service.basePrice} onChange={(e) => setService({ ...service, basePrice: Number(e.target.value) })} className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2" />
           <button className="btn btn-primary" type="submit">Agregar</button>
         </form>
         {editService && (

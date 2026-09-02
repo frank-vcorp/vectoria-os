@@ -8,9 +8,18 @@ Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, sus
 | **Stack** | Next.js 15 · TypeScript · Drizzle · PostgreSQL · Facturapi |
 | **Puerto** | `43123` |
 | **Documentación** | [`Docs/discovery-vectoria-v1.0.md`](Docs/discovery-vectoria-v1.0.md) · [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) |
-| **Estado** | Fase 1 — lista para verificación local |
+| **Estado** | Fase 1 — alineada a Discovery §16–§18, pendiente verificación |
 
 ---
+
+## Fuentes de verdad
+
+| Archivo | Uso |
+|---------|-----|
+| [`Docs/discovery-vectoria-v1.0.md`](Docs/discovery-vectoria-v1.0.md) | Especificación funcional por módulo |
+| [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) | Orden de las 7 fases (documento de construcción, no pantalla de la app) |
+
+Cada fase se detiene para verificación antes de avanzar.
 
 ## Inicio rápido
 
@@ -24,14 +33,19 @@ npm run dev
 
 Abre **http://127.0.0.1:43123**
 
-### Verificación Fase 1
+### Verificación Fase 1 (Discovery §2, §16, §17, §18)
 
-1. Login con admin seed
-2. **Usuarios** — crear, editar, activar/desactivar
-3. **Permisos** — toggles por rol y guardar
-4. **Catálogos** — CRUD básico, estatus, carga rápida (+) en ingresos/egresos/proveedores
-5. **Auditoría** — ver registros de cambios
-6. (Opcional) `docker build` + contenedor local — healthcheck en `/api/health`
+Referencia: [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) Fase 1.
+
+1. **Auth** — login / logout
+2. **Usuarios** (§17) — nombre, correo, rol, estatus activo/inactivo; crear, editar, desactivar
+3. **Permisos** (§17) — módulos por rol; defaults Administrador / Vendedor / Programador
+4. **Catálogos** (§16) — servicios, periodicidades, condiciones de pago, ingresos, egresos, proveedores; estatus; carga rápida (+) en ingresos/egresos/proveedores
+5. **Auditoría** (§2) — registros de creación, modificación y cancelación
+6. **Folios** (§18) — infraestructura lista (`nextFolio`); uso en entidades desde Fase 2+
+7. (Opcional) Docker local — healthcheck `/api/health`
+
+**Fuera de Fase 1:** Planes de Desarrollo importables (Fase 4 — Proyectos).
 
 Credenciales seed (cambiar en producción):
 
@@ -49,7 +63,8 @@ Credenciales seed (cambiar en producción):
 | `npm start` | Servidor producción |
 | `npm run bootstrap` | Migraciones + seed inicial |
 | `npm run db:generate` | Generar migraciones Drizzle |
-| `npm run test:plan-parser` | Validar parser de Plan de Desarrollo |
+
+Scripts de Fase 4 (no usados en Fase 1): `npm run test:plan-parser`
 
 ---
 
