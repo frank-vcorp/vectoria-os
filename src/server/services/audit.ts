@@ -1,5 +1,6 @@
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { auditLogs } from "@/server/db/schema";
+import { auditLogs, users } from "@/server/db/schema";
 
 type AuditAction = "create" | "update" | "cancel" | "validate";
 
@@ -18,4 +19,23 @@ export async function writeAudit(params: {
     userId: params.userId ?? null,
     payload: params.payload ?? null,
   });
+}
+
+export async function listAuditLogs(limit = 100) {
+  const db = getDb();
+  return db
+    .select({
+      id: auditLogs.id,
+      entity: auditLogs.entity,
+      entityId: auditLogs.entityId,
+      action: auditLogs.action,
+      userId: auditLogs.userId,
+      userName: users.name,
+      payload: auditLogs.payload,
+      createdAt: auditLogs.createdAt,
+    })
+    .from(auditLogs)
+    .leftJoin(users, eq(auditLogs.userId, users.id))
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit);
 }

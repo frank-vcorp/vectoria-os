@@ -17,6 +17,9 @@ import {
   updatePeriodicity,
   updateService,
   updatePaymentCondition,
+  updateIncomeCategory,
+  updateExpenseCategory,
+  updateProvider,
 } from "@/server/services/catalogs";
 
 export async function GET(request: Request) {
@@ -66,22 +69,22 @@ export async function POST(request: Request) {
     let item: unknown;
     switch (body.type) {
       case "periodicity":
-        item = await createPeriodicity(body.name, body.intervalMonths);
+        item = await createPeriodicity(body.name, body.intervalMonths, user.id);
         break;
       case "service":
-        item = await createService(body);
+        item = await createService(body, user.id);
         break;
       case "payment_condition":
-        item = await createPaymentCondition(body.name, body.description);
+        item = await createPaymentCondition(body.name, body.description, user.id);
         break;
       case "income":
-        item = await createIncomeCategory(body.name);
+        item = await createIncomeCategory(body.name, user.id);
         break;
       case "expense":
-        item = await createExpenseCategory(body.name);
+        item = await createExpenseCategory(body.name, user.id);
         break;
       case "provider":
-        item = await createProvider(body.name);
+        item = await createProvider(body.name, user.id);
         break;
     }
 
@@ -119,6 +122,21 @@ const updateSchema = z.discriminatedUnion("type", [
     description: z.string().nullable().optional(),
     status: z.enum(["activo", "cancelado"]).optional(),
   }),
+  z.object({
+    type: z.literal("income"),
+    id: z.string().uuid(),
+    name: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("expense"),
+    id: z.string().uuid(),
+    name: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("provider"),
+    id: z.string().uuid(),
+    name: z.string().min(1),
+  }),
 ]);
 
 export async function PATCH(request: Request) {
@@ -131,19 +149,28 @@ export async function PATCH(request: Request) {
     switch (body.type) {
       case "periodicity": {
         const { type: _, id, ...data } = body;
-        item = await updatePeriodicity(id, data);
+        item = await updatePeriodicity(id, data, user.id);
         break;
       }
       case "service": {
         const { type: _, id, ...data } = body;
-        item = await updateService(id, data);
+        item = await updateService(id, data, user.id);
         break;
       }
       case "payment_condition": {
         const { type: _, id, ...data } = body;
-        item = await updatePaymentCondition(id, data);
+        item = await updatePaymentCondition(id, data, user.id);
         break;
       }
+      case "income":
+        item = await updateIncomeCategory(body.id, body.name, user.id);
+        break;
+      case "expense":
+        item = await updateExpenseCategory(body.id, body.name, user.id);
+        break;
+      case "provider":
+        item = await updateProvider(body.id, body.name, user.id);
+        break;
     }
 
     return NextResponse.json({ item });

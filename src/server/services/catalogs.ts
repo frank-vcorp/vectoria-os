@@ -8,6 +8,7 @@ import {
   catalogExpenseCategories,
   catalogProviders,
 } from "@/server/db/schema";
+import { writeAudit } from "@/server/services/audit";
 
 export async function listPeriodicities() {
   const db = getDb();
@@ -39,71 +40,65 @@ export async function listProviders() {
   return db.select().from(catalogProviders).orderBy(asc(catalogProviders.name));
 }
 
-export async function createPeriodicity(name: string, intervalMonths: number) {
+export async function createPeriodicity(name: string, intervalMonths: number, userId?: string) {
   const db = getDb();
   const [row] = await db
     .insert(catalogPeriodicities)
     .values({ name, intervalMonths })
     .returning();
+  await writeAudit({ entity: "catalog_periodicity", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function createService(params: {
-  name: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId?: string | null;
-  basePrice: number;
-}) {
+export async function createService(
+  params: {
+    name: string;
+    contractType: "por_evento" | "suscripcion";
+    periodicityId?: string | null;
+    basePrice: number;
+  },
+  userId?: string,
+) {
   const db = getDb();
   const [row] = await db.insert(catalogServices).values(params).returning();
+  await writeAudit({ entity: "catalog_service", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function createPaymentCondition(name: string, description?: string) {
+export async function createPaymentCondition(name: string, description?: string, userId?: string) {
   const db = getDb();
   const [row] = await db
     .insert(catalogPaymentConditions)
     .values({ name, description: description ?? null })
     .returning();
+  await writeAudit({ entity: "catalog_payment_condition", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function createIncomeCategory(name: string) {
+export async function createIncomeCategory(name: string, userId?: string) {
   const db = getDb();
   const [row] = await db.insert(catalogIncomeCategories).values({ name }).returning();
+  await writeAudit({ entity: "catalog_income", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function createExpenseCategory(name: string) {
+export async function createExpenseCategory(name: string, userId?: string) {
   const db = getDb();
   const [row] = await db.insert(catalogExpenseCategories).values({ name }).returning();
+  await writeAudit({ entity: "catalog_expense", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function createProvider(name: string) {
+export async function createProvider(name: string, userId?: string) {
   const db = getDb();
   const [row] = await db.insert(catalogProviders).values({ name }).returning();
+  await writeAudit({ entity: "catalog_provider", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function updateCatalogStatus(
-  table: "periodicity" | "service" | "payment_condition",
-  id: string,
-  status: string,
-) {
-  const db = getDb();
-  if (table === "periodicity") {
-    await db.update(catalogPeriodicities).set({ status: status as "activo" | "cancelado", updatedAt: new Date() }).where(eq(catalogPeriodicities.id, id));
-  } else if (table === "service") {
-    await db.update(catalogServices).set({ status: status as "activo" | "inactivo", updatedAt: new Date() }).where(eq(catalogServices.id, id));
-  } else {
-    await db.update(catalogPaymentConditions).set({ status: status as "activo" | "cancelado", updatedAt: new Date() }).where(eq(catalogPaymentConditions.id, id));
-  }
-}
-
-export async function updatePeriodicity(
   id: string,
   data: { name?: string; intervalMonths?: number; status?: "activo" | "cancelado" },
+  userId?: string,
 ) {
   const db = getDb();
   const [row] = await db
@@ -111,6 +106,8 @@ export async function updatePeriodicity(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(catalogPeriodicities.id, id))
     .returning();
+  const action = data.status === "cancelado" ? "cancel" : "update";
+  await writeAudit({ entity: "catalog_periodicity", entityId: id, action, userId, payload: data });
   return row;
 }
 
@@ -123,6 +120,7 @@ export async function updateService(
     basePrice?: number;
     status?: "activo" | "inactivo";
   },
+  userId?: string,
 ) {
   const db = getDb();
   const [row] = await db
@@ -130,12 +128,15 @@ export async function updateService(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(catalogServices.id, id))
     .returning();
+  const action = data.status === "inactivo" ? "cancel" : "update";
+  await writeAudit({ entity: "catalog_service", entityId: id, action, userId, payload: data });
   return row;
 }
 
 export async function updatePaymentCondition(
   id: string,
   data: { name?: string; description?: string | null; status?: "activo" | "cancelado" },
+  userId?: string,
 ) {
   const db = getDb();
   const [row] = await db
@@ -143,5 +144,40 @@ export async function updatePaymentCondition(
     .set({ ...data, updatedAt: new Date() })
     .where(eq(catalogPaymentConditions.id, id))
     .returning();
+  const action = data.status === "cancelado" ? "cancel" : "update";
+  await writeAudit({ entity: "catalog_payment_condition", entityId: id, action, userId, payload: data });
+  return row;
+}
+
+export async function updateIncomeCategory(id: string, name: string, userId?: string) {
+  const db = getDb();
+  const [row] = await db
+    .update(catalogIncomeCategories)
+    .set({ name })
+    .where(eq(catalogIncomeCategories.id, id))
+    .returning();
+  await writeAudit({ entity: "catalog_income", entityId: id, action: "update", userId, payload: { name } });
+  return row;
+}
+
+export async function updateExpenseCategory(id: string, name: string, userId?: string) {
+  const db = getDb();
+  const [row] = await db
+    .update(catalogExpenseCategories)
+    .set({ name })
+    .where(eq(catalogExpenseCategories.id, id))
+    .returning();
+  await writeAudit({ entity: "catalog_expense", entityId: id, action: "update", userId, payload: { name } });
+  return row;
+}
+
+export async function updateProvider(id: string, name: string, userId?: string) {
+  const db = getDb();
+  const [row] = await db
+    .update(catalogProviders)
+    .set({ name })
+    .where(eq(catalogProviders.id, id))
+    .returning();
+  await writeAudit({ entity: "catalog_provider", entityId: id, action: "update", userId, payload: { name } });
   return row;
 }
