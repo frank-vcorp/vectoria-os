@@ -37,7 +37,7 @@ COPY --from=builder /app/tsconfig.json ./tsconfig.json
 USER nextjs
 EXPOSE 43123
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=5 \
   CMD wget -qO- http://127.0.0.1:43123/api/health || exit 1
 
-CMD ["sh", "-c", "npx tsx --tsconfig tsconfig.json src/server/db/migrate.ts && npx tsx --tsconfig tsconfig.json scripts/seed.ts && node server.js"]
+CMD ["sh", "-c", "npx tsx --tsconfig tsconfig.json src/server/db/migrate.ts && npx tsx --tsconfig tsconfig.json scripts/seed.ts; exec node server.js"]
