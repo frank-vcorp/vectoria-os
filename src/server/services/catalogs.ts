@@ -96,6 +96,7 @@ export async function createProvider(name: string, userId?: string) {
   return row;
 }
 
+export async function updatePeriodicity(
   id: string,
   data: { name?: string; intervalMonths?: number; status?: "activo" | "cancelado" },
   userId?: string,

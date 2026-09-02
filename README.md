@@ -8,7 +8,7 @@ Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, sus
 | **Stack** | Next.js 15 · TypeScript · Drizzle · PostgreSQL · Facturapi |
 | **Puerto** | `43123` |
 | **Documentación** | [`Docs/discovery-vectoria-v1.0.md`](Docs/discovery-vectoria-v1.0.md) · [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) |
-| **Estado** | Fase 1 en desarrollo |
+| **Estado** | Fase 1 — lista para verificación local |
 
 ---
 
@@ -23,6 +23,15 @@ npm run dev
 ```
 
 Abre **http://127.0.0.1:43123**
+
+### Verificación Fase 1
+
+1. Login con admin seed
+2. **Usuarios** — crear, editar, activar/desactivar
+3. **Permisos** — toggles por rol y guardar
+4. **Catálogos** — CRUD básico, estatus, carga rápida (+) en ingresos/egresos/proveedores
+5. **Auditoría** — ver registros de cambios
+6. (Opcional) `docker build` + contenedor local — healthcheck en `/api/health`
 
 Credenciales seed (cambiar en producción):
 

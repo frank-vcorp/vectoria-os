@@ -7,6 +7,9 @@ import {
   createIncomeCategory,
   createExpenseCategory,
   createProvider,
+  createService,
+  listServices,
+  listPeriodicities,
 } from "@/server/services/catalogs";
 import { setRoleModules } from "@/server/services/permissions";
 import { DEFAULT_ROLE_MODULES } from "@/shared/modules";
@@ -49,6 +52,20 @@ async function seed() {
   await createExpenseCategory("Operación").catch(() => null);
   await createExpenseCategory("Proveedores").catch(() => null);
   await createProvider("Proveedor general").catch(() => null);
+
+  const existingServices = await listServices();
+  if (existingServices.length === 0) {
+    const periodicities = await listPeriodicities();
+    const mensual = periodicities.find((p) => p.name === "Mensual");
+    await createService({ name: "Consultoría por evento", contractType: "por_evento", basePrice: 0 }).catch(() => null);
+    await createService({
+      name: "Soporte mensual",
+      contractType: "suscripcion",
+      periodicityId: mensual?.id ?? null,
+      basePrice: 0,
+    }).catch(() => null);
+    console.log("Servicios seed creados");
+  }
 
   const existingPlans = await listDevelopmentPlans();
   if (existingPlans.length === 0) {
