@@ -37,4 +37,4 @@ EXPOSE 43123
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget -qO- http://127.0.0.1:43123/api/health || exit 1
 
-CMD ["sh", "-c", "npx tsx src/server/db/migrate.ts && node server.js"]
+CMD ["sh", "-c", "npx tsx src/server/db/migrate.ts && npx tsx scripts/seed.ts && node server.js"]
