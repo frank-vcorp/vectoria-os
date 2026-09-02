@@ -14,6 +14,9 @@ import {
   createIncomeCategory,
   createExpenseCategory,
   createProvider,
+  updatePeriodicity,
+  updateService,
+  updatePaymentCondition,
 } from "@/server/services/catalogs";
 
 export async function GET(request: Request) {
@@ -83,6 +86,67 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ item }, { status: 201 });
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: "Datos inválidos", details: e.errors }, { status: 400 });
+    }
+    const msg = e instanceof Error ? e.message : "ERROR";
+    return NextResponse.json({ error: msg }, { status: msg === "UNAUTHORIZED" ? 401 : 403 });
+  }
+}
+
+const updateSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("periodicity"),
+    id: z.string().uuid(),
+    name: z.string().min(1).optional(),
+    intervalMonths: z.number().int().positive().optional(),
+    status: z.enum(["activo", "cancelado"]).optional(),
+  }),
+  z.object({
+    type: z.literal("service"),
+    id: z.string().uuid(),
+    name: z.string().min(1).optional(),
+    contractType: z.enum(["por_evento", "suscripcion"]).optional(),
+    periodicityId: z.string().uuid().nullable().optional(),
+    basePrice: z.number().int().nonnegative().optional(),
+    status: z.enum(["activo", "inactivo"]).optional(),
+  }),
+  z.object({
+    type: z.literal("payment_condition"),
+    id: z.string().uuid(),
+    name: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
+    status: z.enum(["activo", "cancelado"]).optional(),
+  }),
+]);
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await requireUser();
+    await requireModule(user, "catalogos");
+    const body = updateSchema.parse(await request.json());
+
+    let item: unknown;
+    switch (body.type) {
+      case "periodicity": {
+        const { type: _, id, ...data } = body;
+        item = await updatePeriodicity(id, data);
+        break;
+      }
+      case "service": {
+        const { type: _, id, ...data } = body;
+        item = await updateService(id, data);
+        break;
+      }
+      case "payment_condition": {
+        const { type: _, id, ...data } = body;
+        item = await updatePaymentCondition(id, data);
+        break;
+      }
+    }
+
+    return NextResponse.json({ item });
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: "Datos inválidos", details: e.errors }, { status: 400 });

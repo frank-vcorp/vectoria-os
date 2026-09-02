@@ -100,3 +100,48 @@ export async function updateCatalogStatus(
     await db.update(catalogPaymentConditions).set({ status: status as "activo" | "cancelado", updatedAt: new Date() }).where(eq(catalogPaymentConditions.id, id));
   }
 }
+
+export async function updatePeriodicity(
+  id: string,
+  data: { name?: string; intervalMonths?: number; status?: "activo" | "cancelado" },
+) {
+  const db = getDb();
+  const [row] = await db
+    .update(catalogPeriodicities)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(catalogPeriodicities.id, id))
+    .returning();
+  return row;
+}
+
+export async function updateService(
+  id: string,
+  data: {
+    name?: string;
+    contractType?: "por_evento" | "suscripcion";
+    periodicityId?: string | null;
+    basePrice?: number;
+    status?: "activo" | "inactivo";
+  },
+) {
+  const db = getDb();
+  const [row] = await db
+    .update(catalogServices)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(catalogServices.id, id))
+    .returning();
+  return row;
+}
+
+export async function updatePaymentCondition(
+  id: string,
+  data: { name?: string; description?: string | null; status?: "activo" | "cancelado" },
+) {
+  const db = getDb();
+  const [row] = await db
+    .update(catalogPaymentConditions)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(catalogPaymentConditions.id, id))
+    .returning();
+  return row;
+}
