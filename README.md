@@ -5,8 +5,51 @@ Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, sus
 | | |
 |---|---|
 | **Repositorio** | https://github.com/frank-vcorp/vectoria-os |
+| **Stack** | Next.js 15 · TypeScript · Drizzle · PostgreSQL · Facturapi |
+| **Puerto** | `43123` |
 | **Documentación** | [`Docs/discovery-vectoria-v1.0.md`](Docs/discovery-vectoria-v1.0.md) · [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) |
-| **Estado** | Discovery y plan de desarrollo v1.0 — listo para Fase 1 |
+| **Estado** | Fase 1 en desarrollo |
+
+---
+
+## Inicio rápido
+
+```bash
+cp .env.example .env.local
+# Levantar PostgreSQL (docker compose up -d db)
+npm install
+npm run bootstrap   # migrate + seed
+npm run dev
+```
+
+Abre **http://127.0.0.1:43123**
+
+Credenciales seed (cambiar en producción):
+
+- Correo: `admin@vector-ia.mx`
+- Contraseña: `VectorIA2026!`
+
+---
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo en `:43123` |
+| `npm run build` | Build producción |
+| `npm start` | Servidor producción |
+| `npm run bootstrap` | Migraciones + seed inicial |
+| `npm run db:generate` | Generar migraciones Drizzle |
+| `npm run test:plan-parser` | Validar parser de Plan de Desarrollo |
+
+---
+
+## Despliegue Coolify
+
+- Dockerfile incluido · puerto `43123`
+- Variables: `DATABASE_URL`, `SESSION_SECRET`, `FACTURAPI_API_KEY`
+- Healthcheck: `GET /api/health`
+- Tras el primer deploy: ejecutar seed manualmente o vía job (`npm run db:seed`)
 
 ---
 
