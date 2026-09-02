@@ -5,7 +5,7 @@ import { listAuditLogs } from "@/server/services/audit";
 export async function GET(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "usuarios_roles");
+    await requireModule(user, "usuarios_roles", "read");
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Number(searchParams.get("limit") ?? 100), 200);
     const logs = await listAuditLogs(limit);

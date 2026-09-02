@@ -25,7 +25,7 @@ import {
 export async function GET(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "catalogos");
+    await requireModule(user, "catalogos", "read");
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") ?? "all";
 
@@ -63,7 +63,7 @@ const createSchema = z.discriminatedUnion("type", [
 export async function POST(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "catalogos");
+    await requireModule(user, "catalogos", "write");
     const body = createSchema.parse(await request.json());
 
     let item: unknown;
@@ -142,7 +142,7 @@ const updateSchema = z.discriminatedUnion("type", [
 export async function PATCH(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "catalogos");
+    await requireModule(user, "catalogos", "write");
     const body = updateSchema.parse(await request.json());
 
     let item: unknown;

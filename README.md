@@ -39,7 +39,7 @@ Referencia: [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vecto
 
 1. **Auth** — login / logout
 2. **Usuarios** (§17) — nombre, correo, rol, estatus activo/inactivo; crear, editar, desactivar
-3. **Permisos** (§17) — módulos por rol; defaults Administrador / Vendedor / Programador
+3. **Permisos** (§17) — lectura y escritura por módulo y rol; defaults Administrador / Vendedor / Programador
 4. **Catálogos** (§16) — servicios, periodicidades, condiciones de pago, ingresos, egresos, proveedores; estatus; carga rápida (+) en ingresos/egresos/proveedores
 5. **Auditoría** (§2) — registros de creación, modificación y cancelación
 6. **Folios** (§18) — infraestructura lista (`nextFolio`); uso en entidades desde Fase 2+

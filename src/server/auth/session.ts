@@ -6,10 +6,12 @@ import { sessions, users } from "@/server/db/schema";
 import type { User } from "@/server/db/schema";
 import type { ModuleKey, RoleKey } from "@/shared/modules";
 import { DEFAULT_ROLE_MODULES } from "@/shared/modules";
-import { getRoleModules } from "@/server/services/permissions";
+import { getModuleAccess } from "@/server/services/permissions";
 
 const SESSION_COOKIE = "vectoria_session";
 const SESSION_DAYS = 7;
+
+export type ModuleAccessLevel = "read" | "write";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -73,14 +75,32 @@ export async function requireUser(): Promise<User> {
   return user;
 }
 
-export async function userHasModule(user: User, module: ModuleKey): Promise<boolean> {
-  const role = user.role as RoleKey;
-  const modules = await getRoleModules(role);
-  return modules.includes(module);
+export async function userCanReadModule(user: User, module: ModuleKey): Promise<boolean> {
+  if (user.role === "administrador") return true;
+  const access = await getModuleAccess(user.role as RoleKey, module);
+  return access.canRead;
 }
 
-export async function requireModule(user: User, module: ModuleKey): Promise<void> {
-  const allowed = await userHasModule(user, module);
+export async function userCanWriteModule(user: User, module: ModuleKey): Promise<boolean> {
+  if (user.role === "administrador") return true;
+  const access = await getModuleAccess(user.role as RoleKey, module);
+  return access.canWrite;
+}
+
+/** Acceso de lectura al módulo (navegación y páginas). */
+export async function userHasModule(user: User, module: ModuleKey): Promise<boolean> {
+  return userCanReadModule(user, module);
+}
+
+export async function requireModule(
+  user: User,
+  module: ModuleKey,
+  access: ModuleAccessLevel = "read",
+): Promise<void> {
+  const allowed =
+    access === "write"
+      ? await userCanWriteModule(user, module)
+      : await userCanReadModule(user, module);
   if (!allowed) {
     throw new Error("FORBIDDEN");
   }

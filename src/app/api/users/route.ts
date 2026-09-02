@@ -7,7 +7,7 @@ import { ROLES } from "@/shared/modules";
 export async function GET() {
   try {
     const user = await requireUser();
-    await requireModule(user, "usuarios_roles");
+    await requireModule(user, "usuarios_roles", "read");
     const users = await listUsers();
     return NextResponse.json({ users });
   } catch (e) {
@@ -26,7 +26,7 @@ const createSchema = z.object({
 export async function POST(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "usuarios_roles");
+    await requireModule(user, "usuarios_roles", "write");
     const body = createSchema.parse(await request.json());
     const created = await createUser({ ...body, createdBy: user.id });
     return NextResponse.json({ user: created }, { status: 201 });
@@ -51,7 +51,7 @@ const updateSchema = z.object({
 export async function PATCH(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "usuarios_roles");
+    await requireModule(user, "usuarios_roles", "write");
     const body = updateSchema.parse(await request.json());
     const updated = await updateUser({ ...body, updatedBy: user.id });
     return NextResponse.json({ user: updated });

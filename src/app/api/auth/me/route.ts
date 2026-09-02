@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/server/auth/session";
-import { getRoleModules } from "@/server/services/permissions";
+import { getRoleModules, getRolePermissions } from "@/server/services/permissions";
 import type { RoleKey } from "@/shared/modules";
 
 export async function GET() {
@@ -9,7 +9,9 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  const modules = await getRoleModules(user.role as RoleKey);
+  const role = user.role as RoleKey;
+  const modules = await getRoleModules(role);
+  const permissions = await getRolePermissions(role);
   return NextResponse.json({
     user: {
       id: user.id,
@@ -18,5 +20,6 @@ export async function GET() {
       role: user.role,
     },
     modules,
+    permissions,
   });
 }

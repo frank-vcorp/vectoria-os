@@ -10,9 +10,9 @@ import {
   listServices,
   listPeriodicities,
 } from "@/server/services/catalogs";
-import { setRoleModules } from "@/server/services/permissions";
-import { DEFAULT_ROLE_MODULES } from "@/shared/modules";
-import type { RoleKey } from "@/shared/modules";
+import { setRolePermissions } from "@/server/services/permissions";
+import { defaultPermissionsForRole } from "@/shared/modules";
+import type { ModuleKey, RoleKey } from "@/shared/modules";
 
 async function seed() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@vector-ia.mx";
@@ -32,8 +32,15 @@ async function seed() {
     console.log(`Admin existente: ${adminEmail}`);
   }
 
-  for (const role of Object.keys(DEFAULT_ROLE_MODULES) as RoleKey[]) {
-    await setRoleModules(role, DEFAULT_ROLE_MODULES[role]);
+  for (const role of ["administrador", "vendedor", "programador"] as RoleKey[]) {
+    const perms = defaultPermissionsForRole(role);
+    await setRolePermissions(
+      role,
+      Object.entries(perms).map(([module, access]) => ({
+        module: module as ModuleKey,
+        ...access,
+      })),
+    );
   }
 
   await createPeriodicity("Mensual", 1).catch(() => null);

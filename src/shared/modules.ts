@@ -69,3 +69,18 @@ export const FOLIO_PREFIXES = {
 } as const;
 
 export type FolioEntity = keyof typeof FOLIO_PREFIXES;
+
+export type ModuleAccess = {
+  canRead: boolean;
+  canWrite: boolean;
+};
+
+export type RolePermissions = Record<ModuleKey, ModuleAccess>;
+
+/** Permisos por defecto según Discovery §17 (lectura + escritura en módulos asignados). */
+export function defaultPermissionsForRole(role: RoleKey): RolePermissions {
+  const allowed = new Set(DEFAULT_ROLE_MODULES[role]);
+  return Object.fromEntries(
+    MODULES.map((m) => [m, { canRead: allowed.has(m), canWrite: allowed.has(m) }]),
+  ) as RolePermissions;
+}

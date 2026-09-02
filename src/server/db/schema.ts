@@ -31,7 +31,8 @@ export const roleModulePermissions = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     role: text("role").notNull(),
     module: text("module").notNull(),
-    enabled: boolean("enabled").notNull().default(true),
+    canRead: boolean("can_read").notNull().default(false),
+    canWrite: boolean("can_write").notNull().default(false),
   },
   (t) => [uniqueIndex("role_module_unique").on(t.role, t.module)],
 );
