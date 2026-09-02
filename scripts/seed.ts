@@ -1,3 +1,4 @@
+import "./load-env";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { createUser, findUserByEmail } from "@/server/services/users";

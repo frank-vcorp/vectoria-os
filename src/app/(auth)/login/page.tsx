@@ -23,7 +23,8 @@ export default function LoginPage() {
 
     setLoading(false);
     if (!res.ok) {
-      setError("Credenciales inválidas");
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === "string" ? data.error : "Credenciales inválidas");
       return;
     }
     router.push("/dashboard");

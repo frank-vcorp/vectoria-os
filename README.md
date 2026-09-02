@@ -15,10 +15,10 @@ Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, sus
 ## Inicio rápido
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env.local   # obligatorio: DATABASE_URL y SESSION_SECRET
 # Levantar PostgreSQL (docker compose up -d db)
 npm install
-npm run bootstrap   # migrate + seed
+npm run bootstrap   # migrate + seed (lee .env.local)
 npm run dev
 ```
 

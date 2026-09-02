@@ -25,7 +25,13 @@ export async function POST(request: Request) {
 
     await createSession(user.id);
     return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, role: user.role } });
-  } catch {
-    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+    }
+    console.error("login error:", e);
+    const msg = e instanceof Error ? e.message : "Error de servidor";
+    const hint = process.env.NODE_ENV !== "production" ? msg : "Error de servidor";
+    return NextResponse.json({ error: hint }, { status: 500 });
   }
 }
