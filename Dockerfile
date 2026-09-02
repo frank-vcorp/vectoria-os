@@ -33,11 +33,12 @@ COPY --from=builder /app/Docs ./Docs
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+RUN chmod +x scripts/docker-entrypoint.sh scripts/docker-healthcheck.sh
 
 USER nextjs
 EXPOSE 43123
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=5 \
-  CMD wget -qO- http://127.0.0.1:43123/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+  CMD scripts/docker-healthcheck.sh
 
-CMD ["sh", "-c", "npx tsx --tsconfig tsconfig.json src/server/db/migrate.ts && npx tsx --tsconfig tsconfig.json scripts/seed.ts; exec node server.js"]
+ENTRYPOINT ["scripts/docker-entrypoint.sh"]

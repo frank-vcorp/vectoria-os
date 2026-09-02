@@ -49,7 +49,7 @@ Credenciales seed (cambiar en producción):
 - Dockerfile incluido · puerto `43123`
 - Variables: `DATABASE_URL`, `SESSION_SECRET`, `FACTURAPI_API_KEY`
 - Healthcheck: `GET /api/health`
-- Tras el primer deploy: ejecutar seed manualmente o vía job (`npm run db:seed`)
+- El entrypoint ejecuta migraciones al arrancar y el seed en segundo plano (idempotente)
 
 ---
 
