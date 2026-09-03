@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
 import { MoneyInput } from "@/components/money-input";
 import {
@@ -11,18 +12,15 @@ import {
 } from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
-type ServiceOption = {
-  id: string;
-  name: string;
-  basePrice: number;
-};
+type ServiceOption = { id: string; name: string };
 type CatalogOption = { id: string; name: string };
-type BankOption = { id: string; name: string };
 
 type OrderRow = {
   id: string;
   folio: string;
+  clientId: string;
   clientName: string;
+  quoteId: string | null;
   quoteFolio: string | null;
   serviceName: string;
   price: number;
@@ -30,34 +28,15 @@ type OrderRow = {
   status: ServiceOrderStatus;
 };
 
-type PaymentRow = {
-  id: string;
-  concept: string;
-  amount: number;
-  paymentDate: string;
-  bankAccountName: string;
-};
-
-type Summary = {
-  total: number;
-  totalPaid: number;
-  balance: number;
-  paymentType: string;
-};
-
 export function ServiceOrdersManager() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [periodicities, setPeriodicities] = useState<CatalogOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
-  const [banks, setBanks] = useState<BankOption[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [payments, setPayments] = useState<PaymentRow[]>([]);
-  const [summary, setSummary] = useState<Summary | null>(null);
 
   const [form, setForm] = useState({
     clientId: "",
@@ -71,20 +50,11 @@ export function ServiceOrdersManager() {
     observations: "",
   });
 
-  const [payForm, setPayForm] = useState({
-    concept: "",
-    amount: 0,
-    bankAccountId: "",
-    paymentDate: new Date().toISOString().slice(0, 10),
-  });
-
   async function loadAll() {
-    const [catRes, clientsRes, ordersRes, banksRes, meRes] = await Promise.all([
+    const [catRes, clientsRes, ordersRes] = await Promise.all([
       fetch("/api/catalogs?type=all"),
       fetch("/api/clients"),
       fetch("/api/service-orders"),
-      fetch("/api/bank-accounts"),
-      fetch("/api/auth/me"),
     ]);
     if (catRes.ok) {
       const data = await catRes.json();
@@ -96,12 +66,6 @@ export function ServiceOrdersManager() {
     }
     if (clientsRes.ok) setClients((await clientsRes.json()).clients);
     if (ordersRes.ok) setOrders((await ordersRes.json()).orders);
-    if (banksRes.ok) {
-      const data = await banksRes.json();
-      setBanks(data.accounts);
-      if (data.accounts[0]) setPayForm((f) => ({ ...f, bankAccountId: data.accounts[0].id }));
-    }
-    if (meRes.ok) setIsAdmin((await meRes.json()).user?.role === "administrador");
     setLoading(false);
   }
 
@@ -112,24 +76,6 @@ export function ServiceOrdersManager() {
   async function handleQuickAddClient(client: { id: string }) {
     await loadAll();
     setForm((f) => ({ ...f, clientId: client.id }));
-  }
-
-  async function onServiceChange(serviceId: string) {
-    setForm((f) => ({ ...f, serviceId }));
-    if (!serviceId) return;
-    const res = await fetch("/api/service-orders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "prefill_service", serviceId }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setForm((f) => ({
-        ...f,
-        serviceId,
-        price: data.basePrice ?? 0,
-      }));
-    }
   }
 
   async function createOrder(e: React.FormEvent) {
@@ -144,66 +90,8 @@ export function ServiceOrdersManager() {
       setError((await res.json()).error ?? "Error");
       return;
     }
-    setForm({
-      clientId: "",
-      serviceId: "",
-      description: "",
-      contractType: "por_evento",
-      periodicityId: "",
-      price: 0,
-      paymentConditionId: "",
-      deliveryDate: "",
-      observations: "",
-    });
-    await loadAll();
-  }
-
-  async function expandOrder(id: string) {
-    if (expandedId === id) {
-      setExpandedId(null);
-      return;
-    }
-    setExpandedId(id);
-    const res = await fetch(`/api/service-orders?paymentsFor=${id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setPayments(data.payments);
-      setSummary(data.summary);
-    }
-  }
-
-  async function addPayment(e: React.FormEvent) {
-    e.preventDefault();
-    if (!expandedId) return;
-    setError("");
-    const res = await fetch("/api/service-orders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "payment",
-        id: expandedId,
-        ...payForm,
-        amount: payForm.amount,
-      }),
-    });
-    if (!res.ok) {
-      setError((await res.json()).error ?? "Error");
-      return;
-    }
     const data = await res.json();
-    setSummary(data.summary);
-    setPayForm((f) => ({ ...f, concept: "", amount: 0 }));
-    await expandOrder(expandedId);
-    await loadAll();
-  }
-
-  async function setStatus(id: string, status: ServiceOrderStatus) {
-    await fetch("/api/service-orders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "status", id, status }),
-    });
-    await loadAll();
+    router.push(`/ordenes-servicio/${data.order.id}`);
   }
 
   if (loading) return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
@@ -228,7 +116,7 @@ export function ServiceOrdersManager() {
         <QuickAddClient onCreated={handleQuickAddClient} />
         <select
           value={form.serviceId}
-          onChange={(e) => void onServiceChange(e.target.value)}
+          onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
           required
           className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
         >
@@ -274,7 +162,7 @@ export function ServiceOrdersManager() {
             </select>
           )}
           <MoneyInput
-            label="Precio"
+            label="Precio (MXN)"
             valueCents={form.price}
             onChangeCents={(price) => setForm({ ...form, price })}
             required
@@ -299,7 +187,7 @@ export function ServiceOrdersManager() {
             ))}
           </select>
         </div>
-        {error && !expandedId && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         <button type="submit" className="btn btn-primary">
           Crear OS
         </button>
@@ -320,125 +208,37 @@ export function ServiceOrdersManager() {
           </thead>
           <tbody>
             {orders.map((o) => (
-              <Fragment key={o.id}>
-                <tr className="border-b border-[var(--border)] align-top">
-                  <td className="py-2 pr-2 font-mono text-xs">{o.folio}</td>
-                  <td className="py-2 pr-2">{o.clientName}</td>
-                  <td className="py-2 pr-2">
-                    {o.quoteFolio ? (
-                      <Link href="/cotizaciones" className="underline">
-                        {o.quoteFolio}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="py-2 pr-2">{formatMoney(o.price)}</td>
-                  <td className="py-2 pr-2">{new Date(o.deliveryDate).toLocaleDateString("es-MX")}</td>
-                  <td className="py-2 pr-2">
-                    <span className="badge">{SERVICE_ORDER_STATUS_LABELS[o.status]}</span>
-                  </td>
-                  <td className="py-2 flex flex-wrap gap-1">
-                    <a
-                      href={`/api/service-orders/${o.id}/pdf`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-ghost text-xs"
-                    >
-                      PDF
-                    </a>
-                    <button type="button" className="btn btn-ghost text-xs" onClick={() => void expandOrder(o.id)}>
-                      Pagos
-                    </button>
-                    {o.status === "creada" && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost text-xs"
-                        onClick={() => void setStatus(o.id, "entregada")}
-                      >
-                        Entregada
-                      </button>
-                    )}
-                    {isAdmin && o.status !== "cancelada" && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost text-xs"
-                        onClick={() => void setStatus(o.id, "cancelada")}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </td>
-                </tr>
-                {expandedId === o.id && summary && (
-                  <tr key={`${o.id}-pay`}>
-                    <td colSpan={7} className="py-3 bg-[var(--surface-2)]">
-                      <div className="space-y-3 px-2">
-                        <p className="text-sm">
-                          Total: {formatMoney(summary.total)} · Pagado: {formatMoney(summary.totalPaid)} · Saldo:{" "}
-                          {formatMoney(summary.balance)} ·{" "}
-                          {summary.paymentType === "pago_total"
-                            ? "Pago total"
-                            : summary.paymentType === "abono"
-                              ? "Abono"
-                              : "Sin pagos"}
-                        </p>
-                        <ul className="text-sm space-y-1">
-                          {payments.map((p) => (
-                            <li key={p.id}>
-                              {p.concept} — {formatMoney(p.amount)} — {p.bankAccountName} —{" "}
-                              {new Date(p.paymentDate).toLocaleDateString("es-MX")}
-                            </li>
-                          ))}
-                          {payments.length === 0 && <li className="text-[var(--muted)]">Sin pagos</li>}
-                        </ul>
-                        {o.status !== "cancelada" && (
-                          <form className="grid gap-2 md:grid-cols-4" onSubmit={(e) => void addPayment(e)}>
-                            <input
-                              value={payForm.concept}
-                              onChange={(e) => setPayForm({ ...payForm, concept: e.target.value })}
-                              placeholder="Concepto"
-                              required
-                              className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-                            />
-                            <MoneyInput
-                              label="Importe"
-                              valueCents={payForm.amount}
-                              onChangeCents={(amount) => setPayForm({ ...payForm, amount })}
-                              required
-                            />
-                            <select
-                              value={payForm.bankAccountId}
-                              onChange={(e) => setPayForm({ ...payForm, bankAccountId: e.target.value })}
-                              required
-                              className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-                            >
-                              {banks.map((b) => (
-                                <option key={b.id} value={b.id}>
-                                  {b.name}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="date"
-                              value={payForm.paymentDate}
-                              onChange={(e) => setPayForm({ ...payForm, paymentDate: e.target.value })}
-                              required
-                              className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-                            />
-                            <button type="submit" className="btn btn-primary md:col-span-4">
-                              Registrar pago (genera ingreso)
-                            </button>
-                          </form>
-                        )}
-                        {error && expandedId === o.id && (
-                          <p className="text-sm text-[var(--danger)]">{error}</p>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
+              <tr key={o.id} className="border-b border-[var(--border)] align-top">
+                <td className="py-2 pr-2 font-mono text-xs">
+                  <Link href={`/ordenes-servicio/${o.id}`} className="underline">
+                    {o.folio}
+                  </Link>
+                </td>
+                <td className="py-2 pr-2">
+                  <Link href={`/clientes/${o.clientId}`} className="underline">
+                    {o.clientName}
+                  </Link>
+                </td>
+                <td className="py-2 pr-2">
+                  {o.quoteFolio && o.quoteId ? (
+                    <Link href={`/cotizaciones/${o.quoteId}`} className="underline">
+                      {o.quoteFolio}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="py-2 pr-2">{formatMoney(o.price)}</td>
+                <td className="py-2 pr-2">{new Date(o.deliveryDate).toLocaleDateString("es-MX")}</td>
+                <td className="py-2 pr-2">
+                  <span className="badge">{SERVICE_ORDER_STATUS_LABELS[o.status]}</span>
+                </td>
+                <td className="py-2">
+                  <Link href={`/ordenes-servicio/${o.id}`} className="btn btn-ghost text-xs">
+                    Ver
+                  </Link>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>

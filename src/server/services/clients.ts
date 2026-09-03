@@ -1,6 +1,12 @@
 import { asc, desc, eq, ilike, or } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { clients } from "@/server/db/schema";
+import {
+  catalogServices,
+  clients,
+  opportunities,
+  quotes,
+  serviceOrders,
+} from "@/server/db/schema";
 import type { ClientFiscalData } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
 import { nextFolio } from "@/server/services/folios";
@@ -124,6 +130,49 @@ export async function updateClient(params: {
   });
 
   return client;
+}
+
+export async function getClientRelatedRecords(clientId: string) {
+  const db = getDb();
+  const [opps, quotesList, orders] = await Promise.all([
+    db
+      .select({
+        id: opportunities.id,
+        folio: opportunities.folio,
+        status: opportunities.status,
+        serviceName: catalogServices.name,
+        createdAt: opportunities.createdAt,
+      })
+      .from(opportunities)
+      .innerJoin(catalogServices, eq(opportunities.serviceId, catalogServices.id))
+      .where(eq(opportunities.clientId, clientId))
+      .orderBy(desc(opportunities.createdAt)),
+    db
+      .select({
+        id: quotes.id,
+        folio: quotes.folio,
+        status: quotes.status,
+        price: quotes.price,
+        serviceName: catalogServices.name,
+        createdAt: quotes.createdAt,
+      })
+      .from(quotes)
+      .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
+      .where(eq(quotes.clientId, clientId))
+      .orderBy(desc(quotes.createdAt)),
+    db
+      .select({
+        id: serviceOrders.id,
+        folio: serviceOrders.folio,
+        status: serviceOrders.status,
+        price: serviceOrders.price,
+        createdAt: serviceOrders.createdAt,
+      })
+      .from(serviceOrders)
+      .where(eq(serviceOrders.clientId, clientId))
+      .orderBy(desc(serviceOrders.createdAt)),
+  ]);
+  return { opportunities: opps, quotes: quotesList, serviceOrders: orders };
 }
 
 /** Opciones para selectores (carga rápida). */

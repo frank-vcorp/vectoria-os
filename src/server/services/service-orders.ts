@@ -117,6 +117,7 @@ export async function listServiceOrders() {
     .select({
       id: serviceOrders.id,
       folio: serviceOrders.folio,
+      clientId: serviceOrders.clientId,
       clientName: clients.name,
       quoteId: serviceOrders.quoteId,
       quoteFolio: quotes.folio,

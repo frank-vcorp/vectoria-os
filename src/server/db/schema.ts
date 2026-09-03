@@ -55,7 +55,6 @@ export const folioCounters = pgTable(
 export const catalogServices = pgTable("catalog_services", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  basePrice: integer("base_price").notNull().default(0),
   status: text("status").$type<"activo" | "inactivo">().notNull().default("activo"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -73,7 +72,6 @@ export const catalogPeriodicities = pgTable("catalog_periodicities", {
 export const catalogPaymentConditions = pgTable("catalog_payment_conditions", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  description: text("description"),
   status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

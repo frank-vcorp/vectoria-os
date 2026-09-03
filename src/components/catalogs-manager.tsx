@@ -2,17 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
-import { MoneyInput } from "@/components/money-input";
 
 type CatalogData = {
   periodicities?: { id: string; name: string; intervalMonths: number; status: string }[];
-  services?: {
-    id: string;
-    name: string;
-    basePrice: number;
-    status: string;
-  }[];
-  paymentConditions?: { id: string; name: string; description: string | null; status: string }[];
+  services?: { id: string; name: string; status: string }[];
+  paymentConditions?: { id: string; name: string; status: string }[];
   incomeCategories?: { id: string; name: string }[];
   expenseCategories?: { id: string; name: string }[];
   providers?: { id: string; name: string }[];
@@ -60,11 +54,11 @@ function SimpleNameRow({
 export function CatalogsManager() {
   const [data, setData] = useState<CatalogData>({});
   const [periodicity, setPeriodicity] = useState({ name: "", intervalMonths: 1 });
-  const [service, setService] = useState({ name: "", basePrice: 0 });
-  const [payment, setPayment] = useState({ name: "", description: "" });
+  const [service, setService] = useState({ name: "" });
+  const [payment, setPayment] = useState({ name: "" });
   const [editPeriodicity, setEditPeriodicity] = useState<{ id: string; name: string; intervalMonths: number } | null>(null);
-  const [editService, setEditService] = useState<{ id: string; name: string; basePrice: number } | null>(null);
-  const [editPayment, setEditPayment] = useState<{ id: string; name: string; description: string } | null>(null);
+  const [editService, setEditService] = useState<{ id: string; name: string } | null>(null);
+  const [editPayment, setEditPayment] = useState<{ id: string; name: string } | null>(null);
 
   async function load() {
     const res = await fetch("/api/catalogs");
@@ -81,11 +75,6 @@ export function CatalogsManager() {
   async function patch(body: Record<string, unknown>) {
     await fetch("/api/catalogs", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     await load();
-  }
-
-  function periodicityName(id: string | null) {
-    if (!id) return null;
-    return data.periodicities?.find((p) => p.id === id)?.name ?? null;
   }
 
   return (
@@ -126,30 +115,19 @@ export function CatalogsManager() {
 
       <section className="card space-y-3">
         <h2 className="font-medium">Servicios</h2>
-        <p className="text-xs text-[var(--muted)]">
-          El tipo de contratación se define en cotizaciones y órdenes de servicio, no en el catálogo.
-        </p>
         <form
-          className="flex flex-wrap gap-2 items-end"
+          className="flex flex-wrap gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            void post({ type: "service", name: service.name, basePrice: service.basePrice }).then(() =>
-              setService({ name: "", basePrice: 0 }),
-            );
+            void post({ type: "service", name: service.name }).then(() => setService({ name: "" }));
           }}
         >
           <input
             placeholder="Nombre"
             value={service.name}
-            onChange={(e) => setService({ ...service, name: e.target.value })}
+            onChange={(e) => setService({ name: e.target.value })}
             required
             className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <MoneyInput
-            label="Precio base"
-            valueCents={service.basePrice}
-            onChangeCents={(basePrice) => setService({ ...service, basePrice })}
-            className="min-w-[10rem]"
           />
           <button className="btn btn-primary" type="submit">
             Agregar
@@ -157,15 +135,12 @@ export function CatalogsManager() {
         </form>
         {editService && (
           <form
-            className="flex flex-wrap gap-2 items-end p-3 rounded-lg bg-[var(--surface-2)]"
+            className="flex flex-wrap gap-2 p-3 rounded-lg bg-[var(--surface-2)]"
             onSubmit={(e) => {
               e.preventDefault();
-              void patch({
-                type: "service",
-                id: editService.id,
-                name: editService.name,
-                basePrice: editService.basePrice,
-              }).then(() => setEditService(null));
+              void patch({ type: "service", id: editService.id, name: editService.name }).then(() =>
+                setEditService(null),
+              );
             }}
           >
             <input
@@ -173,11 +148,6 @@ export function CatalogsManager() {
               onChange={(e) => setEditService({ ...editService, name: e.target.value })}
               required
               className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
-            <MoneyInput
-              label="Precio base"
-              valueCents={editService.basePrice}
-              onChangeCents={(basePrice) => setEditService({ ...editService, basePrice })}
             />
             <button className="btn btn-primary" type="submit">
               Guardar
@@ -190,15 +160,13 @@ export function CatalogsManager() {
         <ul className="text-sm space-y-2">
           {data.services?.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center gap-2 justify-between">
-              <span>
-                {s.name} — ${(s.basePrice / 100).toFixed(2)}
-              </span>
+              <span>{s.name}</span>
               <span className="flex items-center gap-2">
                 <StatusBadge status={s.status} />
                 <button
                   type="button"
                   className="btn btn-ghost text-sm"
-                  onClick={() => setEditService({ id: s.id, name: s.name, basePrice: s.basePrice })}
+                  onClick={() => setEditService({ id: s.id, name: s.name })}
                 >
                   Editar
                 </button>
@@ -219,30 +187,72 @@ export function CatalogsManager() {
 
       <section className="card space-y-3">
         <h2 className="font-medium">Condiciones de pago</h2>
-        <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); void post({ type: "payment_condition", ...payment }).then(() => setPayment({ name: "", description: "" })); }}>
-          <input placeholder="Nombre" value={payment.name} onChange={(e) => setPayment({ ...payment, name: e.target.value })} required className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2" />
-          <input placeholder="Descripción (opcional)" value={payment.description} onChange={(e) => setPayment({ ...payment, description: e.target.value })} className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2" />
-          <button className="btn btn-primary" type="submit">Agregar</button>
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void post({ type: "payment_condition", name: payment.name }).then(() => setPayment({ name: "" }));
+          }}
+        >
+          <input
+            placeholder="Nombre"
+            value={payment.name}
+            onChange={(e) => setPayment({ name: e.target.value })}
+            required
+            className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+          <button className="btn btn-primary" type="submit">
+            Agregar
+          </button>
         </form>
         {editPayment && (
-          <form className="flex flex-wrap gap-2 p-3 rounded-lg bg-[var(--surface-2)]" onSubmit={(e) => {
-            e.preventDefault();
-            void patch({ type: "payment_condition", id: editPayment.id, name: editPayment.name, description: editPayment.description || null }).then(() => setEditPayment(null));
-          }}>
-            <input value={editPayment.name} onChange={(e) => setEditPayment({ ...editPayment, name: e.target.value })} required className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2" />
-            <input value={editPayment.description} onChange={(e) => setEditPayment({ ...editPayment, description: e.target.value })} className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2" />
-            <button className="btn btn-primary" type="submit">Guardar</button>
-            <button type="button" className="btn btn-ghost" onClick={() => setEditPayment(null)}>Cancelar</button>
+          <form
+            className="flex flex-wrap gap-2 p-3 rounded-lg bg-[var(--surface-2)]"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void patch({ type: "payment_condition", id: editPayment.id, name: editPayment.name }).then(() =>
+                setEditPayment(null),
+              );
+            }}
+          >
+            <input
+              value={editPayment.name}
+              onChange={(e) => setEditPayment({ ...editPayment, name: e.target.value })}
+              required
+              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+            <button className="btn btn-primary" type="submit">
+              Guardar
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setEditPayment(null)}>
+              Cancelar
+            </button>
           </form>
         )}
         <ul className="text-sm space-y-2">
           {data.paymentConditions?.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-2 justify-between">
-              <span>{p.name}{p.description ? ` — ${p.description}` : ""}</span>
+              <span>{p.name}</span>
               <span className="flex items-center gap-2">
                 <StatusBadge status={p.status} />
-                <button type="button" className="btn btn-ghost text-sm" onClick={() => setEditPayment({ id: p.id, name: p.name, description: p.description ?? "" })}>Editar</button>
-                <button type="button" className="btn btn-ghost text-sm" onClick={() => void patch({ type: "payment_condition", id: p.id, status: p.status === "activo" ? "cancelado" : "activo" })}>
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={() => setEditPayment({ id: p.id, name: p.name })}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={() =>
+                    void patch({
+                      type: "payment_condition",
+                      id: p.id,
+                      status: p.status === "activo" ? "cancelado" : "activo",
+                    })
+                  }
+                >
                   {p.status === "activo" ? "Cancelar" : "Activar"}
                 </button>
               </span>

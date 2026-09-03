@@ -1,4 +1,4 @@
-import { CONTRACT_TYPE_LABELS, formatMoney } from "@/shared/commercial";
+import { CONTRACT_TYPE_LABELS, formatDeliveryDate, formatMoney } from "@/shared/commercial";
 
 type QuoteDoc = {
   folio: string;
@@ -72,7 +72,7 @@ export function renderQuoteHtml(quote: QuoteDoc) {
     ["Tipo de contratación", contractLabel],
     quote.periodicityName ? ["Periodicidad", quote.periodicityName] : null,
     ["Precio", formatMoney(quote.price)],
-    ["Tiempo de entrega", quote.deliveryTime],
+    ["Fecha de entrega", formatDeliveryDate(quote.deliveryTime)],
     quote.paymentConditionName ? ["Condiciones de pago", quote.paymentConditionName] : null,
     quote.observations ? ["Observaciones", quote.observations] : null,
     quote.opportunityFolio ? ["Oportunidad", quote.opportunityFolio] : null,

@@ -2,20 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
 import { MoneyInput } from "@/components/money-input";
-import {
-  QUOTE_STATUS_LABELS,
-  formatMoney,
-  type QuoteStatus,
-} from "@/shared/commercial";
+import { QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
-type ServiceOption = {
-  id: string;
-  name: string;
-  basePrice: number;
-};
+type ServiceOption = { id: string; name: string };
 type CatalogOption = { id: string; name: string };
 
 type QuoteRow = {
@@ -34,16 +27,14 @@ type QuoteRow = {
 };
 
 export function QuotesManager() {
+  const router = useRouter();
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [periodicities, setPeriodicities] = useState<CatalogOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [authorizeId, setAuthorizeId] = useState<string | null>(null);
-  const [deliveryDate, setDeliveryDate] = useState("");
 
   const [form, setForm] = useState({
     clientId: "",
@@ -58,21 +49,14 @@ export function QuotesManager() {
   });
 
   async function loadCatalogs() {
-    const [catRes, meRes] = await Promise.all([
-      fetch("/api/catalogs?type=all"),
-      fetch("/api/auth/me"),
-    ]);
-    if (catRes.ok) {
-      const data = await catRes.json();
+    const res = await fetch("/api/catalogs?type=all");
+    if (res.ok) {
+      const data = await res.json();
       setServices((data.services ?? []).filter((s: ServiceOption & { status: string }) => s.status === "activo"));
       setPeriodicities(data.periodicities ?? []);
       setPaymentConditions(
         (data.paymentConditions ?? []).filter((p: CatalogOption & { status: string }) => p.status === "activo"),
       );
-    }
-    if (meRes.ok) {
-      const me = await meRes.json();
-      setIsAdmin(me.user?.role === "administrador");
     }
   }
 
@@ -96,20 +80,6 @@ export function QuotesManager() {
     setForm((f) => ({ ...f, clientId: client.id }));
   }
 
-  async function onServiceChange(serviceId: string) {
-    setForm((f) => ({ ...f, serviceId }));
-    if (!serviceId) return;
-    const res = await fetch(`/api/quotes?prefillService=${serviceId}`);
-    if (res.ok) {
-      const data = await res.json();
-      setForm((f) => ({
-        ...f,
-        serviceId,
-        price: data.basePrice ?? 0,
-      }));
-    }
-  }
-
   async function createDirect(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -119,48 +89,11 @@ export function QuotesManager() {
       body: JSON.stringify({ mode: "direct", ...form, observations: form.observations || null }),
     });
     if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Error");
+      setError((await res.json()).error ?? "Error");
       return;
     }
-    setForm({
-      clientId: "",
-      serviceId: "",
-      description: "",
-      contractType: "por_evento",
-      periodicityId: "",
-      price: 0,
-      deliveryTime: "",
-      paymentConditionId: "",
-      observations: "",
-    });
-    await loadQuotes();
-  }
-
-  async function patchQuote(body: Record<string, unknown>) {
-    setError("");
-    const res = await fetch("/api/quotes", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Error");
-      return false;
-    }
-    await loadQuotes();
-    return true;
-  }
-
-  async function authorize(e: React.FormEvent) {
-    e.preventDefault();
-    if (!authorizeId || !deliveryDate) return;
-    const ok = await patchQuote({ action: "authorize", id: authorizeId, deliveryDate });
-    if (ok) {
-      setAuthorizeId(null);
-      setDeliveryDate("");
-    }
+    const data = await res.json();
+    router.push(`/cotizaciones/${data.quote.id}`);
   }
 
   if (loading) return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
@@ -185,7 +118,7 @@ export function QuotesManager() {
         <QuickAddClient onCreated={handleQuickAddClient} />
         <select
           value={form.serviceId}
-          onChange={(e) => void onServiceChange(e.target.value)}
+          onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
           required
           className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
         >
@@ -231,18 +164,21 @@ export function QuotesManager() {
             </select>
           )}
           <MoneyInput
-            label="Precio"
+            label="Precio (MXN)"
             valueCents={form.price}
             onChangeCents={(price) => setForm({ ...form, price })}
             required
           />
-          <input
-            value={form.deliveryTime}
-            onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
-            placeholder="Tiempo de entrega *"
-            required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
+          <label className="text-sm block">
+            <span className="text-[var(--muted)]">Fecha de entrega</span>
+            <input
+              type="date"
+              value={form.deliveryTime}
+              onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
+              required
+              className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+          </label>
           <select
             value={form.paymentConditionId}
             onChange={(e) => setForm({ ...form, paymentConditionId: e.target.value })}
@@ -279,97 +215,49 @@ export function QuotesManager() {
           <tbody>
             {quotes.map((q) => (
               <tr key={q.id} className="border-b border-[var(--border)] last:border-0 align-top">
-                <td className="py-2 pr-2 font-mono text-xs">{q.folio}</td>
-                <td className="py-2 pr-2">{q.clientName}</td>
+                <td className="py-2 pr-2 font-mono text-xs">
+                  <Link href={`/cotizaciones/${q.id}`} className="underline">
+                    {q.folio}
+                  </Link>
+                </td>
+                <td className="py-2 pr-2">
+                  <Link href={`/clientes/${q.clientId}`} className="underline">
+                    {q.clientName}
+                  </Link>
+                </td>
                 <td className="py-2 pr-2">{q.serviceName}</td>
                 <td className="py-2 pr-2">{formatMoney(q.price)}</td>
                 <td className="py-2 pr-2">
                   <span className="badge">{QUOTE_STATUS_LABELS[q.status]}</span>
                 </td>
                 <td className="py-2 pr-2 text-xs space-y-1">
-                  {q.opportunityFolio && (
+                  {q.opportunityFolio && q.opportunityId && (
                     <div>
                       OP:{" "}
-                      <Link href="/oportunidades" className="underline">
+                      <Link href={`/oportunidades/${q.opportunityId}`} className="underline">
                         {q.opportunityFolio}
                       </Link>
                     </div>
                   )}
-                  {q.serviceOrderFolio && (
+                  {q.serviceOrderFolio && q.serviceOrderId && (
                     <div>
                       OS:{" "}
-                      <Link href="/ordenes-servicio" className="underline">
+                      <Link href={`/ordenes-servicio/${q.serviceOrderId}`} className="underline">
                         {q.serviceOrderFolio}
                       </Link>
                     </div>
                   )}
                 </td>
-                <td className="py-2 flex flex-wrap gap-1">
-                  <a
-                    href={`/api/quotes/${q.id}/pdf`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-ghost text-xs"
-                  >
-                    PDF
-                  </a>
-                  {q.status === "cotizada" && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-primary text-xs"
-                        onClick={() => setAuthorizeId(q.id)}
-                      >
-                        Autorizar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost text-xs"
-                        onClick={() => void patchQuote({ action: "reject", id: q.id })}
-                      >
-                        Rechazar
-                      </button>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          className="btn btn-ghost text-xs"
-                          onClick={() => void patchQuote({ action: "cancel", id: q.id })}
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                    </>
-                  )}
+                <td className="py-2">
+                  <Link href={`/cotizaciones/${q.id}`} className="btn btn-ghost text-xs">
+                    Ver
+                  </Link>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      {authorizeId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <form className="card max-w-md w-full space-y-3" onSubmit={(e) => void authorize(e)}>
-            <h3 className="font-medium">Autorizar cotización → crear OS</h3>
-            <p className="text-sm text-[var(--muted)]">Indica la fecha de entrega para la Orden de Servicio.</p>
-            <input
-              type="date"
-              value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
-              required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
-            <div className="flex gap-2 justify-end">
-              <button type="button" className="btn btn-ghost" onClick={() => setAuthorizeId(null)}>
-                Cancelar
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Autorizar y crear OS
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

@@ -60,8 +60,8 @@ async function seed() {
 
   const existingServices = await listServices();
   if (existingServices.length === 0) {
-    await createService({ name: "Consultoría por evento", basePrice: 0 }).catch(() => null);
-    await createService({ name: "Soporte mensual", basePrice: 0 }).catch(() => null);
+    await createService({ name: "Consultoría por evento" }).catch(() => null);
+    await createService({ name: "Soporte mensual" }).catch(() => null);
     console.log("Servicios seed creados");
   }
 

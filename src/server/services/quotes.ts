@@ -86,6 +86,21 @@ export async function getQuoteById(id: string) {
   return row ?? null;
 }
 
+export async function listQuotesByOpportunity(opportunityId: string) {
+  const db = getDb();
+  return db
+    .select({
+      id: quotes.id,
+      folio: quotes.folio,
+      status: quotes.status,
+      price: quotes.price,
+      createdAt: quotes.createdAt,
+    })
+    .from(quotes)
+    .where(eq(quotes.opportunityId, opportunityId))
+    .orderBy(desc(quotes.createdAt));
+}
+
 async function insertQuote(params: {
   clientId: string;
   opportunityId?: string | null;
@@ -185,7 +200,7 @@ export async function createQuoteFromOpportunity(params: {
     description: opp.description,
     contractType: params.contractType,
     periodicityId: params.periodicityId ?? null,
-    price: params.price ?? service.basePrice,
+    price: params.price ?? 0,
     deliveryTime: params.deliveryTime,
     paymentConditionId: params.paymentConditionId,
     observations: params.observations,
@@ -285,27 +300,9 @@ export async function cancelQuote(id: string, userId?: string, isAdmin?: boolean
 export async function getQuotePrefillFromOpportunity(opportunityId: string) {
   const opp = await getOpportunityById(opportunityId);
   if (!opp) throw new Error("NOT_FOUND");
-
-  const db = getDb();
-  const [service] = await db
-    .select()
-    .from(catalogServices)
-    .where(eq(catalogServices.id, opp.serviceId))
-    .limit(1);
-
-  return {
-    opportunity: opp,
-    service: service ? { basePrice: service.basePrice } : null,
-  };
+  return { opportunity: opp };
 }
 
-export async function getQuotePrefillFromService(serviceId: string) {
-  const db = getDb();
-  const [service] = await db
-    .select()
-    .from(catalogServices)
-    .where(eq(catalogServices.id, serviceId))
-    .limit(1);
-  if (!service) throw new Error("SERVICE_NOT_FOUND");
-  return { basePrice: service.basePrice };
+export async function getQuotePrefillFromService(_serviceId: string) {
+  return {};
 }

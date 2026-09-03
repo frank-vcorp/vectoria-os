@@ -44,6 +44,7 @@ export async function getOpportunityById(id: string) {
       folio: opportunities.folio,
       clientId: opportunities.clientId,
       clientName: clients.name,
+      clientFolio: clients.folio,
       sellerId: opportunities.sellerId,
       sellerName: users.name,
       serviceId: opportunities.serviceId,

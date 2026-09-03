@@ -50,24 +50,18 @@ export async function createPeriodicity(name: string, intervalMonths: number, us
   return row;
 }
 
-export async function createService(
-  params: {
-    name: string;
-    basePrice: number;
-  },
-  userId?: string,
-) {
+export async function createService(params: { name: string }, userId?: string) {
   const db = getDb();
-  const [row] = await db.insert(catalogServices).values(params).returning();
+  const [row] = await db.insert(catalogServices).values({ name: params.name }).returning();
   await writeAudit({ entity: "catalog_service", entityId: row.id, action: "create", userId });
   return row;
 }
 
-export async function createPaymentCondition(name: string, description?: string, userId?: string) {
+export async function createPaymentCondition(name: string, userId?: string) {
   const db = getDb();
   const [row] = await db
     .insert(catalogPaymentConditions)
-    .values({ name, description: description ?? null })
+    .values({ name })
     .returning();
   await writeAudit({ entity: "catalog_payment_condition", entityId: row.id, action: "create", userId });
   return row;
@@ -114,7 +108,6 @@ export async function updateService(
   id: string,
   data: {
     name?: string;
-    basePrice?: number;
     status?: "activo" | "inactivo";
   },
   userId?: string,
@@ -132,7 +125,7 @@ export async function updateService(
 
 export async function updatePaymentCondition(
   id: string,
-  data: { name?: string; description?: string | null; status?: "activo" | "cancelado" },
+  data: { name?: string; status?: "activo" | "cancelado" },
   userId?: string,
 ) {
   const db = getDb();

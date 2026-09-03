@@ -47,12 +47,8 @@ export async function GET(request: Request) {
 
 const createSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("periodicity"), name: z.string().min(1), intervalMonths: z.number().int().positive() }),
-  z.object({
-    type: z.literal("service"),
-    name: z.string().min(1),
-    basePrice: z.number().int().nonnegative(),
-  }),
-  z.object({ type: z.literal("payment_condition"), name: z.string().min(1), description: z.string().optional() }),
+  z.object({ type: z.literal("service"), name: z.string().min(1) }),
+  z.object({ type: z.literal("payment_condition"), name: z.string().min(1) }),
   z.object({ type: z.literal("income"), name: z.string().min(1) }),
   z.object({ type: z.literal("expense"), name: z.string().min(1) }),
   z.object({ type: z.literal("provider"), name: z.string().min(1) }),
@@ -70,10 +66,10 @@ export async function POST(request: Request) {
         item = await createPeriodicity(body.name, body.intervalMonths, user.id);
         break;
       case "service":
-        item = await createService(body, user.id);
+        item = await createService({ name: body.name }, user.id);
         break;
       case "payment_condition":
-        item = await createPaymentCondition(body.name, body.description, user.id);
+        item = await createPaymentCondition(body.name, user.id);
         break;
       case "income":
         item = await createIncomeCategory(body.name, user.id);
@@ -108,14 +104,12 @@ const updateSchema = z.discriminatedUnion("type", [
     type: z.literal("service"),
     id: z.string().uuid(),
     name: z.string().min(1).optional(),
-    basePrice: z.number().int().nonnegative().optional(),
     status: z.enum(["activo", "inactivo"]).optional(),
   }),
   z.object({
     type: z.literal("payment_condition"),
     id: z.string().uuid(),
     name: z.string().min(1).optional(),
-    description: z.string().nullable().optional(),
     status: z.enum(["activo", "cancelado"]).optional(),
   }),
   z.object({
