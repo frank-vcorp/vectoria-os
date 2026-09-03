@@ -1,12 +1,30 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser, requireModule } from "@/server/auth/session";
-import { createQuoteFromOpportunity, listQuotes } from "@/server/services/quotes";
+import { QUOTE_STATUSES } from "@/shared/commercial";
+import {
+  cancelQuote,
+  createQuoteDirect,
+  createQuoteFromOpportunity,
+  getQuotePrefillFromService,
+  listQuotes,
+  rejectQuote,
+  updateQuote,
+} from "@/server/services/quotes";
+import { createServiceOrderFromQuote } from "@/server/services/service-orders";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const user = await requireUser();
     await requireModule(user, "cotizaciones", "read");
+    const { searchParams } = new URL(request.url);
+    const serviceId = searchParams.get("prefillService");
+
+    if (serviceId) {
+      const prefill = await getQuotePrefillFromService(serviceId);
+      return NextResponse.json(prefill);
+    }
+
     const quotes = await listQuotes();
     return NextResponse.json({ quotes });
   } catch (e) {
@@ -15,7 +33,21 @@ export async function GET() {
   }
 }
 
-const createFromOpportunitySchema = z.object({
+const directSchema = z.object({
+  mode: z.literal("direct"),
+  clientId: z.string().uuid(),
+  serviceId: z.string().uuid(),
+  description: z.string().min(1),
+  contractType: z.enum(["por_evento", "suscripcion"]),
+  periodicityId: z.string().uuid().nullable().optional(),
+  price: z.number().int().nonnegative(),
+  deliveryTime: z.string().min(1),
+  paymentConditionId: z.string().uuid(),
+  observations: z.string().optional().nullable(),
+});
+
+const fromOpportunitySchema = z.object({
+  mode: z.literal("opportunity").optional(),
   opportunityId: z.string().uuid(),
   deliveryTime: z.string().min(1),
   paymentConditionId: z.string().uuid(),
@@ -29,8 +61,20 @@ export async function POST(request: Request) {
   try {
     const user = await requireUser();
     await requireModule(user, "cotizaciones", "write");
-    const body = createFromOpportunitySchema.parse(await request.json());
-    const quote = await createQuoteFromOpportunity({ ...body, userId: user.id });
+    const body = await request.json();
+
+    if (body.mode === "direct") {
+      const parsed = directSchema.parse(body);
+      const quote = await createQuoteDirect({
+        ...parsed,
+        sellerId: user.id,
+        userId: user.id,
+      });
+      return NextResponse.json({ quote }, { status: 201 });
+    }
+
+    const parsed = fromOpportunitySchema.parse(body);
+    const quote = await createQuoteFromOpportunity({ ...parsed, userId: user.id });
     return NextResponse.json({ quote }, { status: 201 });
   } catch (e) {
     if (e instanceof z.ZodError) {
@@ -45,6 +89,79 @@ export async function POST(request: Request) {
           : msg === "UNAUTHORIZED"
             ? 401
             : 403;
+    return NextResponse.json({ error: msg }, { status });
+  }
+}
+
+const patchSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("update"),
+    id: z.string().uuid(),
+    clientId: z.string().uuid().optional(),
+    serviceId: z.string().uuid().optional(),
+    description: z.string().min(1).optional(),
+    contractType: z.enum(["por_evento", "suscripcion"]).optional(),
+    periodicityId: z.string().uuid().nullable().optional(),
+    price: z.number().int().nonnegative().optional(),
+    deliveryTime: z.string().min(1).optional(),
+    paymentConditionId: z.string().uuid().optional(),
+    observations: z.string().nullable().optional(),
+  }),
+  z.object({ action: z.literal("reject"), id: z.string().uuid() }),
+  z.object({ action: z.literal("cancel"), id: z.string().uuid() }),
+  z.object({
+    action: z.literal("authorize"),
+    id: z.string().uuid(),
+    deliveryDate: z.string().min(1),
+  }),
+]);
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await requireUser();
+    const body = patchSchema.parse(await request.json());
+
+    if (body.action === "authorize") {
+      await requireModule(user, "cotizaciones", "write");
+      await requireModule(user, "ordenes_servicio", "write");
+      const order = await createServiceOrderFromQuote({
+        quoteId: body.id,
+        deliveryDate: new Date(body.deliveryDate),
+        userId: user.id,
+      });
+      return NextResponse.json({ order });
+    }
+
+    await requireModule(user, "cotizaciones", "write");
+
+    if (body.action === "reject") {
+      const quote = await rejectQuote(body.id, user.id);
+      return NextResponse.json({ quote });
+    }
+
+    if (body.action === "cancel") {
+      const quote = await cancelQuote(body.id, user.id, user.role === "administrador");
+      return NextResponse.json({ quote });
+    }
+
+    const { action: _, id, ...data } = body;
+    const quote = await updateQuote({ id, ...data, userId: user.id });
+    return NextResponse.json({ quote });
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+    }
+    const msg = e instanceof Error ? e.message : "ERROR";
+    const status =
+      msg === "NOT_FOUND"
+        ? 404
+        : msg === "LOCKED" || msg === "INVALID_STATUS" || msg === "OS_EXISTS" || msg === "HAS_OS"
+          ? 409
+          : msg === "FORBIDDEN"
+            ? 403
+            : msg === "UNAUTHORIZED"
+              ? 401
+              : 403;
     return NextResponse.json({ error: msg }, { status });
   }
 }

@@ -10,6 +10,7 @@ const NAV: { href: string; module: ModuleKey; label: string }[] = [
   { href: "/clientes", module: "clientes", label: "Clientes" },
   { href: "/oportunidades", module: "oportunidades", label: "Oportunidades" },
   { href: "/cotizaciones", module: "cotizaciones", label: "Cotizaciones" },
+  { href: "/ordenes-servicio", module: "ordenes_servicio", label: "Órdenes de Servicio" },
   { href: "/admin/usuarios", module: "usuarios_roles", label: "Usuarios" },
   { href: "/admin/permisos", module: "usuarios_roles", label: "Permisos" },
   { href: "/admin/auditoria", module: "usuarios_roles", label: "Auditoría" },

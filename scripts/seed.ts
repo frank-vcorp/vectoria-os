@@ -13,6 +13,7 @@ import {
 import { setRolePermissions } from "@/server/services/permissions";
 import { defaultPermissionsForRole } from "@/shared/modules";
 import type { ModuleKey, RoleKey } from "@/shared/modules";
+import { ensureDefaultBankAccount } from "@/server/services/bank-accounts";
 
 async function seed() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@vector-ia.mx";
@@ -71,6 +72,8 @@ async function seed() {
     }).catch(() => null);
     console.log("Servicios seed creados");
   }
+
+  await ensureDefaultBankAccount().catch(() => null);
 
   console.log("Seed completado");
 }

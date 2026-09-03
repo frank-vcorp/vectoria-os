@@ -8,7 +8,7 @@ Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, sus
 | **Stack** | Next.js 15 · TypeScript · Drizzle · PostgreSQL · Facturapi |
 | **Puerto** | `43123` |
 | **Documentación** | [`Docs/discovery-vectoria-v1.0.md`](Docs/discovery-vectoria-v1.0.md) · [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) |
-| **Estado** | Fase 2 — Clientes y Oportunidades, pendiente verificación |
+| **Estado** | Fase 3 — Cotizaciones y OS, pendiente verificación |
 
 ---
 
@@ -56,6 +56,14 @@ Referencia: [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vecto
 3. **Cotización desde Oportunidad** — herencia de cliente, servicio, descripción y defaults del catálogo; completar tiempo de entrega y condiciones de pago
 
 **Fase 3:** autorización, rechazo, PDF y flujo completo de cotizaciones.
+
+### Verificación Fase 3 (Discovery §6–§7)
+
+1. **Cotizaciones** — creación directa; autorizar (crea OS), rechazar, cancelar (admin); PDF; enlaces a OP y OS
+2. **Órdenes de Servicio** — desde cotización autorizada o directa; PDF; pagos con banco; total/saldo/abono
+3. **Ingreso automático** — cada pago de OS genera registro en `financial_incomes` (stub Fase 5)
+
+**Fase 4:** Proyectos y Suscripciones.
 
 Credenciales seed (cambiar en producción):
 
