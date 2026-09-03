@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoneyInput } from "@/components/money-input";
+import { DateInput } from "@/components/date-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import {
   DetailField,
   DetailGrid,
@@ -421,28 +423,22 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
         <form className="grid gap-3 max-w-md" onSubmit={(e) => void saveDetails(e)}>
           <label className="text-sm block">
             <span className="text-[var(--muted)]">Programador</span>
-            <select
+            <SearchableSelect
+              className="mt-1 w-full"
               value={detailsForm.programmerId}
-              onChange={(e) => setDetailsForm((f) => ({ ...f, programmerId: e.target.value }))}
+              onChange={(programmerId) => setDetailsForm((f) => ({ ...f, programmerId }))}
               required
-              className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="">Seleccionar…</option>
-              {programmers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Seleccionar…"
+              options={programmers.map((p) => ({ value: p.id, label: p.name }))}
+            />
           </label>
           <label className="text-sm block">
             <span className="text-[var(--muted)]">Fecha de entrega</span>
-            <input
-              type="date"
+            <DateInput
+              className="mt-1 w-full"
               value={detailsForm.deliveryDate}
-              onChange={(e) => setDetailsForm((f) => ({ ...f, deliveryDate: e.target.value }))}
+              onChange={(deliveryDate) => setDetailsForm((f) => ({ ...f, deliveryDate }))}
               required
-              className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
           </label>
           <p className="text-xs text-[var(--muted)]">
@@ -485,24 +481,17 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
               onChangeCents={(amount) => setPayForm({ ...payForm, amount })}
               required
             />
-            <select
+            <SearchableSelect
               value={payForm.bankAccountId}
-              onChange={(e) => setPayForm({ ...payForm, bankAccountId: e.target.value })}
+              onChange={(bankAccountId) => setPayForm({ ...payForm, bankAccountId })}
               required
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              {banks.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
+              placeholder="Cuenta bancaria…"
+              options={banks.map((b) => ({ value: b.id, label: b.name }))}
+            />
+            <DateInput
               value={payForm.paymentDate}
-              onChange={(e) => setPayForm({ ...payForm, paymentDate: e.target.value })}
+              onChange={(paymentDate) => setPayForm({ ...payForm, paymentDate })}
               required
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
             <button type="submit" className="btn btn-primary md:col-span-2">
               Registrar pago (genera ingreso)
@@ -526,19 +515,14 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
 
         {showNewSub && (
           <form className="card space-y-2 mb-4" onSubmit={(e) => void createSub(e)}>
-            <select
+            <SearchableSelect
+              className="w-full"
               value={newSubForm.subscriptionTemplateId}
-              onChange={(e) => onTemplatePick(e.target.value)}
+              onChange={onTemplatePick}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="">Plantilla de suscripción…</option>
-              {subTemplates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Plantilla de suscripción…"
+              options={subTemplates.map((t) => ({ value: t.id, label: t.name }))}
+            />
             <input
               value={newSubForm.description}
               onChange={(e) => setNewSubForm({ ...newSubForm, description: e.target.value })}
@@ -606,24 +590,17 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
                     valueCents={subPayForm.amount}
                     onChangeCents={(amount) => setSubPayForm({ ...subPayForm, amount })}
                   />
-                  <select
+                  <SearchableSelect
                     value={subPayForm.bankAccountId}
-                    onChange={(e) => setSubPayForm({ ...subPayForm, bankAccountId: e.target.value })}
+                    onChange={(bankAccountId) => setSubPayForm({ ...subPayForm, bankAccountId })}
                     required
-                    className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-                  >
-                    {banks.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="date"
+                    placeholder="Cuenta bancaria…"
+                    options={banks.map((b) => ({ value: b.id, label: b.name }))}
+                  />
+                  <DateInput
                     value={subPayForm.paymentDate}
-                    onChange={(e) => setSubPayForm({ ...subPayForm, paymentDate: e.target.value })}
+                    onChange={(paymentDate) => setSubPayForm({ ...subPayForm, paymentDate })}
                     required
-                    className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
                   />
                   <button type="submit" className="btn-primary text-xs md:col-span-2">
                     Confirmar pago

@@ -59,9 +59,9 @@ const createSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("service"),
     name: z.string().min(1),
-    basePrice: z.number().int().min(0),
-    incomeCategoryId: z.string().uuid(),
     generatesProject: z.boolean(),
+    basePrice: z.number().int().min(0).optional(),
+    incomeCategoryId: z.string().uuid().optional().nullable(),
   }),
   z.object({
     type: z.literal("subscription_template"),
@@ -95,9 +95,9 @@ export async function POST(request: Request) {
         item = await createService(
           {
             name: body.name,
-            basePrice: body.basePrice,
-            incomeCategoryId: body.incomeCategoryId,
             generatesProject: body.generatesProject,
+            basePrice: body.basePrice,
+            incomeCategoryId: body.incomeCategoryId ?? null,
           },
           user.id,
         );

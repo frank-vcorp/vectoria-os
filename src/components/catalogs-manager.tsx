@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
 import { MoneyInput } from "@/components/money-input";
+import { SearchableSelect } from "@/components/searchable-select";
 
 const TIMEZONE_OPTIONS = [
   "America/Mexico_City",
@@ -122,19 +123,14 @@ function CategorySelect({
   className?: string;
 }) {
   return (
-    <select
+    <SearchableSelect
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={onChange}
       required={required}
-      className={`bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 ${className}`}
-    >
-      <option value="">Categoría de ingreso</option>
-      {categories.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
-    </select>
+      className={className}
+      placeholder="Categoría de ingreso"
+      options={categories.map((c) => ({ value: c.id, label: c.name }))}
+    />
   );
 }
 
@@ -152,21 +148,16 @@ function PeriodicitySelect({
   className?: string;
 }) {
   return (
-    <select
+    <SearchableSelect
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={onChange}
       required={required}
-      className={`bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 ${className}`}
-    >
-      <option value="">Periodicidad</option>
-      {periodicities
+      className={className}
+      placeholder="Periodicidad"
+      options={periodicities
         .filter((p) => p.status === "activo")
-        .map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-    </select>
+        .map((p) => ({ value: p.id, label: p.name }))}
+    />
   );
 }
 
@@ -200,8 +191,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
   const [periodicity, setPeriodicity] = useState({ name: "", intervalMonths: 1 });
   const [service, setService] = useState({
     name: "",
-    basePrice: 0,
-    incomeCategoryId: "",
     generatesProject: false,
   });
   const [subscription, setSubscription] = useState({
@@ -221,8 +210,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
   const [editService, setEditService] = useState<{
     id: string;
     name: string;
-    basePrice: number;
-    incomeCategoryId: string;
     generatesProject: boolean;
   } | null>(null);
   const [editSubscription, setEditSubscription] = useState<{
@@ -593,7 +580,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           onSubmit={(e) => {
             e.preventDefault();
             void post({ type: "service", ...service }).then(() =>
-              setService({ name: "", basePrice: 0, incomeCategoryId: "", generatesProject: false }),
+              setService({ name: "", generatesProject: false }),
             );
           }}
         >
@@ -603,18 +590,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
             onChange={(e) => setService({ ...service, name: e.target.value })}
             required
             className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <MoneyInput
-            valueCents={service.basePrice}
-            onChangeCents={(basePrice) => setService({ ...service, basePrice })}
-            required
-            className="min-w-[8rem]"
-          />
-          <CategorySelect
-            value={service.incomeCategoryId}
-            onChange={(incomeCategoryId) => setService({ ...service, incomeCategoryId })}
-            categories={incomeCategories}
-            required
           />
           <label className="flex items-center gap-2 text-sm pb-2">
             <input
@@ -642,17 +617,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
               required
               className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
-            <MoneyInput
-              valueCents={editService.basePrice}
-              onChangeCents={(basePrice) => setEditService({ ...editService, basePrice })}
-              required
-            />
-            <CategorySelect
-              value={editService.incomeCategoryId}
-              onChange={(incomeCategoryId) => setEditService({ ...editService, incomeCategoryId })}
-              categories={incomeCategories}
-              required
-            />
             <label className="flex items-center gap-2 text-sm pb-2">
               <input
                 type="checkbox"
@@ -673,8 +637,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           {data.services?.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center gap-2 justify-between">
               <span>
-                {s.name} — {formatMoney(s.basePrice)}
-                {s.incomeCategoryName ? ` · ${s.incomeCategoryName}` : ""}
+                {s.name}
                 {s.generatesProject ? " · Genera proyecto" : ""}
               </span>
               <span className="flex items-center gap-2">
@@ -686,8 +649,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
                     setEditService({
                       id: s.id,
                       name: s.name,
-                      basePrice: s.basePrice,
-                      incomeCategoryId: s.incomeCategoryId ?? "",
                       generatesProject: s.generatesProject,
                     })
                   }

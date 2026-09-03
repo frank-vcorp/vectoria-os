@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoneyInput } from "@/components/money-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import {
   QuoteSubscriptionLinesEditor,
   type PeriodicityOption,
@@ -227,30 +228,26 @@ export function OpportunityDetailView({ id }: { id: string }) {
       {editing ? (
         <DetailSection title="Editar oportunidad">
           <form className="space-y-3" onSubmit={(e) => void saveEdit(e)}>
-            <select
+            <SearchableSelect
+              className="w-full"
               value={editForm.clientId}
-              onChange={(e) => setEditForm({ ...editForm, clientId: e.target.value })}
+              onChange={(clientId) => setEditForm({ ...editForm, clientId })}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.folio} — {c.name}
-                </option>
-              ))}
-            </select>
-            <select
+              placeholder="Cliente…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
+            />
+            <SearchableSelect
+              className="w-full"
               value={editForm.serviceId}
-              onChange={(e) => setEditForm({ ...editForm, serviceId: e.target.value })}
+              onChange={(serviceId) => setEditForm({ ...editForm, serviceId })}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Servicio…"
+              options={services.map((s) => ({ value: s.id, label: s.name }))}
+            />
             <textarea
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
@@ -363,19 +360,14 @@ export function OpportunityDetailView({ id }: { id: string }) {
                 className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
               />
             </label>
-            <select
+            <SearchableSelect
+              className="w-full"
               value={quoteForm.paymentConditionId}
-              onChange={(e) => setQuoteForm({ ...quoteForm, paymentConditionId: e.target.value })}
+              onChange={(paymentConditionId) => setQuoteForm({ ...quoteForm, paymentConditionId })}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="">Condiciones de pago…</option>
-              {paymentConditions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Condiciones de pago…"
+              options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+            />
             <textarea
               value={quoteForm.observations}
               onChange={(e) => setQuoteForm({ ...quoteForm, observations: e.target.value })}

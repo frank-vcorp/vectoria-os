@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
 import { ListSearchInput } from "@/components/list-search-input";
+import { DateInput } from "@/components/date-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import { MoneyInput } from "@/components/money-input";
 import {
   SERVICE_ORDER_STATUS_LABELS,
@@ -107,46 +109,35 @@ export function ServiceOrdersManager() {
     <div className="space-y-6">
       <form className="card space-y-3" onSubmit={(e) => void createOrder(e)}>
         <h2 className="font-medium">Nueva OS directa</h2>
-        <select
+        <SearchableSelect
+          className="w-full"
           value={form.clientId}
-          onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+          onChange={(clientId) => setForm({ ...form, clientId })}
           required
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Cliente…</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.folio} — {c.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Cliente…"
+          options={clients.map((c) => ({
+            value: c.id,
+            label: `${c.folio} — ${c.name}`,
+            keywords: `${c.folio} ${c.name}`,
+          }))}
+        />
         <QuickAddClient onCreated={handleQuickAddClient} />
-        <select
+        <SearchableSelect
+          className="w-full"
           value={form.programmerId}
-          onChange={(e) => setForm({ ...form, programmerId: e.target.value })}
+          onChange={(programmerId) => setForm({ ...form, programmerId })}
           required
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Programador *</option>
-          {programmers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <select
+          placeholder="Programador *"
+          options={programmers.map((p) => ({ value: p.id, label: p.name }))}
+        />
+        <SearchableSelect
+          className="w-full"
           value={form.serviceId}
-          onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
+          onChange={(serviceId) => setForm({ ...form, serviceId })}
           required
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Servicio…</option>
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Servicio…"
+          options={services.map((s) => ({ value: s.id, label: s.name }))}
+        />
         <textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -167,19 +158,13 @@ export function ServiceOrdersManager() {
             <option value="suscripcion">Suscripción</option>
           </select>
           {form.contractType === "suscripcion" && (
-            <select
+            <SearchableSelect
               value={form.periodicityId}
-              onChange={(e) => setForm({ ...form, periodicityId: e.target.value })}
+              onChange={(periodicityId) => setForm({ ...form, periodicityId })}
               required
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="">Periodicidad…</option>
-              {periodicities.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Periodicidad…"
+              options={periodicities.map((p) => ({ value: p.id, label: p.name }))}
+            />
           )}
           <MoneyInput
             label="Precio (MXN)"
@@ -187,25 +172,18 @@ export function ServiceOrdersManager() {
             onChangeCents={(price) => setForm({ ...form, price })}
             required
           />
-          <input
-            type="date"
+          <DateInput
             value={form.deliveryDate}
-            onChange={(e) => setForm({ ...form, deliveryDate: e.target.value })}
+            onChange={(deliveryDate) => setForm({ ...form, deliveryDate })}
             required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
-          <select
+          <SearchableSelect
+            className="md:col-span-2"
             value={form.paymentConditionId}
-            onChange={(e) => setForm({ ...form, paymentConditionId: e.target.value })}
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 md:col-span-2"
-          >
-            <option value="">Condiciones de pago (opcional)</option>
-            {paymentConditions.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
+            placeholder="Condiciones de pago (opcional)"
+            options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+          />
         </div>
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         <button type="submit" className="btn btn-primary">

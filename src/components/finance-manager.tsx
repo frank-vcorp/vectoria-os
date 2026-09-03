@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MoneyInput } from "@/components/money-input";
+import { DateInput } from "@/components/date-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import { formatMoney } from "@/shared/commercial";
 
 type Balance = { id: string; name: string; bank: string | null; balance: number };
@@ -414,33 +416,26 @@ export function FinanceManager() {
             </label>
             <label className="text-sm">
               <span className="text-[var(--muted)]">Banco</span>
-              <select
+              <SearchableSelect
+                className="mt-1 min-w-[10rem]"
                 value={reportFilters.bankAccountId}
-                onChange={(e) => setReportFilters({ ...reportFilters, bankAccountId: e.target.value })}
-                className="mt-1 block bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 min-w-[10rem]"
-              >
-                <option value="">Todos</option>
-                {banks.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(bankAccountId) => setReportFilters({ ...reportFilters, bankAccountId })}
+                placeholder="Todos"
+                options={[{ value: "", label: "Todos" }, ...banks.map((b) => ({ value: b.id, label: b.name }))]}
+              />
             </label>
             <label className="text-sm">
               <span className="text-[var(--muted)]">Categoría</span>
-              <select
+              <SearchableSelect
+                className="mt-1 min-w-[10rem]"
                 value={reportFilters.categoryId}
-                onChange={(e) => setReportFilters({ ...reportFilters, categoryId: e.target.value })}
-                className="mt-1 block bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 min-w-[10rem]"
-              >
-                <option value="">Todas</option>
-                {reportCategoryOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(categoryId) => setReportFilters({ ...reportFilters, categoryId })}
+                placeholder="Todas"
+                options={[
+                  { value: "", label: "Todas" },
+                  ...reportCategoryOptions.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
             </label>
             <div className="flex flex-wrap gap-2">
               <button type="button" className="btn-secondary text-sm" onClick={() => exportReport(false, "csv")}>
@@ -536,36 +531,25 @@ export function FinanceManager() {
             valueCents={manualForm.amount}
             onChangeCents={(amount) => setManualForm({ ...manualForm, amount })}
           />
-          <select
+          <SearchableSelect
+            className="w-full"
             value={manualForm.bankAccountId}
-            onChange={(e) => setManualForm({ ...manualForm, bankAccountId: e.target.value })}
+            onChange={(bankAccountId) => setManualForm({ ...manualForm, bankAccountId })}
             required
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            <option value="">Cuenta bancaria *</option>
-            {banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          <select
+            placeholder="Cuenta bancaria *"
+            options={banks.map((b) => ({ value: b.id, label: b.name }))}
+          />
+          <SearchableSelect
+            className="w-full"
             value={manualForm.categoryId}
-            onChange={(e) => setManualForm({ ...manualForm, categoryId: e.target.value })}
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            <option value="">Categoría (opcional)</option>
-            {categoryOptions.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
+            onChange={(categoryId) => setManualForm({ ...manualForm, categoryId })}
+            placeholder="Categoría (opcional)"
+            options={categoryOptions.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <DateInput
+            className="w-full"
             value={manualForm.date}
-            onChange={(e) => setManualForm({ ...manualForm, date: e.target.value })}
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+            onChange={(date) => setManualForm({ ...manualForm, date })}
           />
           <button type="submit" className="btn-primary">
             Guardar
@@ -585,11 +569,10 @@ export function FinanceManager() {
               required
             />
             <MoneyInput valueCents={cxpForm.amount} onChangeCents={(amount) => setCxpForm({ ...cxpForm, amount })} />
-            <input
-              type="date"
+            <DateInput
+              className="w-full"
               value={cxpForm.dueDate}
-              onChange={(e) => setCxpForm({ ...cxpForm, dueDate: e.target.value })}
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+              onChange={(dueDate) => setCxpForm({ ...cxpForm, dueDate })}
               required
             />
             <button type="submit" className="btn-primary">
@@ -635,24 +618,17 @@ export function FinanceManager() {
                       valueCents={cxpPayForm.amount}
                       onChangeCents={(amount) => setCxpPayForm({ ...cxpPayForm, amount })}
                     />
-                    <select
+                    <SearchableSelect
                       value={cxpPayForm.bankAccountId}
-                      onChange={(e) => setCxpPayForm({ ...cxpPayForm, bankAccountId: e.target.value })}
+                      onChange={(bankAccountId) => setCxpPayForm({ ...cxpPayForm, bankAccountId })}
                       required
-                      className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-                    >
-                      {banks.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="date"
+                      placeholder="Cuenta bancaria…"
+                      options={banks.map((b) => ({ value: b.id, label: b.name }))}
+                    />
+                    <DateInput
                       value={cxpPayForm.paymentDate}
-                      onChange={(e) => setCxpPayForm({ ...cxpPayForm, paymentDate: e.target.value })}
+                      onChange={(paymentDate) => setCxpPayForm({ ...cxpPayForm, paymentDate })}
                       required
-                      className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
                     />
                     <button type="submit" className="btn-primary text-xs md:col-span-2">
                       Confirmar pago

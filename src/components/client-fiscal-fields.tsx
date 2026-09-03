@@ -1,4 +1,7 @@
+"use client";
+
 import type { ClientFiscalData } from "@/shared/commercial";
+import { SearchableSelect } from "@/components/searchable-select";
 import { SAT_REGIMEN_FISCAL, SAT_USO_CFDI } from "@/shared/sat-catalogs";
 
 export function ClientFiscalFields({
@@ -28,18 +31,17 @@ export function ClientFiscalFields({
       </label>
       <label className="text-sm">
         <span className="text-[var(--muted)]">Régimen fiscal (SAT)</span>
-        <select
+        <SearchableSelect
+          className="mt-1 w-full"
           value={data.regimenFiscal ?? ""}
-          onChange={(e) => onChange({ ...data, regimenFiscal: e.target.value })}
-          className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Seleccionar…</option>
-          {SAT_REGIMEN_FISCAL.map((o) => (
-            <option key={o.code} value={o.code}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          onChange={(regimenFiscal) => onChange({ ...data, regimenFiscal })}
+          placeholder="Seleccionar…"
+          options={SAT_REGIMEN_FISCAL.map((o) => ({
+            value: o.code,
+            label: o.label,
+            keywords: o.code,
+          }))}
+        />
       </label>
       <label className="text-sm">
         <span className="text-[var(--muted)]">Código postal</span>
@@ -51,18 +53,17 @@ export function ClientFiscalFields({
       </label>
       <label className="text-sm md:col-span-2">
         <span className="text-[var(--muted)]">Uso CFDI (SAT)</span>
-        <select
+        <SearchableSelect
+          className="mt-1 w-full"
           value={data.usoCfdi ?? ""}
-          onChange={(e) => onChange({ ...data, usoCfdi: e.target.value })}
-          className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Seleccionar…</option>
-          {SAT_USO_CFDI.map((o) => (
-            <option key={o.code} value={o.code}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          onChange={(usoCfdi) => onChange({ ...data, usoCfdi })}
+          placeholder="Seleccionar…"
+          options={SAT_USO_CFDI.map((o) => ({
+            value: o.code,
+            label: o.label,
+            keywords: o.code,
+          }))}
+        />
       </label>
     </div>
   );

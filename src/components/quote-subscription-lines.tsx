@@ -1,6 +1,7 @@
 "use client";
 
 import { MoneyInput } from "@/components/money-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import { formatMoney, type QuoteSubscriptionItemInput } from "@/shared/commercial";
 
 export type SubscriptionTemplateOption = {
@@ -99,20 +100,15 @@ export function QuoteSubscriptionLinesEditor({
               </button>
             )}
           </div>
-          <select
+          <SearchableSelect
+            className="w-full"
             value={line.subscriptionTemplateId}
-            onChange={(e) => onTemplateSelect(line.key, e.target.value)}
+            onChange={(templateId) => onTemplateSelect(line.key, templateId)}
             required
             disabled={disabled}
-            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Suscripción del catálogo…</option>
-            {activeTemplates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Suscripción del catálogo…"
+            options={activeTemplates.map((t) => ({ value: t.id, label: t.name }))}
+          />
           <textarea
             value={line.description}
             onChange={(e) => updateLine(line.key, { description: e.target.value })}
@@ -132,22 +128,17 @@ export function QuoteSubscriptionLinesEditor({
             />
             <label className="text-sm block">
               <span className="text-[var(--muted)]">Periodicidad</span>
-              <select
+              <SearchableSelect
+                className="mt-1 w-full"
                 value={line.periodicityId}
-                onChange={(e) => updateLine(line.key, { periodicityId: e.target.value })}
+                onChange={(periodicityId) => updateLine(line.key, { periodicityId })}
                 required
                 disabled={disabled}
-                className="mt-1 w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-              >
-                <option value="">Periodicidad…</option>
-                {periodicities
+                placeholder="Periodicidad…"
+                options={periodicities
                   .filter((p) => !p.status || p.status === "activo")
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
+                  .map((p) => ({ value: p.id, label: p.name }))}
+              />
             </label>
           </div>
         </div>

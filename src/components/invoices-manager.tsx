@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
 import { ListSearchInput } from "@/components/list-search-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import { ClientFiscalFields, emptyFiscal, hasFiscalData } from "@/components/client-fiscal-fields";
 import { MoneyInput } from "@/components/money-input";
 import {
@@ -162,19 +163,14 @@ export function InvoicesManager() {
         <form className="card space-y-3 max-w-lg" onSubmit={(e) => void createManual(e)}>
           <h2 className="font-medium">Captura manual</h2>
           <QuickAddClient onCreated={handleQuickAddClient} />
-          <select
+          <SearchableSelect
+            className="w-full"
             value={form.clientId}
-            onChange={(e) => onClientPick(e.target.value)}
+            onChange={onClientPick}
             required
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            <option value="">Cliente *</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Cliente *"
+            options={clients.map((c) => ({ value: c.id, label: c.name }))}
+          />
           <input
             value={form.concept}
             onChange={(e) => setForm({ ...form, concept: e.target.value })}

@@ -13,6 +13,7 @@ import {
   toSubscriptionItemPayload,
 } from "@/components/quote-subscription-lines";
 import { ListSearchInput } from "@/components/list-search-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import {
   QUOTE_STATUS_LABELS,
   formatMoney,
@@ -134,33 +135,27 @@ export function QuotesManager() {
     <div className="space-y-6">
       <form className="card space-y-3" onSubmit={(e) => void createDirect(e)}>
         <h2 className="font-medium">Nueva cotización directa</h2>
-        <select
+        <SearchableSelect
+          className="w-full"
           value={form.clientId}
-          onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+          onChange={(clientId) => setForm({ ...form, clientId })}
           required
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Cliente…</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.folio} — {c.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Cliente…"
+          options={clients.map((c) => ({
+            value: c.id,
+            label: `${c.folio} — ${c.name}`,
+            keywords: `${c.folio} ${c.name}`,
+          }))}
+        />
         <QuickAddClient onCreated={handleQuickAddClient} />
-        <select
+        <SearchableSelect
+          className="w-full"
           value={form.serviceId}
-          onChange={(e) => void onServiceChange(e.target.value)}
+          onChange={(serviceId) => void onServiceChange(serviceId)}
           required
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        >
-          <option value="">Servicio principal…</option>
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Servicio principal…"
+          options={services.map((s) => ({ value: s.id, label: s.name }))}
+        />
         <textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -187,19 +182,14 @@ export function QuotesManager() {
               className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
           </label>
-          <select
+          <SearchableSelect
+            className="md:col-span-2"
             value={form.paymentConditionId}
-            onChange={(e) => setForm({ ...form, paymentConditionId: e.target.value })}
+            onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
             required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 md:col-span-2"
-          >
-            <option value="">Condiciones de pago…</option>
-            {paymentConditions.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Condiciones de pago…"
+            options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+          />
         </div>
         <textarea
           value={form.observations}

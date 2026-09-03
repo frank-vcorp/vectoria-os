@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { QuickAddClient } from "@/components/quick-add-client";
 import { ListSearchInput } from "@/components/list-search-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import { OPPORTUNITY_STATUS_LABELS, type OpportunityStatus } from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
@@ -87,34 +88,28 @@ export function OpportunitiesManager() {
         <div className="space-y-2">
           <label className="text-sm block">
             <span className="text-[var(--muted)]">Cliente</span>
-            <select
+            <SearchableSelect
+              className="mt-1 w-full"
               value={form.clientId}
-              onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              onChange={(clientId) => setForm({ ...form, clientId })}
               required
-              className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="">Seleccionar…</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.folio} — {c.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Seleccionar…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
+            />
           </label>
           <QuickAddClient onCreated={handleQuickAddClient} />
-          <select
+          <SearchableSelect
+            className="w-full"
             value={form.serviceId}
-            onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
+            onChange={(serviceId) => setForm({ ...form, serviceId })}
             required
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            <option value="">Servicio…</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Servicio…"
+            options={services.map((s) => ({ value: s.id, label: s.name }))}
+          />
           <textarea
             placeholder="Descripción *"
             value={form.description}

@@ -93,9 +93,9 @@ export async function createPeriodicity(name: string, intervalMonths: number, us
 export async function createService(
   params: {
     name: string;
-    basePrice: number;
-    incomeCategoryId: string;
     generatesProject: boolean;
+    basePrice?: number;
+    incomeCategoryId?: string | null;
   },
   userId?: string,
 ) {
@@ -104,8 +104,8 @@ export async function createService(
     .insert(catalogServices)
     .values({
       name: params.name,
-      basePrice: params.basePrice,
-      incomeCategoryId: params.incomeCategoryId,
+      basePrice: params.basePrice ?? 0,
+      incomeCategoryId: params.incomeCategoryId ?? null,
       generatesProject: params.generatesProject,
     })
     .returning();

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoneyInput } from "@/components/money-input";
+import { DateInput } from "@/components/date-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import {
   QuoteSubscriptionLinesEditor,
   QuoteSubscriptionLinesReadonly,
@@ -250,30 +252,26 @@ export function QuoteDetailView({ id }: { id: string }) {
       {editing ? (
         <DetailSection title="Editar cotización">
           <form className="space-y-3" onSubmit={(e) => void saveEdit(e)}>
-            <select
+            <SearchableSelect
+              className="w-full"
               value={form.clientId}
-              onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              onChange={(clientId) => setForm({ ...form, clientId })}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.folio} — {c.name}
-                </option>
-              ))}
-            </select>
-            <select
+              placeholder="Cliente…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
+            />
+            <SearchableSelect
+              className="w-full"
               value={form.serviceId}
-              onChange={(e) => void onServiceChange(e.target.value)}
+              onChange={(serviceId) => void onServiceChange(serviceId)}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Servicio…"
+              options={services.map((s) => ({ value: s.id, label: s.name }))}
+            />
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -298,18 +296,14 @@ export function QuoteDetailView({ id }: { id: string }) {
                   className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
                 />
               </label>
-              <select
+              <SearchableSelect
+                className="md:col-span-2"
                 value={form.paymentConditionId}
-                onChange={(e) => setForm({ ...form, paymentConditionId: e.target.value })}
+                onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
                 required
-                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 md:col-span-2"
-              >
-                {paymentConditions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Condiciones de pago…"
+                options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+              />
             </div>
             <textarea
               value={form.observations}
@@ -388,26 +382,20 @@ export function QuoteDetailView({ id }: { id: string }) {
           <form className="card max-w-md w-full space-y-3" onSubmit={(e) => void authorize(e)}>
             <h3 className="font-medium">Autorizar cotización → crear OS</h3>
             <p className="text-sm text-[var(--muted)]">Indica la fecha de entrega para la Orden de Servicio.</p>
-            <input
-              type="date"
+            <DateInput
+              className="w-full"
               value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
+              onChange={setDeliveryDate}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
-            <select
+            <SearchableSelect
+              className="w-full"
               value={programmerId}
-              onChange={(e) => setProgrammerId(e.target.value)}
+              onChange={setProgrammerId}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="">Programador *</option>
-              {programmers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Programador *"
+              options={programmers.map((p) => ({ value: p.id, label: p.name }))}
+            />
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
             <div className="flex gap-2 justify-end">
               <button type="button" className="btn btn-ghost" onClick={() => setShowAuthorize(false)}>

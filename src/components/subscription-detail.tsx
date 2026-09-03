@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoneyInput } from "@/components/money-input";
+import { DateInput } from "@/components/date-input";
+import { SearchableSelect } from "@/components/searchable-select";
 import {
   DetailField,
   DetailGrid,
@@ -341,23 +343,18 @@ export function SubscriptionDetailView({ id }: { id: string }) {
             valueCents={payForm.amount}
             onChangeCents={(amount) => setPayForm({ ...payForm, amount })}
           />
-          <select
+          <SearchableSelect
+            className="w-full"
             value={payForm.bankAccountId}
-            onChange={(e) => setPayForm({ ...payForm, bankAccountId: e.target.value })}
+            onChange={(bankAccountId) => setPayForm({ ...payForm, bankAccountId })}
             required
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            {banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
+            placeholder="Cuenta bancaria…"
+            options={banks.map((b) => ({ value: b.id, label: b.name }))}
+          />
+          <DateInput
+            className="w-full"
             value={payForm.paymentDate}
-            onChange={(e) => setPayForm({ ...payForm, paymentDate: e.target.value })}
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+            onChange={(paymentDate) => setPayForm({ ...payForm, paymentDate })}
             required
           />
           <label className="flex items-center gap-2 text-sm">
