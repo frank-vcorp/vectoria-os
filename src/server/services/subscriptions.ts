@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
   bankAccounts,
@@ -12,17 +12,40 @@ import {
   subscriptions,
 } from "@/server/db/schema";
 import type { SubscriptionBillingStatus, SubscriptionServiceStatus } from "@/shared/commercial";
+import { getClientById } from "@/server/services/clients";
+import { isFiscalComplete } from "@/server/services/invoices";
 import { writeAudit } from "@/server/services/audit";
 import { createIncomeFromSubscriptionPayment } from "@/server/services/financial-incomes";
 import { nextFolio } from "@/server/services/folios";
 
-function monthEnd(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+import { getOperationalTimezone } from "@/server/services/settings";
+import {
+  dueDateAfterPeriodEnd,
+  monthEndInTimezone,
+  monthStartInTimezone,
+} from "@/server/services/operational-dates";
+
+async function operationalMonthEnd(ref: Date): Promise<Date> {
+  const tz = await getOperationalTimezone();
+  return monthEndInTimezone(ref, tz);
 }
 
-function dueDateForPeriod(periodEnd: Date): Date {
-  return new Date(periodEnd.getFullYear(), periodEnd.getMonth() + 1, 5, 23, 59, 59, 999);
+async function operationalDueDate(periodEnd: Date): Promise<Date> {
+  const tz = await getOperationalTimezone();
+  return dueDateAfterPeriodEnd(periodEnd, tz);
 }
+
+async function operationalMonthStart(ref: Date): Promise<Date> {
+  const tz = await getOperationalTimezone();
+  return monthStartInTimezone(ref, tz);
+}
+
+const SERVICE_STATUS_TRANSITIONS: Record<SubscriptionServiceStatus, SubscriptionServiceStatus[]> = {
+  pendiente_activacion: ["activa", "cancelada"],
+  activa: ["pausada", "cancelada"],
+  pausada: ["activa", "cancelada"],
+  cancelada: [],
+};
 
 export async function createSubscriptionsFromQuoteItems(params: {
   serviceOrderId: string;
@@ -79,9 +102,9 @@ export async function createSubscriptionsFromQuoteItems(params: {
 export async function generateInitialCycle(subscriptionId: string, price: number) {
   const db = getDb();
   const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const periodEnd = monthEnd(periodStart);
-  const dueDate = dueDateForPeriod(periodEnd);
+  const periodStart = await operationalMonthStart(now);
+  const periodEnd = await operationalMonthEnd(periodStart);
+  const dueDate = await operationalDueDate(periodEnd);
 
   const [cycle] = await db
     .insert(subscriptionCycles)
@@ -119,12 +142,14 @@ export async function ensureFutureCycles(subscriptionId: string) {
   const last = existing[0];
   const now = new Date();
   const targetMonths = 3;
-  let cursor = last ? new Date(last.periodEnd) : monthEnd(now);
+  let cursor = last ? new Date(last.periodEnd) : await operationalMonthEnd(now);
+  const horizon = await operationalMonthEnd(new Date(now.getFullYear(), now.getMonth() + targetMonths, 1));
 
-  while (existing.length < targetMonths || cursor < monthEnd(new Date(now.getFullYear(), now.getMonth() + targetMonths, 1))) {
-    const periodStart = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-    const periodEnd = monthEnd(periodStart);
-    const dueDate = dueDateForPeriod(periodEnd);
+  while (existing.length < targetMonths || cursor < horizon) {
+    const nextStart = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    const periodStart = await operationalMonthStart(nextStart);
+    const periodEnd = await operationalMonthEnd(periodStart);
+    const dueDate = await operationalDueDate(periodEnd);
 
     const dup = existing.some(
       (c) => c.periodStart.getTime() === periodStart.getTime() && c.periodEnd.getTime() === periodEnd.getTime(),
@@ -205,9 +230,45 @@ export async function updateSubscriptionStatus(params: {
   autoInvoice?: boolean;
   userId?: string;
 }) {
+  const current = await getSubscriptionById(params.id);
+  if (!current) throw new Error("NOT_FOUND");
+
+  if (params.serviceStatus) {
+    const allowed = SERVICE_STATUS_TRANSITIONS[current.serviceStatus] ?? [];
+    if (!allowed.includes(params.serviceStatus)) throw new Error("INVALID_TRANSITION");
+    if (params.serviceStatus === "activa") {
+      await activateSubscription({ id: params.id, userId: params.userId });
+      if (params.billingStatus || params.autoInvoice !== undefined) {
+        return updateSubscriptionStatus({
+          id: params.id,
+          billingStatus: params.billingStatus,
+          autoInvoice: params.autoInvoice,
+          userId: params.userId,
+        });
+      }
+      return getSubscriptionById(params.id);
+    }
+  }
+
+  if (
+    params.billingStatus === "suspendida_adeudo" &&
+    current.billingStatus !== "vencida"
+  ) {
+    throw new Error("INVALID_BILLING_STATUS");
+  }
+
+  if (params.autoInvoice === true) {
+    const client = await getClientById(current.clientId);
+    if (!isFiscalComplete(client?.fiscalData)) throw new Error("FISCAL_INCOMPLETE");
+    if (!client?.email?.trim()) throw new Error("EMAIL_REQUIRED");
+  }
+
   const db = getDb();
   const updates: Partial<typeof subscriptions.$inferInsert> = { updatedAt: new Date() };
-  if (params.serviceStatus) updates.serviceStatus = params.serviceStatus;
+  const serviceStatusToSet = params.serviceStatus;
+  if (serviceStatusToSet) {
+    updates.serviceStatus = serviceStatusToSet;
+  }
   if (params.billingStatus) updates.billingStatus = params.billingStatus;
   if (params.autoInvoice !== undefined) updates.autoInvoice = params.autoInvoice;
 
@@ -227,11 +288,65 @@ export async function updateSubscriptionStatus(params: {
     payload: updates,
   });
 
-  return sub;
+  return getSubscriptionById(params.id);
 }
 
-export async function listSubscriptions() {
+export async function getSubscriptionFinancialSummary(subscriptionId: string) {
+  const cycles = await listSubscriptionCycles(subscriptionId);
+  const payments = await listSubscriptionPayments(subscriptionId);
+  const now = new Date();
+
+  let overdueBalance = 0;
+  let totalPending = 0;
+  let overdueCount = 0;
+
+  for (const c of cycles) {
+    const balance = c.amount - c.paidAmount;
+    if (balance <= 0) continue;
+    totalPending += balance;
+    if (c.dueDate < now && c.status !== "pagado") {
+      overdueBalance += balance;
+      overdueCount += 1;
+    }
+  }
+
+  const upcoming = cycles
+    .filter((c) => c.periodStart > now && c.amount > c.paidAmount)
+    .sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime())[0];
+
+  return {
+    overdueBalance,
+    totalPending,
+    overdueCount,
+    lastPayment: payments[0] ?? null,
+    nextCut: upcoming?.periodStart ?? null,
+  };
+}
+
+export async function listSubscriptions(filters?: { q?: string; view?: string }) {
   const db = getDb();
+  const conditions = [];
+
+  const q = filters?.q?.trim();
+  if (q) {
+    const term = `%${q}%`;
+    conditions.push(or(ilike(subscriptions.folio, term), ilike(clients.name, term)));
+  }
+
+  const view = filters?.view ?? "attention";
+  if (view === "attention") {
+    conditions.push(
+      or(
+        eq(subscriptions.billingStatus, "vencida"),
+        eq(subscriptions.billingStatus, "suspendida_adeudo"),
+      ),
+    );
+  } else if (view !== "all") {
+    conditions.push(eq(subscriptions.serviceStatus, view as SubscriptionServiceStatus));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
   return db
     .select({
       id: subscriptions.id,
@@ -253,6 +368,7 @@ export async function listSubscriptions() {
     .innerJoin(clients, eq(subscriptions.clientId, clients.id))
     .innerJoin(serviceOrders, eq(subscriptions.serviceOrderId, serviceOrders.id))
     .innerJoin(catalogPeriodicities, eq(subscriptions.periodicityId, catalogPeriodicities.id))
+    .where(whereClause)
     .orderBy(desc(subscriptions.createdAt));
 }
 
@@ -357,6 +473,15 @@ export async function addSubscriptionPayment(params: {
   const sub = await getSubscriptionById(params.subscriptionId);
   if (!sub) throw new Error("NOT_FOUND");
 
+  const cycles = await listSubscriptionCycles(params.subscriptionId);
+  const totalPending = cycles.reduce(
+    (sum, c) => sum + Math.max(0, c.amount - c.paidAmount),
+    0,
+  );
+  if (!params.isConvenio && params.amount > totalPending) {
+    throw new Error("PAYMENT_EXCEEDS_BALANCE");
+  }
+
   const db = getDb();
   const [payment] = await db
     .insert(subscriptionPayments)
@@ -416,6 +541,58 @@ async function updateBillingStatus(subscriptionId: string) {
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.id, subscriptionId));
+}
+
+export async function createSubscriptionFromServiceOrder(params: {
+  serviceOrderId: string;
+  subscriptionTemplateId: string;
+  description: string;
+  price: number;
+  periodicityId: string;
+  userId?: string;
+}) {
+  const db = getDb();
+  const [os] = await db
+    .select({ clientId: serviceOrders.clientId })
+    .from(serviceOrders)
+    .where(eq(serviceOrders.id, params.serviceOrderId))
+    .limit(1);
+
+  if (!os) throw new Error("NOT_FOUND");
+
+  return createSubscriptionsFromQuoteItems({
+    serviceOrderId: params.serviceOrderId,
+    clientId: os.clientId,
+    items: [
+      {
+        subscriptionTemplateId: params.subscriptionTemplateId,
+        description: params.description,
+        price: params.price,
+        periodicityId: params.periodicityId,
+      },
+    ],
+    userId: params.userId,
+  }).then((rows) => rows[0]);
+}
+
+export async function activateAllPendingSubscriptions(params: {
+  serviceOrderId: string;
+  userId?: string;
+}) {
+  const subs = await listSubscriptionsByServiceOrder(params.serviceOrderId);
+  const pending = subs.filter((s) => s.serviceStatus === "pendiente_activacion");
+  const results: { id: string; ok: boolean; error?: string }[] = [];
+
+  for (const sub of pending) {
+    try {
+      await activateSubscription({ id: sub.id, userId: params.userId });
+      results.push({ id: sub.id, ok: true });
+    } catch (e) {
+      results.push({ id: sub.id, ok: false, error: e instanceof Error ? e.message : "ERROR" });
+    }
+  }
+
+  return results;
 }
 
 export async function listSubscriptionsByServiceOrder(serviceOrderId: string) {

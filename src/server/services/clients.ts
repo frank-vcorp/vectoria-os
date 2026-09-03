@@ -3,9 +3,12 @@ import { getDb } from "@/server/db";
 import {
   catalogServices,
   clients,
+  invoices,
   opportunities,
+  projects,
   quotes,
   serviceOrders,
+  subscriptions,
 } from "@/server/db/schema";
 import type { ClientFiscalData } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
@@ -134,7 +137,7 @@ export async function updateClient(params: {
 
 export async function getClientRelatedRecords(clientId: string) {
   const db = getDb();
-  const [opps, quotesList, orders] = await Promise.all([
+  const [opps, quotesList, orders, projectsList, subsList, invList] = await Promise.all([
     db
       .select({
         id: opportunities.id,
@@ -171,8 +174,49 @@ export async function getClientRelatedRecords(clientId: string) {
       .from(serviceOrders)
       .where(eq(serviceOrders.clientId, clientId))
       .orderBy(desc(serviceOrders.createdAt)),
+    db
+      .select({
+        id: projects.id,
+        folio: projects.folio,
+        status: projects.status,
+        serviceName: catalogServices.name,
+        createdAt: projects.createdAt,
+      })
+      .from(projects)
+      .innerJoin(catalogServices, eq(projects.serviceId, catalogServices.id))
+      .where(eq(projects.clientId, clientId))
+      .orderBy(desc(projects.createdAt)),
+    db
+      .select({
+        id: subscriptions.id,
+        folio: subscriptions.folio,
+        serviceStatus: subscriptions.serviceStatus,
+        price: subscriptions.price,
+        createdAt: subscriptions.createdAt,
+      })
+      .from(subscriptions)
+      .where(eq(subscriptions.clientId, clientId))
+      .orderBy(desc(subscriptions.createdAt)),
+    db
+      .select({
+        id: invoices.id,
+        folio: invoices.folio,
+        status: invoices.status,
+        total: invoices.total,
+        createdAt: invoices.createdAt,
+      })
+      .from(invoices)
+      .where(eq(invoices.clientId, clientId))
+      .orderBy(desc(invoices.createdAt)),
   ]);
-  return { opportunities: opps, quotes: quotesList, serviceOrders: orders };
+  return {
+    opportunities: opps,
+    quotes: quotesList,
+    serviceOrders: orders,
+    projects: projectsList,
+    subscriptions: subsList,
+    invoices: invList,
+  };
 }
 
 /** Opciones para selectores (carga rápida). */

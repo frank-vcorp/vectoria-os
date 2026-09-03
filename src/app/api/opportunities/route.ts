@@ -23,7 +23,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ log });
     }
 
-    const opportunities = await listOpportunities();
+    const search = searchParams.get("search") ?? undefined;
+    const opportunities = await listOpportunities(search);
     return NextResponse.json({ opportunities });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";

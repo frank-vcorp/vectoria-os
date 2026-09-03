@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { QuickAddClient } from "@/components/quick-add-client";
+import { ListSearchInput } from "@/components/list-search-input";
 import { OPPORTUNITY_STATUS_LABELS, type OpportunityStatus } from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
@@ -29,6 +30,7 @@ export function OpportunitiesManager() {
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({ clientId: "", serviceId: "", description: "" });
 
   async function loadCatalogs() {
@@ -43,8 +45,9 @@ export function OpportunitiesManager() {
     if (res.ok) setClients((await res.json()).clients);
   }
 
-  async function loadOpportunities() {
-    const res = await fetch("/api/opportunities");
+  async function loadOpportunities(q = search) {
+    const params = q.trim() ? `?search=${encodeURIComponent(q.trim())}` : "";
+    const res = await fetch(`/api/opportunities${params}`);
     if (res.ok) setOpportunities((await res.json()).opportunities);
     setLoading(false);
   }
@@ -130,7 +133,15 @@ export function OpportunitiesManager() {
         </button>
       </form>
 
-      <div className="card overflow-x-auto">
+      <div className="card space-y-3 overflow-x-auto">
+        <ListSearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={() => {
+            setLoading(true);
+            void loadOpportunities(search);
+          }}
+        />
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left">

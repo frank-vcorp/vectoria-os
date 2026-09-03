@@ -1,4 +1,4 @@
-import { eq, asc } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
@@ -18,6 +18,15 @@ export async function listUsers() {
       updatedAt: users.updatedAt,
     })
     .from(users)
+    .orderBy(asc(users.name));
+}
+
+export async function listActiveProgrammers() {
+  const db = getDb();
+  return db
+    .select({ id: users.id, name: users.name })
+    .from(users)
+    .where(and(eq(users.role, "programador"), eq(users.status, "activo")))
     .orderBy(asc(users.name));
 }
 

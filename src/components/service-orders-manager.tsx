@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
+import { ListSearchInput } from "@/components/list-search-input";
 import { MoneyInput } from "@/components/money-input";
 import {
   SERVICE_ORDER_STATUS_LABELS,
@@ -37,7 +38,9 @@ export function ServiceOrdersManager() {
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
+  const [programmers, setProgrammers] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
     clientId: "",
     serviceId: "",
@@ -48,13 +51,16 @@ export function ServiceOrdersManager() {
     paymentConditionId: "",
     deliveryDate: "",
     observations: "",
+    programmerId: "",
   });
 
-  async function loadAll() {
-    const [catRes, clientsRes, ordersRes] = await Promise.all([
+  async function loadAll(q = search) {
+    const searchParams = q.trim() ? `?search=${encodeURIComponent(q.trim())}` : "";
+    const [catRes, clientsRes, ordersRes, progRes] = await Promise.all([
       fetch("/api/catalogs?type=all"),
       fetch("/api/clients"),
-      fetch("/api/service-orders"),
+      fetch(`/api/service-orders${searchParams}`),
+      fetch("/api/service-orders?programmers=1"),
     ]);
     if (catRes.ok) {
       const data = await catRes.json();
@@ -66,6 +72,7 @@ export function ServiceOrdersManager() {
     }
     if (clientsRes.ok) setClients((await clientsRes.json()).clients);
     if (ordersRes.ok) setOrders((await ordersRes.json()).orders);
+    if (progRes.ok) setProgrammers((await progRes.json()).programmers ?? []);
     setLoading(false);
   }
 
@@ -114,6 +121,19 @@ export function ServiceOrdersManager() {
           ))}
         </select>
         <QuickAddClient onCreated={handleQuickAddClient} />
+        <select
+          value={form.programmerId}
+          onChange={(e) => setForm({ ...form, programmerId: e.target.value })}
+          required
+          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+        >
+          <option value="">Programador *</option>
+          {programmers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
         <select
           value={form.serviceId}
           onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
@@ -193,7 +213,15 @@ export function ServiceOrdersManager() {
         </button>
       </form>
 
-      <div className="card overflow-x-auto">
+      <div className="card space-y-3 overflow-x-auto">
+        <ListSearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={() => {
+            setLoading(true);
+            void loadAll(search);
+          }}
+        />
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left">

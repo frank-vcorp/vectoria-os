@@ -14,6 +14,18 @@ export async function getFacturapiSettings() {
   };
 }
 
+export function assertFacturapiConfigured(settings: Awaited<ReturnType<typeof getFacturapiSettings>>) {
+  if (!settings.enabled) throw new Error("FACTURAPI_DISABLED");
+  if (!settings.apiKey.trim()) throw new Error("FACTURAPI_NOT_CONFIGURED");
+}
+
+export function facturapiSettingsForAdmin(settings: Awaited<ReturnType<typeof getFacturapiSettings>>) {
+  return {
+    enabled: settings.enabled,
+    apiKeyConfigured: Boolean(settings.apiKey.trim()),
+  };
+}
+
 export async function setFacturapiSettings(params: { enabled?: boolean; apiKey?: string }) {
   const db = getDb();
   if (params.enabled !== undefined) {
@@ -40,20 +52,14 @@ export async function stampInvoiceWithFacturapi(params: {
   folio: string;
   clientId: string;
   total: number;
+  concept?: string;
 }) {
   const settings = await getFacturapiSettings();
+  assertFacturapiConfigured(settings);
+
   const db = getDb();
   const [client] = await db.select().from(clients).where(eq(clients.id, params.clientId)).limit(1);
   if (!client) throw new Error("CLIENT_NOT_FOUND");
-
-  if (!settings.enabled || !settings.apiKey) {
-    return {
-      facturapiId: `sim-${params.folio}`,
-      pdfUrl: `/api/invoices/simulated/${params.folio}.pdf`,
-      xmlUrl: `/api/invoices/simulated/${params.folio}.xml`,
-      simulated: true,
-    };
-  }
 
   const res = await fetch("https://www.facturapi.io/v2/invoices", {
     method: "POST",
@@ -72,7 +78,7 @@ export async function stampInvoiceWithFacturapi(params: {
         {
           quantity: 1,
           product: {
-            description: `Factura ${params.folio}`,
+            description: params.concept?.trim() || `Factura ${params.folio}`,
             product_key: "01010101",
             price: params.total / 100,
             tax_included: true,

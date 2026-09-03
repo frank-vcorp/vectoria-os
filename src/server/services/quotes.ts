@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, and } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
   catalogPaymentConditions,
@@ -16,6 +16,7 @@ import type { QuoteStatus, QuoteSubscriptionItemInput } from "@/shared/commercia
 import { writeAudit } from "@/server/services/audit";
 import { nextFolio } from "@/server/services/folios";
 import { getOpportunityById, markOpportunityQuoted } from "@/server/services/opportunities";
+import { folioOrClientNameFilter } from "@/server/services/list-search";
 
 export type QuoteSubscriptionItemRow = {
   id: string;
@@ -71,9 +72,9 @@ async function replaceQuoteSubscriptionItems(
   );
 }
 
-export async function listQuotes() {
+export async function listQuotes(search?: string) {
   const db = getDb();
-  return db
+  const base = db
     .select({
       id: quotes.id,
       folio: quotes.folio,
@@ -96,8 +97,11 @@ export async function listQuotes() {
     .leftJoin(opportunities, eq(quotes.opportunityId, opportunities.id))
     .leftJoin(serviceOrders, eq(serviceOrders.quoteId, quotes.id))
     .innerJoin(users, eq(quotes.sellerId, users.id))
-    .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
-    .orderBy(desc(quotes.createdAt));
+    .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id));
+
+  const filter = folioOrClientNameFilter(search, quotes.folio, clients.name);
+  if (filter) return base.where(filter).orderBy(desc(quotes.createdAt));
+  return base.orderBy(desc(quotes.createdAt));
 }
 
 export async function getQuoteById(id: string) {
@@ -108,6 +112,7 @@ export async function getQuoteById(id: string) {
       folio: quotes.folio,
       clientId: quotes.clientId,
       clientName: clients.name,
+      clientEmail: clients.email,
       opportunityId: quotes.opportunityId,
       opportunityFolio: opportunities.folio,
       serviceOrderId: serviceOrders.id,

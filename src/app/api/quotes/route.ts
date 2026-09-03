@@ -5,12 +5,14 @@ import {
   cancelQuote,
   createQuoteDirect,
   createQuoteFromOpportunity,
+  getQuoteById,
   getQuotePrefillFromService,
   listQuotes,
   rejectQuote,
   updateQuote,
 } from "@/server/services/quotes";
 import { createServiceOrderFromQuote } from "@/server/services/service-orders";
+import { sendQuotePdfEmail } from "@/server/services/email";
 
 const subscriptionItemSchema = z.object({
   subscriptionTemplateId: z.string().uuid(),
@@ -31,7 +33,8 @@ export async function GET(request: Request) {
       return NextResponse.json(prefill);
     }
 
-    const quotes = await listQuotes();
+    const search = searchParams.get("search") ?? undefined;
+    const quotes = await listQuotes(search);
     return NextResponse.json({ quotes });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";
@@ -117,7 +120,12 @@ const patchSchema = z.discriminatedUnion("action", [
     action: z.literal("authorize"),
     id: z.string().uuid(),
     deliveryDate: z.string().min(1),
-    programmerId: z.string().uuid().nullable().optional(),
+    programmerId: z.string().uuid(),
+  }),
+  z.object({
+    action: z.literal("send_pdf"),
+    id: z.string().uuid(),
+    email: z.string().email().optional(),
   }),
 ]);
 
@@ -150,6 +158,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ quote });
     }
 
+    if (body.action === "send_pdf") {
+      const quote = await getQuoteById(body.id);
+      if (!quote) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+      const to = body.email ?? quote.clientEmail;
+      if (!to) return NextResponse.json({ error: "EMAIL_REQUIRED" }, { status: 409 });
+      await sendQuotePdfEmail({ to, folio: quote.folio, clientName: quote.clientName });
+      return NextResponse.json({ sent: true });
+    }
+
     const { action: _, id, ...data } = body;
     const quote = await updateQuote({ id, ...data, userId: user.id });
     return NextResponse.json({ quote });
@@ -161,7 +178,7 @@ export async function PATCH(request: Request) {
     const status =
       msg === "NOT_FOUND"
         ? 404
-        : msg === "LOCKED" || msg === "INVALID_STATUS" || msg === "OS_EXISTS" || msg === "HAS_OS"
+        : msg === "LOCKED" || msg === "INVALID_STATUS" || msg === "OS_EXISTS" || msg === "HAS_OS" || msg === "PROGRAMMER_REQUIRED"
           ? 409
           : msg === "FORBIDDEN"
             ? 403

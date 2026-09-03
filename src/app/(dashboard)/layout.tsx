@@ -13,6 +13,7 @@ const NAV: { href: string; module: ModuleKey; label: string }[] = [
   { href: "/ordenes-servicio", module: "ordenes_servicio", label: "Órdenes de Servicio" },
   { href: "/proyectos", module: "proyectos", label: "Proyectos" },
   { href: "/suscripciones", module: "suscripciones", label: "Suscripciones" },
+  { href: "/bancos", module: "bancos", label: "Bancos" },
   { href: "/finanzas", module: "flujo_financiero", label: "Finanzas" },
   { href: "/facturacion", module: "facturacion", label: "Facturación" },
   { href: "/admin/usuarios", module: "usuarios_roles", label: "Usuarios" },

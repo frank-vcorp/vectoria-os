@@ -1,4 +1,5 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/server/db";
 import {
   bankAccounts,
@@ -14,6 +15,7 @@ import {
 import type { ServiceOrderStatus } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
 import { createIncomeFromOsPayment } from "@/server/services/financial-incomes";
+import { folioOrClientNameFilter } from "@/server/services/list-search";
 import { nextFolio } from "@/server/services/folios";
 import { createProjectFromServiceOrder } from "@/server/services/projects";
 import { createSubscriptionsFromQuoteItems } from "@/server/services/subscriptions";
@@ -39,6 +41,9 @@ async function insertServiceOrder(input: CreateOsInput) {
   const db = getDb();
   if (input.contractType === "suscripcion" && !input.periodicityId) {
     throw new Error("PERIODICITY_REQUIRED");
+  }
+  if (!input.programmerId) {
+    throw new Error("PROGRAMMER_REQUIRED");
   }
 
   const folio = await nextFolio("orden_servicio");
@@ -93,6 +98,8 @@ export async function createServiceOrderFromQuote(params: {
     .limit(1);
   if (existing) throw new Error("OS_EXISTS");
 
+  if (!params.programmerId) throw new Error("PROGRAMMER_REQUIRED");
+
   const order = await insertServiceOrder({
     clientId: quote.clientId,
     quoteId: quote.id,
@@ -142,9 +149,9 @@ export async function createServiceOrderDirect(params: CreateOsInput) {
   return insertServiceOrder(params);
 }
 
-export async function listServiceOrders() {
+export async function listServiceOrders(programmerId?: string | null, search?: string) {
   const db = getDb();
-  return db
+  const base = db
     .select({
       id: serviceOrders.id,
       folio: serviceOrders.folio,
@@ -163,18 +170,30 @@ export async function listServiceOrders() {
     .innerJoin(clients, eq(serviceOrders.clientId, clients.id))
     .leftJoin(quotes, eq(serviceOrders.quoteId, quotes.id))
     .innerJoin(users, eq(serviceOrders.sellerId, users.id))
-    .innerJoin(catalogServices, eq(serviceOrders.serviceId, catalogServices.id))
-    .orderBy(desc(serviceOrders.createdAt));
+    .innerJoin(catalogServices, eq(serviceOrders.serviceId, catalogServices.id));
+
+  const filters = [
+    folioOrClientNameFilter(search, serviceOrders.folio, clients.name),
+    programmerId ? eq(serviceOrders.programmerId, programmerId) : undefined,
+  ].filter((f): f is NonNullable<typeof f> => Boolean(f));
+
+  if (filters.length > 0) {
+    return base.where(and(...filters)).orderBy(desc(serviceOrders.createdAt));
+  }
+
+  return base.orderBy(desc(serviceOrders.createdAt));
 }
 
 export async function getServiceOrderById(id: string) {
   const db = getDb();
+  const programmerUsers = alias(users, "programmer_users");
   const [row] = await db
     .select({
       id: serviceOrders.id,
       folio: serviceOrders.folio,
       clientId: serviceOrders.clientId,
       clientName: clients.name,
+      clientEmail: clients.email,
       quoteId: serviceOrders.quoteId,
       quoteFolio: quotes.folio,
       sellerId: serviceOrders.sellerId,
@@ -191,6 +210,7 @@ export async function getServiceOrderById(id: string) {
       deliveryDate: serviceOrders.deliveryDate,
       observations: serviceOrders.observations,
       programmerId: serviceOrders.programmerId,
+      programmerName: programmerUsers.name,
       status: serviceOrders.status,
       createdAt: serviceOrders.createdAt,
     })
@@ -198,6 +218,7 @@ export async function getServiceOrderById(id: string) {
     .innerJoin(clients, eq(serviceOrders.clientId, clients.id))
     .leftJoin(quotes, eq(serviceOrders.quoteId, quotes.id))
     .innerJoin(users, eq(serviceOrders.sellerId, users.id))
+    .leftJoin(programmerUsers, eq(serviceOrders.programmerId, programmerUsers.id))
     .innerJoin(catalogServices, eq(serviceOrders.serviceId, catalogServices.id))
     .leftJoin(catalogPeriodicities, eq(serviceOrders.periodicityId, catalogPeriodicities.id))
     .leftJoin(catalogPaymentConditions, eq(serviceOrders.paymentConditionId, catalogPaymentConditions.id))
@@ -250,6 +271,9 @@ export async function addServiceOrderPayment(params: {
   const order = await getServiceOrderById(params.serviceOrderId);
   if (!order) throw new Error("NOT_FOUND");
   if (order.status === "cancelada") throw new Error("INVALID_STATUS");
+
+  const summary = await getServiceOrderPaymentSummary(params.serviceOrderId);
+  if (params.amount > summary.balance) throw new Error("PAYMENT_EXCEEDS_BALANCE");
 
   const db = getDb();
   const [payment] = await db
@@ -313,6 +337,48 @@ export async function updateServiceOrderStatus(params: {
     action: params.status === "cancelada" ? "cancel" : "update",
     userId: params.userId,
     payload: { status: params.status },
+  });
+
+  return order;
+}
+
+export async function updateServiceOrderDetails(params: {
+  id: string;
+  programmerId?: string;
+  deliveryDate?: Date;
+  userId?: string;
+}) {
+  const db = getDb();
+  const updates: Partial<typeof serviceOrders.$inferInsert> = { updatedAt: new Date() };
+  if (params.programmerId) updates.programmerId = params.programmerId;
+  if (params.deliveryDate) updates.deliveryDate = params.deliveryDate;
+
+  const [order] = await db
+    .update(serviceOrders)
+    .set(updates)
+    .where(eq(serviceOrders.id, params.id))
+    .returning({
+      id: serviceOrders.id,
+      folio: serviceOrders.folio,
+      programmerId: serviceOrders.programmerId,
+      deliveryDate: serviceOrders.deliveryDate,
+    });
+
+  if (!order) throw new Error("NOT_FOUND");
+
+  const { syncProjectFromServiceOrder } = await import("@/server/services/projects");
+  await syncProjectFromServiceOrder({
+    serviceOrderId: params.id,
+    programmerId: order.programmerId,
+    deliveryDate: order.deliveryDate,
+  });
+
+  await writeAudit({
+    entity: "service_order",
+    entityId: order.id,
+    action: "update",
+    userId: params.userId,
+    payload: { programmerId: order.programmerId, deliveryDate: order.deliveryDate },
   });
 
   return order;

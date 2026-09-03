@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ListSearchInput } from "@/components/list-search-input";
 import { PROJECT_STATUS_LABELS, type ProjectStatus } from "@/shared/commercial";
 
 type ProjectRow = {
@@ -19,18 +20,31 @@ type ProjectRow = {
 export function ProjectsManager() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  async function load(q = search) {
+    setLoading(true);
+    const params = q.trim() ? `?search=${encodeURIComponent(q.trim())}` : "";
+    const res = await fetch(`/api/projects${params}`);
+    if (res.ok) setProjects((await res.json()).projects ?? []);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    void fetch("/api/projects")
-      .then((r) => r.json())
-      .then((d) => setProjects(d.projects ?? []))
-      .finally(() => setLoading(false));
+    void load();
   }, []);
 
-  if (loading) return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
+  if (loading && projects.length === 0) {
+    return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
+  }
 
   return (
-    <div className="card overflow-x-auto">
+    <div className="card space-y-3 overflow-x-auto">
+      <ListSearchInput
+        value={search}
+        onChange={setSearch}
+        onSearch={() => void load(search)}
+      />
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-[var(--muted)] border-b border-[var(--border)]">

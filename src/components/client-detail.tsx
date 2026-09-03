@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ClientFiscalData } from "@/shared/commercial";
 import {
+  INVOICE_STATUS_LABELS,
   OPPORTUNITY_STATUS_LABELS,
+  PROJECT_STATUS_LABELS,
   QUOTE_STATUS_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
+  SUBSCRIPTION_SERVICE_STATUS_LABELS,
   formatMoney,
 } from "@/shared/commercial";
 import { SAT_REGIMEN_FISCAL, SAT_USO_CFDI } from "@/shared/sat-catalogs";
@@ -47,6 +50,9 @@ type Related = {
     createdAt: string;
   }[];
   serviceOrders: { id: string; folio: string; status: string; price: number; createdAt: string }[];
+  projects: { id: string; folio: string; status: string; serviceName: string; createdAt: string }[];
+  subscriptions: { id: string; folio: string; serviceStatus: string; price: number; createdAt: string }[];
+  invoices: { id: string; folio: string; status: string; total: number; createdAt: string }[];
 };
 
 function satLabel(catalog: { code: string; label: string }[], code?: string) {
@@ -293,6 +299,78 @@ export function ClientDetailView({ id }: { id: string }) {
                   status:
                     SERVICE_ORDER_STATUS_LABELS[o.status as keyof typeof SERVICE_ORDER_STATUS_LABELS] ??
                     o.status,
+                },
+              }))}
+            />
+          </DetailSection>
+
+          <DetailSection title="Proyectos">
+            <RelatedTable
+              emptyMessage="Sin proyectos"
+              columns={[
+                { key: "folio", label: "Folio" },
+                { key: "service", label: "Servicio" },
+                { key: "status", label: "Estatus" },
+              ]}
+              rows={(related.projects ?? []).map((p) => ({
+                id: p.id,
+                cells: {
+                  folio: (
+                    <Link href={`/proyectos/${p.id}`} className="underline font-mono text-xs">
+                      {p.folio}
+                    </Link>
+                  ),
+                  service: p.serviceName,
+                  status: PROJECT_STATUS_LABELS[p.status as keyof typeof PROJECT_STATUS_LABELS] ?? p.status,
+                },
+              }))}
+            />
+          </DetailSection>
+
+          <DetailSection title="Suscripciones">
+            <RelatedTable
+              emptyMessage="Sin suscripciones"
+              columns={[
+                { key: "folio", label: "Folio" },
+                { key: "price", label: "Precio" },
+                { key: "status", label: "Estatus" },
+              ]}
+              rows={(related.subscriptions ?? []).map((s) => ({
+                id: s.id,
+                cells: {
+                  folio: (
+                    <Link href={`/suscripciones/${s.id}`} className="underline font-mono text-xs">
+                      {s.folio}
+                    </Link>
+                  ),
+                  price: formatMoney(s.price),
+                  status:
+                    SUBSCRIPTION_SERVICE_STATUS_LABELS[
+                      s.serviceStatus as keyof typeof SUBSCRIPTION_SERVICE_STATUS_LABELS
+                    ] ?? s.serviceStatus,
+                },
+              }))}
+            />
+          </DetailSection>
+
+          <DetailSection title="Facturas">
+            <RelatedTable
+              emptyMessage="Sin facturas"
+              columns={[
+                { key: "folio", label: "Folio" },
+                { key: "total", label: "Total" },
+                { key: "status", label: "Estatus" },
+              ]}
+              rows={(related.invoices ?? []).map((inv) => ({
+                id: inv.id,
+                cells: {
+                  folio: (
+                    <Link href={`/facturacion/${inv.id}`} className="underline font-mono text-xs">
+                      {inv.folio}
+                    </Link>
+                  ),
+                  total: formatMoney(inv.total),
+                  status: INVOICE_STATUS_LABELS[inv.status as keyof typeof INVOICE_STATUS_LABELS] ?? inv.status,
                 },
               }))}
             />

@@ -57,6 +57,27 @@
       "when": 1788425000000,
       "tag": "0008_phases3_7_core",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788430000000,
+      "tag": "0009_invoice_concept_cycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788435000000,
+      "tag": "0010_validation_plan_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788440000000,
+      "tag": "0011_phase_evidence_notes",
+      "breakpoints": true
     }
   ]
 }

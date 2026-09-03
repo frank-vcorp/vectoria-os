@@ -12,7 +12,12 @@ import {
   type SubscriptionTemplateOption,
   toSubscriptionItemPayload,
 } from "@/components/quote-subscription-lines";
-import { QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
+import { ListSearchInput } from "@/components/list-search-input";
+import {
+  QUOTE_STATUS_LABELS,
+  formatMoney,
+  type QuoteStatus,
+} from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = { id: string; name: string; basePrice?: number };
@@ -43,6 +48,7 @@ export function QuotesManager() {
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
   const [form, setForm] = useState({
     clientId: "",
@@ -75,8 +81,9 @@ export function QuotesManager() {
     if (res.ok) setClients((await res.json()).clients);
   }
 
-  async function loadQuotes() {
-    const res = await fetch("/api/quotes");
+  async function loadQuotes(q = search) {
+    const params = q.trim() ? `?search=${encodeURIComponent(q.trim())}` : "";
+    const res = await fetch(`/api/quotes${params}`);
     if (res.ok) setQuotes((await res.json()).quotes);
     setLoading(false);
   }
@@ -213,7 +220,15 @@ export function QuotesManager() {
         </button>
       </form>
 
-      <div className="card overflow-x-auto">
+      <div className="card space-y-3 overflow-x-auto">
+        <ListSearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={() => {
+            setLoading(true);
+            void loadQuotes(search);
+          }}
+        />
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left">

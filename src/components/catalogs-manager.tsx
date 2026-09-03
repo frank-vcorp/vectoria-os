@@ -178,6 +178,24 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
   const [data, setData] = useState<CatalogData>({});
   const [timezone, setTimezone] = useState("America/Mexico_City");
   const [savingTimezone, setSavingTimezone] = useState(false);
+  const [emailSettings, setEmailSettingsState] = useState({
+    enabled: false,
+    fromEmail: "",
+    fromName: "VectorIA",
+    apiKey: "",
+    subjectBase: "Documento fiscal",
+    bodyBase: "Adjunto encontrará su documento.",
+    apiKeyConfigured: false,
+  });
+  const [facturapiSettings, setFacturapiSettingsState] = useState({
+    enabled: false,
+    apiKey: "",
+    apiKeyConfigured: false,
+  });
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingFacturapi, setSavingFacturapi] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+  const [settingsOk, setSettingsOk] = useState("");
 
   const [periodicity, setPeriodicity] = useState({ name: "", intervalMonths: 1 });
   const [service, setService] = useState({
@@ -228,6 +246,24 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     if (res.ok) {
       const json = await res.json();
       setTimezone(json.operationalTimezone ?? "America/Mexico_City");
+      if (json.email) {
+        setEmailSettingsState({
+          enabled: json.email.enabled ?? false,
+          fromEmail: json.email.fromEmail ?? "",
+          fromName: json.email.fromName ?? "VectorIA",
+          apiKey: "",
+          subjectBase: json.email.subjectBase ?? "Documento fiscal",
+          bodyBase: json.email.bodyBase ?? "Adjunto encontrará su documento.",
+          apiKeyConfigured: json.email.apiKeyConfigured ?? false,
+        });
+      }
+      if (json.facturapi) {
+        setFacturapiSettingsState({
+          enabled: json.facturapi.enabled ?? false,
+          apiKey: "",
+          apiKeyConfigured: json.facturapi.apiKeyConfigured ?? false,
+        });
+      }
     }
   }
 
@@ -268,6 +304,60 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     }
   }
 
+  async function saveEmailSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingEmail(true);
+    setSettingsError("");
+    setSettingsOk("");
+    try {
+      const payload: Record<string, unknown> = {
+        enabled: emailSettings.enabled,
+        fromEmail: emailSettings.fromEmail,
+        fromName: emailSettings.fromName,
+        subjectBase: emailSettings.subjectBase,
+        bodyBase: emailSettings.bodyBase,
+      };
+      if (emailSettings.apiKey) payload.apiKey = emailSettings.apiKey;
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: payload }),
+      });
+      if (!res.ok) {
+        setSettingsError((await res.json()).error ?? "Error al guardar SendGrid");
+        return;
+      }
+      setSettingsOk("SendGrid guardado correctamente.");
+      await loadTimezone();
+    } finally {
+      setSavingEmail(false);
+    }
+  }
+
+  async function saveFacturapiSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingFacturapi(true);
+    setSettingsError("");
+    setSettingsOk("");
+    try {
+      const payload: Record<string, unknown> = { enabled: facturapiSettings.enabled };
+      if (facturapiSettings.apiKey) payload.apiKey = facturapiSettings.apiKey;
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facturapi: payload }),
+      });
+      if (!res.ok) {
+        setSettingsError((await res.json()).error ?? "Error al guardar Facturapi");
+        return;
+      }
+      setSettingsOk("Facturapi guardado correctamente.");
+      await loadTimezone();
+    } finally {
+      setSavingFacturapi(false);
+    }
+  }
+
   const incomeCategories = data.incomeCategories ?? [];
   const periodicities = data.periodicities ?? [];
 
@@ -276,6 +366,8 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
       {isAdmin && (
         <section className="card space-y-3">
           <h2 className="font-medium">Configuración del sistema</h2>
+          {settingsError && <p className="text-sm text-[var(--danger)]">{settingsError}</p>}
+          {settingsOk && <p className="text-sm text-green-600">{settingsOk}</p>}
           <p className="text-sm text-[var(--muted)]">
             Zona horaria operativa para fechas, vencimientos y ciclos de suscripción.
           </p>
@@ -296,6 +388,97 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
             </label>
             <button className="btn btn-primary" type="submit" disabled={savingTimezone}>
               {savingTimezone ? "Guardando…" : "Guardar"}
+            </button>
+          </form>
+
+          <form className="space-y-3 pt-4 border-t border-[var(--border)]" onSubmit={(e) => void saveEmailSettings(e)}>
+            <h3 className="font-medium">SendGrid</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Configure la API Key y el remitente aquí. Timbrado y envío de correos requieren credenciales activas.
+            </p>
+            <p className="text-sm">
+              Estado:{" "}
+              <span className="badge">
+                {emailSettings.enabled && emailSettings.apiKeyConfigured ? "Configurado" : "Pendiente"}
+              </span>
+            </p>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={emailSettings.enabled}
+                onChange={(e) => setEmailSettingsState({ ...emailSettings, enabled: e.target.checked })}
+              />
+              Envío automático activo
+            </label>
+            <div className="grid gap-2 md:grid-cols-2">
+              <input
+                value={emailSettings.fromEmail}
+                onChange={(e) => setEmailSettingsState({ ...emailSettings, fromEmail: e.target.value })}
+                placeholder="Correo remitente"
+                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+              />
+              <input
+                value={emailSettings.fromName}
+                onChange={(e) => setEmailSettingsState({ ...emailSettings, fromName: e.target.value })}
+                placeholder="Nombre remitente"
+                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+              />
+              <input
+                type="password"
+                value={emailSettings.apiKey}
+                onChange={(e) => setEmailSettingsState({ ...emailSettings, apiKey: e.target.value })}
+                placeholder={emailSettings.apiKeyConfigured ? "API Key configurada — dejar vacío para mantener" : "API Key SendGrid"}
+                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 md:col-span-2"
+              />
+              <input
+                value={emailSettings.subjectBase}
+                onChange={(e) => setEmailSettingsState({ ...emailSettings, subjectBase: e.target.value })}
+                placeholder="Asunto base"
+                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+              />
+              <textarea
+                value={emailSettings.bodyBase}
+                onChange={(e) => setEmailSettingsState({ ...emailSettings, bodyBase: e.target.value })}
+                placeholder="Texto base del correo"
+                rows={2}
+                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 md:col-span-2"
+              />
+            </div>
+            <button className="btn btn-primary" type="submit" disabled={savingEmail}>
+              {savingEmail ? "Guardando…" : "Guardar SendGrid"}
+            </button>
+          </form>
+
+          <form className="space-y-3 pt-4 border-t border-[var(--border)]" onSubmit={(e) => void saveFacturapiSettings(e)}>
+            <h3 className="font-medium">Facturapi</h3>
+            <p className="text-sm text-[var(--muted)]">
+              API Key de Facturapi para timbrado real. Sin credenciales activas el timbrado no estará disponible.
+            </p>
+            <p className="text-sm">
+              Estado:{" "}
+              <span className="badge">
+                {facturapiSettings.enabled && facturapiSettings.apiKeyConfigured ? "Configurado" : "Pendiente"}
+              </span>
+            </p>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={facturapiSettings.enabled}
+                onChange={(e) => setFacturapiSettingsState({ ...facturapiSettings, enabled: e.target.checked })}
+              />
+              Integración activa
+            </label>
+            <input
+              type="password"
+              value={facturapiSettings.apiKey}
+              onChange={(e) => setFacturapiSettingsState({ ...facturapiSettings, apiKey: e.target.value })}
+              placeholder={
+                facturapiSettings.apiKeyConfigured ? "API Key configurada — dejar vacío para mantener" : "API Key Facturapi"
+              }
+              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+            <button className="btn btn-primary" type="submit" disabled={savingFacturapi}>
+              {savingFacturapi ? "Guardando…" : "Guardar Facturapi"}
             </button>
           </form>
         </section>

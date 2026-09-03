@@ -102,7 +102,30 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   borrador: "Borrador",
   timbrada: "Timbrada",
   cancelada: "Cancelada",
+  error: "Error de timbrado",
+};
+
+export const INVOICE_SEND_STATUS_LABELS: Record<InvoiceSendStatus, string> = {
+  pendiente: "Pendiente",
+  enviado: "Enviado",
   error: "Error",
+};
+
+export const INTEGRATION_ERROR_LABELS: Record<string, string> = {
+  FACTURAPI_DISABLED: "Facturapi desactivado — actívelo en Catálogos → Configuración.",
+  FACTURAPI_NOT_CONFIGURED: "Falta API Key de Facturapi en Configuración.",
+  FACTURAPI_API_KEY_REQUIRED: "Indique la API Key de Facturapi para activar la integración.",
+  SENDGRID_DISABLED: "SendGrid desactivado — actívelo en Catálogos → Configuración.",
+  SENDGRID_NOT_CONFIGURED: "Falta API Key de SendGrid en Configuración.",
+  SENDGRID_FROM_EMAIL_REQUIRED: "Indique el correo remitente de SendGrid en Configuración.",
+  SENDGRID_API_KEY_REQUIRED: "Indique la API Key de SendGrid para activar el envío.",
+};
+
+export const INVOICE_SOURCE_LABELS: Record<string, string> = {
+  manual: "Manual",
+  service_order: "Orden de servicio",
+  subscription_cycle: "Ciclo suscripción",
+  auto_subscription: "Automática suscripción",
 };
 
 export function formatMoney(cents: number): string {

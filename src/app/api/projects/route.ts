@@ -6,10 +6,13 @@ import {
   advanceProjectPhase,
   getProjectById,
   importPlanToProject,
-  listProjectPhases,
+  listProjectPhasesWithChecks,
   listProjects,
   returnProjectPhase,
+  togglePhaseCheck,
+  updatePhaseEvidence,
   updateProject,
+  unlockNextProjectPhase,
   validateProjectPhase,
 } from "@/server/services/projects";
 
@@ -20,14 +23,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
+    const search = searchParams.get("search") ?? undefined;
+
     if (id) {
       const project = await getProjectById(id);
       if (!project) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-      const phases = await listProjectPhases(id);
+      const phases = await listProjectPhasesWithChecks(id);
       return NextResponse.json({ project, phases });
     }
 
-    const projects = await listProjects();
+    const programmerFilter = user.role === "programador" ? user.id : undefined;
+    const projects = await listProjects(programmerFilter, search);
     return NextResponse.json({ projects });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";
@@ -47,11 +53,13 @@ const patchSchema = z.discriminatedUnion("action", [
     id: z.string().uuid(),
     content: z.string().min(1),
     fileName: z.string().optional(),
+    replace: z.boolean().optional(),
   }),
   z.object({
     action: z.literal("advance_phase"),
     projectId: z.string().uuid(),
     phaseId: z.string().uuid(),
+    force: z.boolean().optional(),
   }),
   z.object({
     action: z.literal("validate_phase"),
@@ -65,13 +73,36 @@ const patchSchema = z.discriminatedUnion("action", [
     phaseId: z.string().uuid(),
     notes: z.string().optional(),
   }),
+  z.object({
+    action: z.literal("unlock_next_phase"),
+    projectId: z.string().uuid(),
+    fromPhaseId: z.string().uuid(),
+  }),
+  z.object({
+    action: z.literal("toggle_check"),
+    projectId: z.string().uuid(),
+    checkId: z.string().uuid(),
+    checked: z.boolean().optional(),
+    notApplicable: z.boolean().optional(),
+  }),
+  z.object({
+    action: z.literal("update_evidence"),
+    projectId: z.string().uuid(),
+    phaseId: z.string().uuid(),
+    evidenceNotes: z.string().nullable(),
+  }),
 ]);
 
 export async function PATCH(request: Request) {
   try {
     const user = await requireUser();
-    await requireModule(user, "proyectos", "write");
     const body = patchSchema.parse(await request.json());
+
+    if (body.action === "validate_phase" || body.action === "return_phase") {
+      if (user.role !== "administrador") throw new Error("FORBIDDEN");
+    } else {
+      await requireModule(user, "proyectos", "write");
+    }
 
     if (body.action === "update") {
       const project = await updateProject({
@@ -89,14 +120,43 @@ export async function PATCH(request: Request) {
         content: body.content,
         fileName: body.fileName,
         userId: user.id,
+        replace: body.replace,
       });
-      const phases = await listProjectPhases(body.id);
+      const phases = await listProjectPhasesWithChecks(body.id);
       return NextResponse.json({ result, phases });
     }
 
+    if (body.action === "toggle_check") {
+      await togglePhaseCheck({
+        projectId: body.projectId,
+        checkId: body.checkId,
+        checked: body.checked,
+        notApplicable: body.notApplicable,
+        userId: user.id,
+      });
+      const phases = await listProjectPhasesWithChecks(body.projectId);
+      return NextResponse.json({ phases });
+    }
+
+    if (body.action === "update_evidence") {
+      await updatePhaseEvidence({
+        projectId: body.projectId,
+        phaseId: body.phaseId,
+        evidenceNotes: body.evidenceNotes,
+        userId: user.id,
+      });
+      const phases = await listProjectPhasesWithChecks(body.projectId);
+      return NextResponse.json({ phases });
+    }
+
     if (body.action === "advance_phase") {
-      await advanceProjectPhase({ projectId: body.projectId, phaseId: body.phaseId, userId: user.id });
-      const phases = await listProjectPhases(body.projectId);
+      await advanceProjectPhase({
+        projectId: body.projectId,
+        phaseId: body.phaseId,
+        userId: user.id,
+        force: body.force,
+      });
+      const phases = await listProjectPhasesWithChecks(body.projectId);
       return NextResponse.json({ phases });
     }
 
@@ -107,7 +167,17 @@ export async function PATCH(request: Request) {
         notes: body.notes,
         userId: user.id,
       });
-      const phases = await listProjectPhases(body.projectId);
+      const phases = await listProjectPhasesWithChecks(body.projectId);
+      return NextResponse.json({ phases });
+    }
+
+    if (body.action === "unlock_next_phase") {
+      await unlockNextProjectPhase({
+        projectId: body.projectId,
+        fromPhaseId: body.fromPhaseId,
+        userId: user.id,
+      });
+      const phases = await listProjectPhasesWithChecks(body.projectId);
       return NextResponse.json({ phases });
     }
 
@@ -117,12 +187,24 @@ export async function PATCH(request: Request) {
       notes: body.notes,
       userId: user.id,
     });
-    const phases = await listProjectPhases(body.projectId);
+    const phases = await listProjectPhasesWithChecks(body.projectId);
     return NextResponse.json({ phases });
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     const msg = e instanceof Error ? e.message : "ERROR";
-    const status = msg === "NOT_FOUND" ? 404 : msg === "INVALID_STATUS" ? 409 : msg === "UNAUTHORIZED" ? 401 : 403;
+    const status =
+      msg === "NOT_FOUND"
+        ? 404
+        : msg === "FORBIDDEN"
+          ? 403
+          : msg === "INVALID_STATUS" ||
+              msg === "PLAN_EXISTS" ||
+              msg === "NO_NEXT_PHASE" ||
+              msg === "ALREADY_UNLOCKED"
+            ? 409
+            : msg === "UNAUTHORIZED"
+              ? 401
+              : 403;
     return NextResponse.json({ error: msg }, { status });
   }
 }

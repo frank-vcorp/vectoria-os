@@ -28,6 +28,23 @@ export async function getEmailSettings() {
   };
 }
 
+export function assertEmailConfigured(settings: Awaited<ReturnType<typeof getEmailSettings>>) {
+  if (!settings.enabled) throw new Error("SENDGRID_DISABLED");
+  if (!settings.apiKey.trim()) throw new Error("SENDGRID_NOT_CONFIGURED");
+  if (!settings.fromEmail.trim()) throw new Error("SENDGRID_FROM_EMAIL_REQUIRED");
+}
+
+export function emailSettingsForAdmin(settings: Awaited<ReturnType<typeof getEmailSettings>>) {
+  return {
+    enabled: settings.enabled,
+    fromEmail: settings.fromEmail,
+    fromName: settings.fromName,
+    subjectBase: settings.subjectBase,
+    bodyBase: settings.bodyBase,
+    apiKeyConfigured: Boolean(settings.apiKey.trim()),
+  };
+}
+
 export async function setEmailSettings(params: {
   enabled?: boolean;
   fromEmail?: string;
@@ -60,11 +77,7 @@ export async function sendInvoiceEmail(params: {
   pdfUrl?: string | null;
 }) {
   const settings = await getEmailSettings();
-  if (!settings.enabled) {
-    console.info("[email] SendGrid desactivado — simulando envío", params.folio);
-    return { simulated: true };
-  }
-  if (!settings.apiKey) throw new Error("SENDGRID_NOT_CONFIGURED");
+  assertEmailConfigured(settings);
   if (!params.to) throw new Error("EMAIL_REQUIRED");
 
   const subject = `${settings.subjectBase} — ${params.folio}`;
@@ -99,14 +112,43 @@ export async function sendQuotePdfEmail(params: {
   pdfBuffer?: Buffer;
 }) {
   const settings = await getEmailSettings();
-  if (!settings.enabled) {
-    console.info("[email] SendGrid desactivado — simulando envío cotización", params.folio);
-    return { simulated: true };
-  }
-  if (!settings.apiKey) throw new Error("SENDGRID_NOT_CONFIGURED");
+  assertEmailConfigured(settings);
 
   const subject = `${settings.subjectBase} — Cotización ${params.folio}`;
   const body = `${settings.bodyBase}\n\nCotización ${params.folio} para ${params.clientName}.`;
+
+  const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${settings.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: params.to }] }],
+      from: { email: settings.fromEmail, name: settings.fromName },
+      subject,
+      content: [{ type: "text/plain", value: body }],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`SENDGRID_ERROR: ${text}`);
+  }
+
+  return { sent: true };
+}
+
+export async function sendServiceOrderPdfEmail(params: {
+  to: string;
+  folio: string;
+  clientName: string;
+}) {
+  const settings = await getEmailSettings();
+  assertEmailConfigured(settings);
+
+  const subject = `${settings.subjectBase} — Orden de Servicio ${params.folio}`;
+  const body = `${settings.bodyBase}\n\nOrden de Servicio ${params.folio} para ${params.clientName}.`;
 
   const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",

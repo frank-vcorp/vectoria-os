@@ -77,10 +77,15 @@ export type ModuleAccess = {
 
 export type RolePermissions = Record<ModuleKey, ModuleAccess>;
 
-/** Permisos por defecto según Discovery §17 (lectura + escritura en módulos asignados). */
+/** Permisos por defecto según Discovery §17. Vendedor: consulta en proyectos/suscripciones. */
 export function defaultPermissionsForRole(role: RoleKey): RolePermissions {
   const allowed = new Set(DEFAULT_ROLE_MODULES[role]);
+  const readOnlyForVendedor = new Set<ModuleKey>(["proyectos", "suscripciones"]);
   return Object.fromEntries(
-    MODULES.map((m) => [m, { canRead: allowed.has(m), canWrite: allowed.has(m) }]),
+    MODULES.map((m) => {
+      const canRead = allowed.has(m);
+      const canWrite = allowed.has(m) && !(role === "vendedor" && readOnlyForVendedor.has(m));
+      return [m, { canRead, canWrite }];
+    }),
   ) as RolePermissions;
 }

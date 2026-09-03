@@ -316,6 +316,10 @@ export const projects = pgTable("projects", {
   status: text("status").$type<ProjectStatus>().notNull().default("en_progreso"),
   planSourceFileName: text("plan_source_file_name"),
   planImportedAt: timestamp("plan_imported_at", { withTimezone: true }),
+  planVersion: text("plan_version"),
+  planName: text("plan_name"),
+  planDiscovery: text("plan_discovery"),
+  checklistRequired: boolean("checklist_required").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -334,6 +338,20 @@ export const projectPhases = pgTable("project_phases", {
   startedAt: timestamp("started_at", { withTimezone: true }),
   validatedAt: timestamp("validated_at", { withTimezone: true }),
   validationNotes: text("validation_notes"),
+  evidenceNotes: text("evidence_notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const projectPhaseChecks = pgTable("project_phase_checks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  phaseId: uuid("phase_id")
+    .notNull()
+    .references(() => projectPhases.id, { onDelete: "cascade" }),
+  sortOrder: integer("sort_order").notNull(),
+  text: text("text").notNull(),
+  checked: boolean("checked").notNull().default(false),
+  notApplicable: boolean("not_applicable").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -453,8 +471,10 @@ export const invoices = pgTable("invoices", {
   sendStatus: text("send_status").$type<InvoiceSendStatus>().notNull().default("pendiente"),
   subtotal: integer("subtotal").notNull().default(0),
   total: integer("total").notNull().default(0),
+  concept: text("concept").notNull().default(""),
   sourceType: text("source_type"),
   sourceId: uuid("source_id"),
+  cycleId: uuid("cycle_id"),
   facturapiId: text("facturapi_id"),
   pdfUrl: text("pdf_url"),
   xmlUrl: text("xml_url"),
@@ -508,6 +528,7 @@ export type Quote = typeof quotes.$inferSelect;
 export type ServiceOrder = typeof serviceOrders.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type ProjectPhase = typeof projectPhases.$inferSelect;
+export type ProjectPhaseCheck = typeof projectPhaseChecks.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type SubscriptionCycle = typeof subscriptionCycles.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;

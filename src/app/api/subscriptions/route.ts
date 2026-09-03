@@ -8,8 +8,11 @@ import {
 import { ensureDefaultBankAccount } from "@/server/services/bank-accounts";
 import {
   activateSubscription,
+  activateAllPendingSubscriptions,
   addSubscriptionPayment,
+  createSubscriptionFromServiceOrder,
   getSubscriptionById,
+  getSubscriptionFinancialSummary,
   listSubscriptionCycles,
   listSubscriptionPayments,
   listSubscriptions,
@@ -24,15 +27,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const serviceOrderId = searchParams.get("serviceOrderId");
+    const q = searchParams.get("q") ?? undefined;
+    const view = searchParams.get("view") ?? undefined;
 
     if (id) {
       const subscription = await getSubscriptionById(id);
       if (!subscription) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-      const [cycles, payments] = await Promise.all([
+      const [cycles, payments, summary] = await Promise.all([
         listSubscriptionCycles(id),
         listSubscriptionPayments(id),
+        getSubscriptionFinancialSummary(id),
       ]);
-      return NextResponse.json({ subscription, cycles, payments });
+      return NextResponse.json({ subscription, cycles, payments, summary });
     }
 
     if (serviceOrderId) {
@@ -40,7 +46,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ subscriptions });
     }
 
-    const subscriptions = await listSubscriptions();
+    const subscriptions = await listSubscriptions({ q, view });
     return NextResponse.json({ subscriptions });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";
@@ -48,8 +54,31 @@ export async function GET(request: Request) {
   }
 }
 
+const postSchema = z.object({
+  serviceOrderId: z.string().uuid(),
+  subscriptionTemplateId: z.string().uuid(),
+  description: z.string().min(1),
+  price: z.number().int().nonnegative(),
+  periodicityId: z.string().uuid(),
+});
+
+export async function POST(request: Request) {
+  try {
+    const user = await requireUser();
+    await requireModule(user, "suscripciones", "write");
+    const body = postSchema.parse(await request.json());
+    const subscription = await createSubscriptionFromServiceOrder({ ...body, userId: user.id });
+    return NextResponse.json({ subscription }, { status: 201 });
+  } catch (e) {
+    if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+    const msg = e instanceof Error ? e.message : "ERROR";
+    return NextResponse.json({ error: msg }, { status: msg === "NOT_FOUND" ? 404 : msg === "UNAUTHORIZED" ? 401 : 403 });
+  }
+}
+
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("activate"), id: z.string().uuid() }),
+  z.object({ action: z.literal("activate_all"), serviceOrderId: z.string().uuid() }),
   z.object({
     action: z.literal("update_status"),
     id: z.string().uuid(),
@@ -81,6 +110,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ subscription, cycles });
     }
 
+    if (body.action === "activate_all") {
+      const results = await activateAllPendingSubscriptions({
+        serviceOrderId: body.serviceOrderId,
+        userId: user.id,
+      });
+      const subscriptions = await listSubscriptionsByServiceOrder(body.serviceOrderId);
+      return NextResponse.json({ results, subscriptions });
+    }
+
     if (body.action === "update_status") {
       const subscription = await updateSubscriptionStatus({
         id: body.id,
@@ -110,7 +148,7 @@ export async function PATCH(request: Request) {
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     const msg = e instanceof Error ? e.message : "ERROR";
-    const status = msg === "NOT_FOUND" ? 404 : msg === "INVALID_STATUS" ? 409 : msg === "UNAUTHORIZED" ? 401 : 403;
+    const status = msg === "NOT_FOUND" ? 404 : msg === "INVALID_STATUS" || msg === "INVALID_TRANSITION" || msg === "INVALID_BILLING_STATUS" || msg === "PAYMENT_EXCEEDS_BALANCE" || msg === "FISCAL_INCOMPLETE" || msg === "EMAIL_REQUIRED" ? 409 : msg === "UNAUTHORIZED" ? 401 : 403;
     return NextResponse.json({ error: msg }, { status });
   }
 }

@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
   catalogServices,
@@ -10,10 +10,11 @@ import {
 import type { OpportunityStatus } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
 import { nextFolio } from "@/server/services/folios";
+import { folioOrClientNameFilter } from "@/server/services/list-search";
 
-export async function listOpportunities() {
+export async function listOpportunities(search?: string) {
   const db = getDb();
-  return db
+  const base = db
     .select({
       id: opportunities.id,
       folio: opportunities.folio,
@@ -32,8 +33,11 @@ export async function listOpportunities() {
     .from(opportunities)
     .innerJoin(clients, eq(opportunities.clientId, clients.id))
     .innerJoin(users, eq(opportunities.sellerId, users.id))
-    .innerJoin(catalogServices, eq(opportunities.serviceId, catalogServices.id))
-    .orderBy(desc(opportunities.createdAt));
+    .innerJoin(catalogServices, eq(opportunities.serviceId, catalogServices.id));
+
+  const filter = folioOrClientNameFilter(search, opportunities.folio, clients.name);
+  if (filter) return base.where(filter).orderBy(desc(opportunities.createdAt));
+  return base.orderBy(desc(opportunities.createdAt));
 }
 
 export async function getOpportunityById(id: string) {

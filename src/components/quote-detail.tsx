@@ -35,6 +35,7 @@ type QuoteDetail = {
   folio: string;
   clientId: string;
   clientName: string;
+  clientEmail?: string | null;
   opportunityId: string | null;
   opportunityFolio: string | null;
   serviceOrderId: string | null;
@@ -80,7 +81,10 @@ export function QuoteDetailView({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
   const [showAuthorize, setShowAuthorize] = useState(false);
+  const [sendEmail, setSendEmail] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
+  const [programmerId, setProgrammerId] = useState("");
+  const [programmers, setProgrammers] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
     clientId: "",
     serviceId: "",
@@ -101,6 +105,7 @@ export function QuoteDetailView({ id }: { id: string }) {
     if (res.ok) {
       const data = await res.json();
       setQuote(data.quote);
+      setSendEmail(data.quote.clientEmail ?? "");
       setForm({
         clientId: data.quote.clientId,
         serviceId: data.quote.serviceId,
@@ -116,10 +121,11 @@ export function QuoteDetailView({ id }: { id: string }) {
   }
 
   async function loadCatalogs() {
-    const [catRes, clientsRes, meRes] = await Promise.all([
+    const [catRes, clientsRes, meRes, progRes] = await Promise.all([
       fetch("/api/catalogs?type=all"),
       fetch("/api/clients"),
       fetch("/api/auth/me"),
+      fetch("/api/service-orders?programmers=1"),
     ]);
     if (catRes.ok) {
       const data = await catRes.json();
@@ -132,6 +138,7 @@ export function QuoteDetailView({ id }: { id: string }) {
     }
     if (clientsRes.ok) setClients((await clientsRes.json()).clients);
     if (meRes.ok) setIsAdmin((await meRes.json()).user?.role === "administrador");
+    if (progRes.ok) setProgrammers((await progRes.json()).programmers ?? []);
   }
 
   useEffect(() => {
@@ -181,8 +188,8 @@ export function QuoteDetailView({ id }: { id: string }) {
 
   async function authorize(e: React.FormEvent) {
     e.preventDefault();
-    if (!deliveryDate) return;
-    const result = await patchQuote({ action: "authorize", id, deliveryDate });
+    if (!deliveryDate || !programmerId) return;
+    const result = await patchQuote({ action: "authorize", id, deliveryDate, programmerId });
     if (result?.order) {
       setShowAuthorize(false);
       router.push(`/ordenes-servicio/${result.order.id}`);
@@ -204,6 +211,13 @@ export function QuoteDetailView({ id }: { id: string }) {
           <a href={`/api/quotes/${id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-ghost">
             Imprimir PDF
           </a>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => void patchQuote({ action: "send_pdf", id, email: sendEmail || undefined })}
+          >
+            Enviar PDF por correo
+          </button>
           {canEdit && !editing && (
             <>
               <button type="button" className="btn btn-primary" onClick={() => setShowAuthorize(true)}>
@@ -381,6 +395,19 @@ export function QuoteDetailView({ id }: { id: string }) {
               required
               className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
+            <select
+              value={programmerId}
+              onChange={(e) => setProgrammerId(e.target.value)}
+              required
+              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+            >
+              <option value="">Programador *</option>
+              {programmers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
             <div className="flex gap-2 justify-end">
               <button type="button" className="btn btn-ghost" onClick={() => setShowAuthorize(false)}>

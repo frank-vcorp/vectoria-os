@@ -10,6 +10,7 @@ import {
   getFinancialMovements,
   getMonthlyFlow,
   getMonthlySales,
+  summarizeMovements,
 } from "@/server/services/financial-flow";
 
 export async function GET(request: Request) {
@@ -26,10 +27,42 @@ export async function GET(request: Request) {
       return NextResponse.json({ balances });
     }
 
-    if (view === "movements") {
+    if (view === "movements" || view === "report") {
       await requireModule(user, "reporte_financiero", "read");
-      const movements = await getFinancialMovements();
-      return NextResponse.json({ movements });
+      const typeParam = searchParams.get("type") ?? "ambos";
+      const bankAccountId = searchParams.get("bankAccountId") ?? undefined;
+      const categoryId = searchParams.get("categoryId") ?? undefined;
+      const fromParam = searchParams.get("from");
+      const toParam = searchParams.get("to");
+
+      let from: Date | undefined;
+      let to: Date | undefined;
+      if (fromParam && toParam) {
+        from = new Date(fromParam);
+        to = new Date(toParam);
+        to.setHours(23, 59, 59, 999);
+      } else {
+        from = new Date(year, month - 1, 1);
+        to = new Date(year, month, 0, 23, 59, 59, 999);
+      }
+
+      const movements = await getFinancialMovements({
+        from,
+        to,
+        type: typeParam === "ingreso" || typeParam === "egreso" ? typeParam : "ambos",
+        bankAccountId,
+        categoryId,
+      });
+      const totals = summarizeMovements(movements);
+      return NextResponse.json({
+        movements: movements.map((m) => ({
+          ...m,
+          date: m.date.toISOString(),
+        })),
+        totals,
+        year,
+        month,
+      });
     }
 
     if (view === "flow") {

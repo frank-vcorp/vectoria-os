@@ -15,8 +15,8 @@ export function QuickAddClient({ onCreated }: QuickAddClientProps) {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit() {
+    if (busy) return;
     setError("");
     setBusy(true);
     try {
@@ -25,13 +25,13 @@ export function QuickAddClient({ onCreated }: QuickAddClientProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
-          phone: form.phone.trim() || null,
-          email: form.email.trim() || null,
+          phone: form.phone.trim(),
+          email: form.email.trim(),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "No se pudo crear el cliente");
+        setError(typeof data.error === "string" ? data.error : "No se pudo crear el cliente");
         return;
       }
       await onCreated(data.client);
@@ -42,18 +42,34 @@ export function QuickAddClient({ onCreated }: QuickAddClientProps) {
     }
   }
 
+  function handleEnter(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      void submit();
+    }
+  }
+
   if (!open) {
     return (
-      <button type="button" className="btn btn-ghost text-sm" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="btn btn-ghost text-sm"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
+      >
         + Carga rápida de cliente
       </button>
     );
   }
 
   return (
-    <form
+    <div
       className="p-3 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] space-y-2"
-      onSubmit={(e) => void submit(e)}
+      onKeyDown={handleEnter}
     >
       <p className="text-sm font-medium">Nuevo cliente (carga rápida)</p>
       <input
@@ -83,7 +99,12 @@ export function QuickAddClient({ onCreated }: QuickAddClientProps) {
       />
       {error && <p className="text-xs text-[var(--danger)]">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" className="btn btn-primary text-sm" disabled={busy}>
+        <button
+          type="button"
+          className="btn btn-primary text-sm"
+          disabled={busy || !form.name.trim() || !form.phone.trim() || !form.email.trim()}
+          onClick={() => void submit()}
+        >
           Guardar cliente
         </button>
         <button
@@ -98,6 +119,6 @@ export function QuickAddClient({ onCreated }: QuickAddClientProps) {
           Cancelar
         </button>
       </div>
-    </form>
+    </div>
   );
 }

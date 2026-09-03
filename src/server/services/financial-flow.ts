@@ -1,7 +1,8 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
   bankAccounts,
+  catalogExpenseCategories,
   catalogIncomeCategories,
   catalogServices,
   clients,
@@ -13,6 +14,7 @@ import {
   subscriptionCycles,
   subscriptions,
 } from "@/server/db/schema";
+import { getOperationalMonthRange } from "@/server/services/operational-dates";
 
 export type FinancialMovement = {
   id: string;
@@ -20,7 +22,9 @@ export type FinancialMovement = {
   type: "ingreso" | "egreso";
   concept: string;
   category: string | null;
+  categoryId: string | null;
   bank: string;
+  bankAccountId: string;
   amount: number;
   sourceType: string | null;
   sourceId: string | null;
@@ -93,7 +97,9 @@ export async function getFinancialMovements(filters?: {
       type: "ingreso",
       concept: row.concept,
       category: row.category,
+      categoryId: row.categoryId,
       bank: row.bank,
+      bankAccountId: row.bankAccountId,
       amount: row.amount,
       sourceType: row.sourceType,
       sourceId: row.sourceId,
@@ -109,12 +115,14 @@ export async function getFinancialMovements(filters?: {
       amount: financialExpenses.amount,
       sourceType: financialExpenses.sourceType,
       sourceId: financialExpenses.sourceId,
-      category: sql<string | null>`null`,
+      category: catalogExpenseCategories.name,
+      categoryId: financialExpenses.categoryId,
       bank: bankAccounts.name,
       bankAccountId: financialExpenses.bankAccountId,
     })
     .from(financialExpenses)
-    .innerJoin(bankAccounts, eq(financialExpenses.bankAccountId, bankAccounts.id));
+    .innerJoin(bankAccounts, eq(financialExpenses.bankAccountId, bankAccounts.id))
+    .leftJoin(catalogExpenseCategories, eq(financialExpenses.categoryId, catalogExpenseCategories.id));
 
   for (const row of expenses) {
     movements.push({
@@ -123,7 +131,9 @@ export async function getFinancialMovements(filters?: {
       type: "egreso",
       concept: row.concept,
       category: row.category,
+      categoryId: row.categoryId,
       bank: row.bank,
+      bankAccountId: row.bankAccountId,
       amount: row.amount,
       sourceType: row.sourceType,
       sourceId: row.sourceId,
@@ -136,14 +146,21 @@ export async function getFinancialMovements(filters?: {
       if (filters?.from && m.date < filters.from) return false;
       if (filters?.to && m.date > filters.to) return false;
       if (filters?.type && filters.type !== "ambos" && m.type !== filters.type) return false;
+      if (filters?.bankAccountId && m.bankAccountId !== filters.bankAccountId) return false;
+      if (filters?.categoryId && m.categoryId !== filters.categoryId) return false;
       return true;
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 
+export function summarizeMovements(movements: FinancialMovement[]) {
+  const income = movements.filter((m) => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
+  const expense = movements.filter((m) => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
+  return { income, expense, net: income - expense, count: movements.length };
+}
+
 export async function getMonthlyFlow(year: number, month: number) {
-  const from = new Date(year, month - 1, 1);
-  const to = new Date(year, month, 0, 23, 59, 59, 999);
+  const { from, to } = await getOperationalMonthRange(year, month);
   const movements = await getFinancialMovements({ from, to, type: "ambos" });
 
   const income = movements.filter((m) => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
@@ -154,8 +171,7 @@ export async function getMonthlyFlow(year: number, month: number) {
 
 export async function getMonthlySales(year: number, month: number) {
   const db = getDb();
-  const from = new Date(year, month - 1, 1);
-  const to = new Date(year, month, 0, 23, 59, 59, 999);
+  const { from, to } = await getOperationalMonthRange(year, month);
 
   const authorizedQuotes = await db
     .select({
@@ -168,7 +184,13 @@ export async function getMonthlySales(year: number, month: number) {
     .from(quotes)
     .innerJoin(clients, eq(quotes.clientId, clients.id))
     .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
-    .where(sql`${quotes.status} = 'autorizada' AND ${quotes.createdAt} >= ${from} AND ${quotes.createdAt} <= ${to}`);
+    .where(
+      and(
+        eq(quotes.status, "autorizada"),
+        gte(quotes.createdAt, from),
+        lte(quotes.createdAt, to),
+      ),
+    );
 
   const total = authorizedQuotes.reduce((s, q) => s + q.price, 0);
   return { total, quotes: authorizedQuotes };
