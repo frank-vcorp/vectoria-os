@@ -80,7 +80,9 @@ export function AppShell({
       </nav>
 
       <div className="app-sidebar-footer">
-        <ThemeToggle />
+        <div className="app-sidebar-footer-tools">
+          <ThemeToggle />
+        </div>
         <LogoutButton />
       </div>
     </div>
@@ -118,7 +120,7 @@ export function AppShell({
             ☰
           </button>
           <Image src="/logo.png" alt="VectorIA" width={108} height={28} className="app-logo-top" priority />
-          <ThemeToggle compact />
+          <ThemeToggle />
         </header>
 
         <main className="app-main">{children}</main>
