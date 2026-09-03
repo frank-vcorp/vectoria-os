@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:cleanup-catalog-demo": "tsx scripts/cleanup-catalog-demo.ts",
     "bootstrap": "tsx scripts/bootstrap.ts",
     "test:plan-parser": "tsx scripts/test-plan-parser.ts"
   },

@@ -138,16 +138,9 @@ export async function createSubscriptionTemplate(
   return row;
 }
 
-export async function createPaymentCondition(
-  name: string,
-  description?: string | null,
-  userId?: string,
-) {
+export async function createPaymentCondition(name: string, userId?: string) {
   const db = getDb();
-  const [row] = await db
-    .insert(catalogPaymentConditions)
-    .values({ name, description: description?.trim() || null })
-    .returning();
+  const [row] = await db.insert(catalogPaymentConditions).values({ name }).returning();
   await writeAudit({ entity: "catalog_payment_condition", entityId: row.id, action: "create", userId });
   return row;
 }
@@ -252,7 +245,7 @@ export async function updateSubscriptionTemplate(
 
 export async function updatePaymentCondition(
   id: string,
-  data: { name?: string; description?: string | null; status?: "activo" | "cancelado" },
+  data: { name?: string; status?: "activo" | "cancelado" },
   userId?: string,
 ) {
   const db = getDb();
@@ -260,7 +253,6 @@ export async function updatePaymentCondition(
     updatedAt: new Date(),
   };
   if (data.name !== undefined) updates.name = data.name;
-  if (data.description !== undefined) updates.description = data.description?.trim() || null;
   if (data.status) updates.status = data.status;
 
   const [row] = await db

@@ -1,17 +1,12 @@
 import "./load-env";
 import { createUser, findUserByEmail } from "@/server/services/users";
 import {
-  createPeriodicity,
-  createPaymentCondition,
   createIncomeCategory,
   createExpenseCategory,
   createProvider,
   createService,
-  createSubscriptionTemplate,
   listServices,
-  listSubscriptionTemplates,
   listIncomeCategories,
-  listPeriodicities,
 } from "@/server/services/catalogs";
 import { setRolePermissions } from "@/server/services/permissions";
 import { defaultPermissionsForRole } from "@/shared/modules";
@@ -50,18 +45,6 @@ async function seed() {
 
   await ensureDefaultSettings();
 
-  await createPeriodicity("Mensual", 1).catch(() => null);
-  await createPeriodicity("Bimestral", 2).catch(() => null);
-  await createPeriodicity("Trimestral", 3).catch(() => null);
-  await createPeriodicity("Semestral", 6).catch(() => null);
-  await createPeriodicity("Anual", 12).catch(() => null);
-
-  await createPaymentCondition(
-    "50% anticipo / 50% entrega",
-    "Mitad al inicio del proyecto y mitad a la entrega.",
-  ).catch(() => null);
-  await createPaymentCondition("100% anticipo", "Pago completo antes de iniciar.").catch(() => null);
-
   await createIncomeCategory("Servicios").catch(() => null);
   await createIncomeCategory("Suscripciones").catch(() => null);
   await createExpenseCategory("Operación").catch(() => null);
@@ -70,9 +53,6 @@ async function seed() {
 
   const incomeCategories = await listIncomeCategories();
   const serviciosCat = incomeCategories.find((c) => c.name === "Servicios")?.id;
-  const suscripcionesCat = incomeCategories.find((c) => c.name === "Suscripciones")?.id;
-  const periodicities = await listPeriodicities();
-  const mensual = periodicities.find((p) => p.name === "Mensual")?.id;
 
   const existingServices = await listServices();
   if (existingServices.length === 0 && serviciosCat) {
@@ -89,25 +69,6 @@ async function seed() {
       generatesProject: true,
     }).catch(() => null);
     console.log("Servicios seed creados");
-  }
-
-  const existingSubscriptions = await listSubscriptionTemplates();
-  if (existingSubscriptions.length === 0 && mensual && suscripcionesCat) {
-    await createSubscriptionTemplate({
-      name: "Soporte mensual",
-      description: "Soporte técnico recurrente con SLA estándar.",
-      basePrice: 150_000,
-      periodicityId: mensual,
-      incomeCategoryId: suscripcionesCat,
-    }).catch(() => null);
-    await createSubscriptionTemplate({
-      name: "Hosting y mantenimiento",
-      description: "Infraestructura y actualizaciones periódicas.",
-      basePrice: 80_000,
-      periodicityId: mensual,
-      incomeCategoryId: suscripcionesCat,
-    }).catch(() => null);
-    console.log("Suscripciones seed creadas");
   }
 
   await ensureDefaultBankAccount().catch(() => null);

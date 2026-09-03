@@ -74,7 +74,6 @@ const createSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("payment_condition"),
     name: z.string().min(1),
-    description: z.string().optional().nullable(),
   }),
   z.object({ type: z.literal("income"), name: z.string().min(1) }),
   z.object({ type: z.literal("expense"), name: z.string().min(1) }),
@@ -116,7 +115,7 @@ export async function POST(request: Request) {
         );
         break;
       case "payment_condition":
-        item = await createPaymentCondition(body.name, body.description, user.id);
+        item = await createPaymentCondition(body.name, user.id);
         break;
       case "income":
         item = await createIncomeCategory(body.name, user.id);
@@ -170,7 +169,6 @@ const updateSchema = z.discriminatedUnion("type", [
     type: z.literal("payment_condition"),
     id: z.string().uuid(),
     name: z.string().min(1).optional(),
-    description: z.string().optional().nullable(),
     status: z.enum(["activo", "cancelado"]).optional(),
   }),
   z.object({

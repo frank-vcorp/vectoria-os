@@ -34,7 +34,7 @@ type CatalogData = {
     incomeCategoryName: string | null;
     status: string;
   }[];
-  paymentConditions?: { id: string; name: string; description: string | null; status: string }[];
+  paymentConditions?: { id: string; name: string; status: string }[];
   incomeCategories?: { id: string; name: string }[];
   expenseCategories?: { id: string; name: string }[];
   providers?: { id: string; name: string }[];
@@ -193,7 +193,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     periodicityId: "",
     incomeCategoryId: "",
   });
-  const [payment, setPayment] = useState({ name: "", description: "" });
+  const [payment, setPayment] = useState({ name: "" });
 
   const [editPeriodicity, setEditPeriodicity] = useState<{
     id: string;
@@ -215,11 +215,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     periodicityId: string;
     incomeCategoryId: string;
   } | null>(null);
-  const [editPayment, setEditPayment] = useState<{
-    id: string;
-    name: string;
-    description: string;
-  } | null>(null);
+  const [editPayment, setEditPayment] = useState<{ id: string; name: string } | null>(null);
 
   async function load() {
     const res = await fetch("/api/catalogs");
@@ -699,11 +695,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           className="flex flex-wrap gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            void post({
-              type: "payment_condition",
-              name: payment.name,
-              description: payment.description || null,
-            }).then(() => setPayment({ name: "", description: "" }));
+            void post({ type: "payment_condition", name: payment.name }).then(() => setPayment({ name: "" }));
           }}
         >
           <input
@@ -711,12 +703,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
             value={payment.name}
             onChange={(e) => setPayment({ ...payment, name: e.target.value })}
             required
-            className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <input
-            placeholder="Descripción (opcional)"
-            value={payment.description}
-            onChange={(e) => setPayment({ ...payment, description: e.target.value })}
             className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
           <button className="btn btn-primary" type="submit">
@@ -732,7 +718,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
                 type: "payment_condition",
                 id: editPayment.id,
                 name: editPayment.name,
-                description: editPayment.description || null,
               }).then(() => setEditPayment(null));
             }}
           >
@@ -740,12 +725,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
               value={editPayment.name}
               onChange={(e) => setEditPayment({ ...editPayment, name: e.target.value })}
               required
-              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
-            <input
-              value={editPayment.description}
-              onChange={(e) => setEditPayment({ ...editPayment, description: e.target.value })}
-              placeholder="Descripción"
               className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
             <button className="btn btn-primary" type="submit">
@@ -759,22 +738,13 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
         <ul className="text-sm space-y-2">
           {data.paymentConditions?.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-2 justify-between">
-              <span>
-                {p.name}
-                {p.description ? ` — ${p.description}` : ""}
-              </span>
+              <span>{p.name}</span>
               <span className="flex items-center gap-2">
                 <StatusBadge status={p.status} />
                 <button
                   type="button"
                   className="btn btn-ghost text-sm"
-                  onClick={() =>
-                    setEditPayment({
-                      id: p.id,
-                      name: p.name,
-                      description: p.description ?? "",
-                    })
-                  }
+                  onClick={() => setEditPayment({ id: p.id, name: p.name })}
                 >
                   Editar
                 </button>

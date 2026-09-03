@@ -7,6 +7,9 @@ PORT="${PORT:-43123}"
 echo "Ejecutando migraciones…"
 "$TSX" --tsconfig tsconfig.json src/server/db/migrate.ts
 
+echo "Limpieza catálogo demo…"
+"$TSX" --tsconfig tsconfig.json scripts/cleanup-catalog-demo.ts
+
 echo "Iniciando seed en segundo plano…"
 "$TSX" --tsconfig tsconfig.json scripts/seed.ts &
 
