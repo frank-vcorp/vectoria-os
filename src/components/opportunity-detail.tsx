@@ -5,6 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoneyInput } from "@/components/money-input";
 import {
+  QuoteSubscriptionLinesEditor,
+  type PeriodicityOption,
+  type QuoteSubscriptionLineForm,
+  type SubscriptionTemplateOption,
+  toSubscriptionItemPayload,
+} from "@/components/quote-subscription-lines";
+import {
   DetailField,
   DetailGrid,
   DetailSection,
@@ -38,7 +45,6 @@ type QuoteSummary = { id: string; folio: string; status: string; price: number; 
 type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = { id: string; name: string };
 type PaymentOption = { id: string; name: string };
-type PeriodicityOption = { id: string; name: string };
 
 export function OpportunityDetailView({ id }: { id: string }) {
   const router = useRouter();
@@ -48,6 +54,7 @@ export function OpportunityDetailView({ id }: { id: string }) {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<PaymentOption[]>([]);
+  const [subscriptionTemplates, setSubscriptionTemplates] = useState<SubscriptionTemplateOption[]>([]);
   const [periodicities, setPeriodicities] = useState<PeriodicityOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -59,10 +66,9 @@ export function OpportunityDetailView({ id }: { id: string }) {
     deliveryTime: "",
     paymentConditionId: "",
     price: 0,
-    contractType: "por_evento" as "por_evento" | "suscripcion",
-    periodicityId: "",
     observations: "",
   });
+  const [quoteSubscriptionLines, setQuoteSubscriptionLines] = useState<QuoteSubscriptionLineForm[]>([]);
 
   async function load() {
     const res = await fetch(`/api/opportunities/${id}`);
@@ -95,6 +101,7 @@ export function OpportunityDetailView({ id }: { id: string }) {
       setPaymentConditions(
         (data.paymentConditions ?? []).filter((p: PaymentOption & { status: string }) => p.status === "activo"),
       );
+      setSubscriptionTemplates(data.subscriptionTemplates ?? []);
       setPeriodicities(data.periodicities ?? []);
       if (data.paymentConditions?.[0]) {
         setQuoteForm((f) => ({ ...f, paymentConditionId: data.paymentConditions[0].id }));
@@ -146,6 +153,21 @@ export function OpportunityDetailView({ id }: { id: string }) {
     await load();
   }
 
+  useEffect(() => {
+    if (!showQuote || !opportunity) return;
+    void fetch("/api/opportunities", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "prefill_quote", id: opportunity.id }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.basePrice !== undefined) {
+          setQuoteForm((f) => ({ ...f, price: data.basePrice }));
+        }
+      });
+  }, [showQuote, opportunity?.id]);
+
   async function createQuote(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -157,10 +179,8 @@ export function OpportunityDetailView({ id }: { id: string }) {
         deliveryTime: quoteForm.deliveryTime,
         paymentConditionId: quoteForm.paymentConditionId,
         price: quoteForm.price,
-        contractType: quoteForm.contractType,
-        periodicityId:
-          quoteForm.contractType === "suscripcion" ? quoteForm.periodicityId || null : null,
         observations: quoteForm.observations || null,
+        subscriptionItems: toSubscriptionItemPayload(quoteSubscriptionLines),
       }),
     });
     if (!res.ok) {
@@ -324,46 +344,19 @@ export function OpportunityDetailView({ id }: { id: string }) {
 
       {showQuote && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <form className="card max-w-lg w-full space-y-3" onSubmit={(e) => void createQuote(e)}>
+          <form className="card max-w-lg w-full space-y-3 max-h-[90vh] overflow-y-auto" onSubmit={(e) => void createQuote(e)}>
             <h3 className="font-medium">Crear cotización</h3>
-            <select
-              value={quoteForm.contractType}
-              onChange={(e) =>
-                setQuoteForm({
-                  ...quoteForm,
-                  contractType: e.target.value as "por_evento" | "suscripcion",
-                })
-              }
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="por_evento">Por evento</option>
-              <option value="suscripcion">Suscripción</option>
-            </select>
-            {quoteForm.contractType === "suscripcion" && (
-              <select
-                value={quoteForm.periodicityId}
-                onChange={(e) => setQuoteForm({ ...quoteForm, periodicityId: e.target.value })}
-                required
-                className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-              >
-                <option value="">Periodicidad…</option>
-                {periodicities.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            )}
             <MoneyInput
-              label="Precio (MXN)"
+              label="Precio servicio principal (MXN)"
               valueCents={quoteForm.price}
               onChangeCents={(price) => setQuoteForm({ ...quoteForm, price })}
               required
             />
             <label className="text-sm block">
-              <span className="text-[var(--muted)]">Fecha de entrega</span>
+              <span className="text-[var(--muted)]">Tiempo de entrega</span>
               <input
-                type="date"
+                type="text"
+                placeholder="Ej. 15 días hábiles"
                 value={quoteForm.deliveryTime}
                 onChange={(e) => setQuoteForm({ ...quoteForm, deliveryTime: e.target.value })}
                 required
@@ -389,6 +382,12 @@ export function OpportunityDetailView({ id }: { id: string }) {
               placeholder="Observaciones (opcional)"
               rows={2}
               className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+            <QuoteSubscriptionLinesEditor
+              lines={quoteSubscriptionLines}
+              onChange={setQuoteSubscriptionLines}
+              templates={subscriptionTemplates}
+              periodicities={periodicities}
             />
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
             <div className="flex gap-2 justify-end">

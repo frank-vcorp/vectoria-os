@@ -1,19 +1,75 @@
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
   catalogPaymentConditions,
   catalogPeriodicities,
   catalogServices,
+  catalogSubscriptionTemplates,
   clients,
   opportunities,
+  quoteSubscriptionItems,
   quotes,
   serviceOrders,
   users,
 } from "@/server/db/schema";
-import type { QuoteStatus } from "@/shared/commercial";
+import type { QuoteStatus, QuoteSubscriptionItemInput } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
 import { nextFolio } from "@/server/services/folios";
 import { getOpportunityById, markOpportunityQuoted } from "@/server/services/opportunities";
+
+export type QuoteSubscriptionItemRow = {
+  id: string;
+  subscriptionTemplateId: string;
+  subscriptionTemplateName: string;
+  description: string;
+  price: number;
+  periodicityId: string;
+  periodicityName: string;
+  sortOrder: number;
+};
+
+export async function listQuoteSubscriptionItems(quoteId: string): Promise<QuoteSubscriptionItemRow[]> {
+  const db = getDb();
+  return db
+    .select({
+      id: quoteSubscriptionItems.id,
+      subscriptionTemplateId: quoteSubscriptionItems.subscriptionTemplateId,
+      subscriptionTemplateName: catalogSubscriptionTemplates.name,
+      description: quoteSubscriptionItems.description,
+      price: quoteSubscriptionItems.price,
+      periodicityId: quoteSubscriptionItems.periodicityId,
+      periodicityName: catalogPeriodicities.name,
+      sortOrder: quoteSubscriptionItems.sortOrder,
+    })
+    .from(quoteSubscriptionItems)
+    .innerJoin(
+      catalogSubscriptionTemplates,
+      eq(quoteSubscriptionItems.subscriptionTemplateId, catalogSubscriptionTemplates.id),
+    )
+    .innerJoin(catalogPeriodicities, eq(quoteSubscriptionItems.periodicityId, catalogPeriodicities.id))
+    .where(eq(quoteSubscriptionItems.quoteId, quoteId))
+    .orderBy(asc(quoteSubscriptionItems.sortOrder), asc(quoteSubscriptionItems.createdAt));
+}
+
+async function replaceQuoteSubscriptionItems(
+  quoteId: string,
+  items: QuoteSubscriptionItemInput[],
+) {
+  const db = getDb();
+  await db.delete(quoteSubscriptionItems).where(eq(quoteSubscriptionItems.quoteId, quoteId));
+  if (items.length === 0) return;
+
+  await db.insert(quoteSubscriptionItems).values(
+    items.map((item, index) => ({
+      quoteId,
+      subscriptionTemplateId: item.subscriptionTemplateId,
+      description: item.description.trim(),
+      price: item.price,
+      periodicityId: item.periodicityId,
+      sortOrder: index,
+    })),
+  );
+}
 
 export async function listQuotes() {
   const db = getDb();
@@ -30,7 +86,6 @@ export async function listQuotes() {
       sellerName: users.name,
       serviceName: catalogServices.name,
       description: quotes.description,
-      contractType: quotes.contractType,
       price: quotes.price,
       deliveryTime: quotes.deliveryTime,
       status: quotes.status,
@@ -62,9 +117,6 @@ export async function getQuoteById(id: string) {
       serviceId: quotes.serviceId,
       serviceName: catalogServices.name,
       description: quotes.description,
-      contractType: quotes.contractType,
-      periodicityId: quotes.periodicityId,
-      periodicityName: catalogPeriodicities.name,
       price: quotes.price,
       deliveryTime: quotes.deliveryTime,
       paymentConditionId: quotes.paymentConditionId,
@@ -79,11 +131,14 @@ export async function getQuoteById(id: string) {
     .leftJoin(serviceOrders, eq(serviceOrders.quoteId, quotes.id))
     .innerJoin(users, eq(quotes.sellerId, users.id))
     .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
-    .leftJoin(catalogPeriodicities, eq(quotes.periodicityId, catalogPeriodicities.id))
     .leftJoin(catalogPaymentConditions, eq(quotes.paymentConditionId, catalogPaymentConditions.id))
     .where(eq(quotes.id, id))
     .limit(1);
-  return row ?? null;
+
+  if (!row) return null;
+
+  const subscriptionItems = await listQuoteSubscriptionItems(id);
+  return { ...row, subscriptionItems };
 }
 
 export async function listQuotesByOpportunity(opportunityId: string) {
@@ -107,18 +162,13 @@ async function insertQuote(params: {
   sellerId: string;
   serviceId: string;
   description: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId?: string | null;
   price: number;
   deliveryTime: string;
   paymentConditionId: string;
   observations?: string | null;
+  subscriptionItems?: QuoteSubscriptionItemInput[];
   userId?: string;
 }) {
-  if (params.contractType === "suscripcion" && !params.periodicityId) {
-    throw new Error("PERIODICITY_REQUIRED");
-  }
-
   const folio = await nextFolio("cotizacion");
   const db = getDb();
   const [quote] = await db
@@ -130,8 +180,6 @@ async function insertQuote(params: {
       sellerId: params.sellerId,
       serviceId: params.serviceId,
       description: params.description.trim(),
-      contractType: params.contractType,
-      periodicityId: params.contractType === "suscripcion" ? params.periodicityId : null,
       price: params.price,
       deliveryTime: params.deliveryTime.trim(),
       paymentConditionId: params.paymentConditionId,
@@ -141,6 +189,8 @@ async function insertQuote(params: {
       updatedBy: params.userId ?? null,
     })
     .returning({ id: quotes.id, folio: quotes.folio, status: quotes.status });
+
+  await replaceQuoteSubscriptionItems(quote.id, params.subscriptionItems ?? []);
 
   await writeAudit({
     entity: "quote",
@@ -157,12 +207,11 @@ export async function createQuoteDirect(params: {
   clientId: string;
   serviceId: string;
   description: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId?: string | null;
   price: number;
   deliveryTime: string;
   paymentConditionId: string;
   observations?: string | null;
+  subscriptionItems?: QuoteSubscriptionItemInput[];
   sellerId: string;
   userId?: string;
 }) {
@@ -174,9 +223,8 @@ export async function createQuoteFromOpportunity(params: {
   deliveryTime: string;
   paymentConditionId: string;
   price?: number;
-  periodicityId?: string | null;
-  contractType?: "por_evento" | "suscripcion";
   observations?: string | null;
+  subscriptionItems?: QuoteSubscriptionItemInput[];
   userId?: string;
 }) {
   const opp = await getOpportunityById(params.opportunityId);
@@ -185,12 +233,11 @@ export async function createQuoteFromOpportunity(params: {
 
   const db = getDb();
   const [service] = await db
-    .select()
+    .select({ basePrice: catalogServices.basePrice })
     .from(catalogServices)
     .where(eq(catalogServices.id, opp.serviceId))
     .limit(1);
   if (!service) throw new Error("SERVICE_NOT_FOUND");
-  if (!params.contractType) throw new Error("CONTRACT_TYPE_REQUIRED");
 
   const quote = await insertQuote({
     clientId: opp.clientId,
@@ -198,12 +245,11 @@ export async function createQuoteFromOpportunity(params: {
     sellerId: opp.sellerId,
     serviceId: opp.serviceId,
     description: opp.description,
-    contractType: params.contractType,
-    periodicityId: params.periodicityId ?? null,
-    price: params.price ?? 0,
+    price: params.price ?? service.basePrice,
     deliveryTime: params.deliveryTime,
     paymentConditionId: params.paymentConditionId,
     observations: params.observations,
+    subscriptionItems: params.subscriptionItems,
     userId: params.userId,
   });
 
@@ -216,12 +262,11 @@ export async function updateQuote(params: {
   clientId?: string;
   serviceId?: string;
   description?: string;
-  contractType?: "por_evento" | "suscripcion";
-  periodicityId?: string | null;
   price?: number;
   deliveryTime?: string;
   paymentConditionId?: string;
   observations?: string | null;
+  subscriptionItems?: QuoteSubscriptionItemInput[];
   userId?: string;
 }) {
   const existing = await getQuoteById(params.id);
@@ -229,7 +274,6 @@ export async function updateQuote(params: {
   if (existing.status !== "cotizada") throw new Error("LOCKED");
 
   const db = getDb();
-  const contractType = params.contractType ?? existing.contractType;
   const updates: Partial<typeof quotes.$inferInsert> = {
     updatedAt: new Date(),
     updatedBy: params.userId ?? null,
@@ -238,21 +282,20 @@ export async function updateQuote(params: {
   if (params.clientId) updates.clientId = params.clientId;
   if (params.serviceId) updates.serviceId = params.serviceId;
   if (params.description !== undefined) updates.description = params.description.trim();
-  if (params.contractType) updates.contractType = params.contractType;
   if (params.price !== undefined) updates.price = params.price;
   if (params.deliveryTime !== undefined) updates.deliveryTime = params.deliveryTime.trim();
   if (params.paymentConditionId) updates.paymentConditionId = params.paymentConditionId;
   if (params.observations !== undefined) updates.observations = params.observations?.trim() || null;
-  if (params.periodicityId !== undefined || params.contractType) {
-    updates.periodicityId =
-      contractType === "suscripcion" ? (params.periodicityId ?? existing.periodicityId) : null;
-  }
 
   const [quote] = await db
     .update(quotes)
     .set(updates)
     .where(eq(quotes.id, params.id))
     .returning({ id: quotes.id, folio: quotes.folio, status: quotes.status });
+
+  if (params.subscriptionItems !== undefined) {
+    await replaceQuoteSubscriptionItems(params.id, params.subscriptionItems);
+  }
 
   await writeAudit({ entity: "quote", entityId: quote.id, action: "update", userId: params.userId });
   return quote;
@@ -300,9 +343,36 @@ export async function cancelQuote(id: string, userId?: string, isAdmin?: boolean
 export async function getQuotePrefillFromOpportunity(opportunityId: string) {
   const opp = await getOpportunityById(opportunityId);
   if (!opp) throw new Error("NOT_FOUND");
-  return { opportunity: opp };
+
+  const db = getDb();
+  const [service] = await db
+    .select({ basePrice: catalogServices.basePrice, name: catalogServices.name })
+    .from(catalogServices)
+    .where(eq(catalogServices.id, opp.serviceId))
+    .limit(1);
+
+  return {
+    opportunity: opp,
+    basePrice: service?.basePrice ?? 0,
+    serviceName: service?.name ?? "",
+  };
 }
 
-export async function getQuotePrefillFromService(_serviceId: string) {
-  return {};
+export async function getQuotePrefillFromService(serviceId: string) {
+  const db = getDb();
+  const [service] = await db
+    .select({
+      id: catalogServices.id,
+      name: catalogServices.name,
+      basePrice: catalogServices.basePrice,
+    })
+    .from(catalogServices)
+    .where(eq(catalogServices.id, serviceId))
+    .limit(1);
+  if (!service) throw new Error("NOT_FOUND");
+  return { basePrice: service.basePrice, name: service.name };
+}
+
+export async function getQuoteSubscriptionItemsForPdf(quoteId: string) {
+  return listQuoteSubscriptionItems(quoteId);
 }

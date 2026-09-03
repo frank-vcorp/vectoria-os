@@ -72,9 +72,13 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
     bankAccountId: "",
     paymentDate: new Date().toISOString().slice(0, 10),
   });
+  const [linkedSubs, setLinkedSubs] = useState<{ id: string; folio: string; description: string }[]>([]);
 
   async function load() {
-    const res = await fetch(`/api/service-orders/${id}`);
+    const [res, subsRes] = await Promise.all([
+      fetch(`/api/service-orders/${id}`),
+      fetch(`/api/subscriptions?serviceOrderId=${id}`),
+    ]);
     if (res.status === 404) {
       router.replace("/ordenes-servicio");
       return;
@@ -84,6 +88,10 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
       setOrder(data.order);
       setPayments(data.payments);
       setSummary(data.summary);
+    }
+    if (subsRes.ok) {
+      const subsData = await subsRes.json();
+      setLinkedSubs(subsData.subscriptions ?? []);
     }
     setLoading(false);
   }
@@ -270,6 +278,22 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
         )}
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
       </DetailSection>
+
+      {linkedSubs.length > 0 && (
+        <DetailSection title="Suscripciones vinculadas">
+          <ul className="space-y-1 text-sm">
+            {linkedSubs.map((s) => (
+              <li key={s.id}>
+                <Link href={`/suscripciones/${s.id}`} className="text-[var(--accent)] hover:underline">
+                  {s.folio}
+                </Link>
+                {" — "}
+                {s.description}
+              </li>
+            ))}
+          </ul>
+        </DetailSection>
+      )}
     </EntityDetailLayout>
   );
 }

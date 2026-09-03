@@ -5,6 +5,7 @@ import {
   catalogPaymentConditions,
   catalogPeriodicities,
   catalogSubscriptionTemplates,
+  quoteSubscriptionItems,
   quotes,
   serviceOrders,
 } from "@/server/db/schema";
@@ -67,8 +68,11 @@ async function dedupePeriodicities() {
       continue;
     }
     removeIds.push(row.id);
-    await db.update(quotes).set({ periodicityId: keepId }).where(eq(quotes.periodicityId, row.id));
     await db.update(serviceOrders).set({ periodicityId: keepId }).where(eq(serviceOrders.periodicityId, row.id));
+    await db
+      .update(quoteSubscriptionItems)
+      .set({ periodicityId: keepId })
+      .where(eq(quoteSubscriptionItems.periodicityId, row.id));
     await db
       .update(catalogSubscriptionTemplates)
       .set({ periodicityId: keepId })
@@ -134,7 +138,6 @@ async function removeDemoPeriodicities() {
   }
 
   const ids = rows.map((r) => r.id);
-  await db.update(quotes).set({ periodicityId: null }).where(inArray(quotes.periodicityId, ids));
   await db.update(serviceOrders).set({ periodicityId: null }).where(inArray(serviceOrders.periodicityId, ids));
   await db.delete(catalogPeriodicities).where(inArray(catalogPeriodicities.id, ids));
   console.log(`Periodicidades demo: ${ids.length} eliminadas`);

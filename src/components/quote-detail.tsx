@@ -4,19 +4,31 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoneyInput } from "@/components/money-input";
-import { formatDeliveryDate } from "@/shared/commercial";
+import {
+  QuoteSubscriptionLinesEditor,
+  QuoteSubscriptionLinesReadonly,
+  type PeriodicityOption,
+  type QuoteSubscriptionLineForm,
+  type SubscriptionTemplateOption,
+  toSubscriptionItemPayload,
+} from "@/components/quote-subscription-lines";
 import {
   DetailField,
   DetailGrid,
   DetailSection,
   EntityDetailLayout,
 } from "@/components/entity-detail-layout";
-import {
-  CONTRACT_TYPE_LABELS,
-  QUOTE_STATUS_LABELS,
-  formatMoney,
-  type QuoteStatus,
-} from "@/shared/commercial";
+import { QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
+
+type SubscriptionItem = {
+  id: string;
+  subscriptionTemplateId: string;
+  subscriptionTemplateName: string;
+  description: string;
+  price: number;
+  periodicityId: string;
+  periodicityName: string;
+};
 
 type QuoteDetail = {
   id: string;
@@ -31,9 +43,6 @@ type QuoteDetail = {
   serviceId: string;
   serviceName: string;
   description: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId: string | null;
-  periodicityName: string | null;
   price: number;
   deliveryTime: string;
   paymentConditionId: string;
@@ -41,18 +50,30 @@ type QuoteDetail = {
   observations: string | null;
   status: QuoteStatus;
   createdAt: string;
+  subscriptionItems: SubscriptionItem[];
 };
 
 type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = { id: string; name: string };
 type CatalogOption = { id: string; name: string };
 
+function itemsToLines(items: SubscriptionItem[]): QuoteSubscriptionLineForm[] {
+  return items.map((item) => ({
+    key: item.id,
+    subscriptionTemplateId: item.subscriptionTemplateId,
+    description: item.description,
+    price: item.price,
+    periodicityId: item.periodicityId,
+  }));
+}
+
 export function QuoteDetailView({ id }: { id: string }) {
   const router = useRouter();
   const [quote, setQuote] = useState<QuoteDetail | null>(null);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
-  const [periodicities, setPeriodicities] = useState<CatalogOption[]>([]);
+  const [subscriptionTemplates, setSubscriptionTemplates] = useState<SubscriptionTemplateOption[]>([]);
+  const [periodicities, setPeriodicities] = useState<PeriodicityOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,13 +85,12 @@ export function QuoteDetailView({ id }: { id: string }) {
     clientId: "",
     serviceId: "",
     description: "",
-    contractType: "por_evento" as "por_evento" | "suscripcion",
-    periodicityId: "",
     price: 0,
     deliveryTime: "",
     paymentConditionId: "",
     observations: "",
   });
+  const [subscriptionLines, setSubscriptionLines] = useState<QuoteSubscriptionLineForm[]>([]);
 
   async function load() {
     const res = await fetch(`/api/quotes/${id}`);
@@ -85,13 +105,12 @@ export function QuoteDetailView({ id }: { id: string }) {
         clientId: data.quote.clientId,
         serviceId: data.quote.serviceId,
         description: data.quote.description,
-        contractType: data.quote.contractType,
-        periodicityId: data.quote.periodicityId ?? "",
         price: data.quote.price,
         deliveryTime: data.quote.deliveryTime,
         paymentConditionId: data.quote.paymentConditionId,
         observations: data.quote.observations ?? "",
       });
+      setSubscriptionLines(itemsToLines(data.quote.subscriptionItems ?? []));
     }
     setLoading(false);
   }
@@ -105,6 +124,7 @@ export function QuoteDetailView({ id }: { id: string }) {
     if (catRes.ok) {
       const data = await catRes.json();
       setServices((data.services ?? []).filter((s: ServiceOption & { status: string }) => s.status === "activo"));
+      setSubscriptionTemplates(data.subscriptionTemplates ?? []);
       setPeriodicities(data.periodicities ?? []);
       setPaymentConditions(
         (data.paymentConditions ?? []).filter((p: CatalogOption & { status: string }) => p.status === "activo"),
@@ -134,14 +154,24 @@ export function QuoteDetailView({ id }: { id: string }) {
     return res.json();
   }
 
+  async function onServiceChange(serviceId: string) {
+    setForm((f) => ({ ...f, serviceId }));
+    if (!serviceId) return;
+    const res = await fetch(`/api/quotes?prefillService=${serviceId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setForm((f) => ({ ...f, serviceId, price: data.basePrice ?? f.price }));
+    }
+  }
+
   async function saveEdit(e: React.FormEvent) {
     e.preventDefault();
     const result = await patchQuote({
       action: "update",
       id,
       ...form,
-      periodicityId: form.contractType === "suscripcion" ? form.periodicityId || null : null,
       observations: form.observations || null,
+      subscriptionItems: toSubscriptionItemPayload(subscriptionLines),
     });
     if (result) {
       setEditing(false);
@@ -171,12 +201,7 @@ export function QuoteDetailView({ id }: { id: string }) {
       statusBadge={<span className="badge">{QUOTE_STATUS_LABELS[quote.status]}</span>}
       actions={
         <>
-          <a
-            href={`/api/quotes/${id}/pdf`}
-            target="_blank"
-            rel="noreferrer"
-            className="btn btn-ghost"
-          >
+          <a href={`/api/quotes/${id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-ghost">
             Imprimir PDF
           </a>
           {canEdit && !editing && (
@@ -225,7 +250,7 @@ export function QuoteDetailView({ id }: { id: string }) {
             </select>
             <select
               value={form.serviceId}
-              onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
+              onChange={(e) => void onServiceChange(e.target.value)}
               required
               className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             >
@@ -243,41 +268,16 @@ export function QuoteDetailView({ id }: { id: string }) {
               className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
             <div className="grid gap-2 md:grid-cols-2">
-              <select
-                value={form.contractType}
-                onChange={(e) =>
-                  setForm({ ...form, contractType: e.target.value as "por_evento" | "suscripcion" })
-                }
-                className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-              >
-                <option value="por_evento">Por evento</option>
-                <option value="suscripcion">Suscripción</option>
-              </select>
-              {form.contractType === "suscripcion" && (
-                <select
-                  value={form.periodicityId}
-                  onChange={(e) => setForm({ ...form, periodicityId: e.target.value })}
-                  required
-                  className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-                >
-                  <option value="">Periodicidad…</option>
-                  {periodicities.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              )}
               <MoneyInput
-                label="Precio (MXN)"
+                label="Precio servicio principal (MXN)"
                 valueCents={form.price}
                 onChangeCents={(price) => setForm({ ...form, price })}
                 required
               />
               <label className="text-sm block">
-                <span className="text-[var(--muted)]">Fecha de entrega</span>
+                <span className="text-[var(--muted)]">Tiempo de entrega</span>
                 <input
-                  type="date"
+                  type="text"
                   value={form.deliveryTime}
                   onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
                   required
@@ -304,6 +304,12 @@ export function QuoteDetailView({ id }: { id: string }) {
               rows={2}
               className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
+            <QuoteSubscriptionLinesEditor
+              lines={subscriptionLines}
+              onChange={setSubscriptionLines}
+              templates={subscriptionTemplates}
+              periodicities={periodicities}
+            />
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
             <div className="flex gap-2">
               <button type="submit" className="btn btn-primary">
@@ -316,53 +322,49 @@ export function QuoteDetailView({ id }: { id: string }) {
           </form>
         </DetailSection>
       ) : (
-        <DetailSection title="Información">
-          <DetailGrid>
-            <DetailField
-              label="Cliente"
-              value={
-                <Link href={`/clientes/${quote.clientId}`} className="underline">
-                  {quote.clientName}
-                </Link>
-              }
-            />
-            <DetailField label="Vendedor" value={quote.sellerName} />
-            <DetailField label="Servicio" value={quote.serviceName} />
-            <DetailField label="Descripción" value={quote.description} />
-            <DetailField label="Tipo de contrato" value={CONTRACT_TYPE_LABELS[quote.contractType]} />
-            {quote.contractType === "suscripcion" && (
-              <DetailField label="Periodicidad" value={quote.periodicityName} />
-            )}
-            <DetailField label="Precio" value={formatMoney(quote.price)} />
-            <DetailField label="Fecha de entrega" value={formatDeliveryDate(quote.deliveryTime)} />
-            <DetailField label="Condiciones de pago" value={quote.paymentConditionName} />
-            <DetailField label="Observaciones" value={quote.observations} />
-            <DetailField
-              label="Fecha"
-              value={new Date(quote.createdAt).toLocaleString("es-MX")}
-            />
-            {quote.opportunityFolio && quote.opportunityId && (
+        <>
+          <DetailSection title="Servicio principal">
+            <DetailGrid>
               <DetailField
-                label="Oportunidad"
+                label="Cliente"
                 value={
-                  <Link href={`/oportunidades/${quote.opportunityId}`} className="underline font-mono text-xs">
-                    {quote.opportunityFolio}
+                  <Link href={`/clientes/${quote.clientId}`} className="underline">
+                    {quote.clientName}
                   </Link>
                 }
               />
-            )}
-            {quote.serviceOrderFolio && quote.serviceOrderId && (
-              <DetailField
-                label="Orden de servicio"
-                value={
-                  <Link href={`/ordenes-servicio/${quote.serviceOrderId}`} className="underline font-mono text-xs">
-                    {quote.serviceOrderFolio}
-                  </Link>
-                }
-              />
-            )}
-          </DetailGrid>
-        </DetailSection>
+              <DetailField label="Vendedor" value={quote.sellerName} />
+              <DetailField label="Servicio" value={quote.serviceName} />
+              <DetailField label="Descripción" value={quote.description} />
+              <DetailField label="Precio" value={formatMoney(quote.price)} />
+              <DetailField label="Tiempo de entrega" value={quote.deliveryTime} />
+              <DetailField label="Condiciones de pago" value={quote.paymentConditionName} />
+              <DetailField label="Observaciones" value={quote.observations} />
+              <DetailField label="Fecha" value={new Date(quote.createdAt).toLocaleString("es-MX")} />
+              {quote.opportunityFolio && quote.opportunityId && (
+                <DetailField
+                  label="Oportunidad"
+                  value={
+                    <Link href={`/oportunidades/${quote.opportunityId}`} className="underline font-mono text-xs">
+                      {quote.opportunityFolio}
+                    </Link>
+                  }
+                />
+              )}
+              {quote.serviceOrderFolio && quote.serviceOrderId && (
+                <DetailField
+                  label="Orden de servicio"
+                  value={
+                    <Link href={`/ordenes-servicio/${quote.serviceOrderId}`} className="underline font-mono text-xs">
+                      {quote.serviceOrderFolio}
+                    </Link>
+                  }
+                />
+              )}
+            </DetailGrid>
+          </DetailSection>
+          <QuoteSubscriptionLinesReadonly items={quote.subscriptionItems} />
+        </>
       )}
 
       {error && !editing && <p className="text-sm text-[var(--danger)]">{error}</p>}

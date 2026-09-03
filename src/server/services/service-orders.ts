@@ -15,7 +15,9 @@ import type { ServiceOrderStatus } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
 import { createIncomeFromOsPayment } from "@/server/services/financial-incomes";
 import { nextFolio } from "@/server/services/folios";
-import { getQuoteById, setQuoteStatus } from "@/server/services/quotes";
+import { createProjectFromServiceOrder } from "@/server/services/projects";
+import { createSubscriptionsFromQuoteItems } from "@/server/services/subscriptions";
+import { listQuoteSubscriptionItems, getQuoteById, setQuoteStatus } from "@/server/services/quotes";
 
 type CreateOsInput = {
   clientId: string;
@@ -29,6 +31,7 @@ type CreateOsInput = {
   paymentConditionId?: string | null;
   deliveryDate: Date;
   observations?: string | null;
+  programmerId?: string | null;
   userId?: string;
 };
 
@@ -54,6 +57,7 @@ async function insertServiceOrder(input: CreateOsInput) {
       paymentConditionId: input.paymentConditionId ?? null,
       deliveryDate: input.deliveryDate,
       observations: input.observations?.trim() || null,
+      programmerId: input.programmerId ?? null,
       status: "creada",
       createdBy: input.userId ?? null,
       updatedBy: input.userId ?? null,
@@ -74,6 +78,7 @@ async function insertServiceOrder(input: CreateOsInput) {
 export async function createServiceOrderFromQuote(params: {
   quoteId: string;
   deliveryDate: Date;
+  programmerId?: string | null;
   userId?: string;
 }) {
   const quote = await getQuoteById(params.quoteId);
@@ -94,14 +99,40 @@ export async function createServiceOrderFromQuote(params: {
     sellerId: quote.sellerId,
     serviceId: quote.serviceId,
     description: quote.description,
-    contractType: quote.contractType,
-    periodicityId: quote.periodicityId,
+    contractType: "por_evento",
+    periodicityId: null,
     price: quote.price,
     paymentConditionId: quote.paymentConditionId,
     deliveryDate: params.deliveryDate,
     observations: quote.observations,
+    programmerId: params.programmerId ?? null,
     userId: params.userId,
   });
+
+  const subscriptionItems = quote.subscriptionItems ?? (await listQuoteSubscriptionItems(params.quoteId));
+  if (subscriptionItems.length > 0) {
+    await createSubscriptionsFromQuoteItems({
+      serviceOrderId: order.id,
+      clientId: quote.clientId,
+      items: subscriptionItems.map((item) => ({
+        subscriptionTemplateId: item.subscriptionTemplateId,
+        description: item.description,
+        price: item.price,
+        periodicityId: item.periodicityId,
+      })),
+      userId: params.userId,
+    });
+  }
+
+  try {
+    await createProjectFromServiceOrder({
+      serviceOrderId: order.id,
+      programmerId: params.programmerId ?? null,
+      userId: params.userId,
+    });
+  } catch (e) {
+    if (!(e instanceof Error && e.message === "NO_PROJECT")) throw e;
+  }
 
   await setQuoteStatus(params.quoteId, "autorizada", params.userId);
   return order;
@@ -159,6 +190,7 @@ export async function getServiceOrderById(id: string) {
       paymentConditionName: catalogPaymentConditions.name,
       deliveryDate: serviceOrders.deliveryDate,
       observations: serviceOrders.observations,
+      programmerId: serviceOrders.programmerId,
       status: serviceOrders.status,
       createdAt: serviceOrders.createdAt,
     })

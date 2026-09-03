@@ -5,10 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
 import { MoneyInput } from "@/components/money-input";
+import {
+  QuoteSubscriptionLinesEditor,
+  type PeriodicityOption,
+  type QuoteSubscriptionLineForm,
+  type SubscriptionTemplateOption,
+  toSubscriptionItemPayload,
+} from "@/components/quote-subscription-lines";
 import { QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
-type ServiceOption = { id: string; name: string };
+type ServiceOption = { id: string; name: string; basePrice?: number };
 type CatalogOption = { id: string; name: string };
 
 type QuoteRow = {
@@ -31,7 +38,8 @@ export function QuotesManager() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
-  const [periodicities, setPeriodicities] = useState<CatalogOption[]>([]);
+  const [subscriptionTemplates, setSubscriptionTemplates] = useState<SubscriptionTemplateOption[]>([]);
+  const [periodicities, setPeriodicities] = useState<PeriodicityOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,19 +48,21 @@ export function QuotesManager() {
     clientId: "",
     serviceId: "",
     description: "",
-    contractType: "por_evento" as "por_evento" | "suscripcion",
-    periodicityId: "",
     price: 0,
     deliveryTime: "",
     paymentConditionId: "",
     observations: "",
   });
+  const [subscriptionLines, setSubscriptionLines] = useState<QuoteSubscriptionLineForm[]>([]);
 
   async function loadCatalogs() {
     const res = await fetch("/api/catalogs?type=all");
     if (res.ok) {
       const data = await res.json();
-      setServices((data.services ?? []).filter((s: ServiceOption & { status: string }) => s.status === "activo"));
+      setServices(
+        (data.services ?? []).filter((s: ServiceOption & { status: string }) => s.status === "activo"),
+      );
+      setSubscriptionTemplates(data.subscriptionTemplates ?? []);
       setPeriodicities(data.periodicities ?? []);
       setPaymentConditions(
         (data.paymentConditions ?? []).filter((p: CatalogOption & { status: string }) => p.status === "activo"),
@@ -80,13 +90,28 @@ export function QuotesManager() {
     setForm((f) => ({ ...f, clientId: client.id }));
   }
 
+  async function onServiceChange(serviceId: string) {
+    setForm((f) => ({ ...f, serviceId }));
+    if (!serviceId) return;
+    const res = await fetch(`/api/quotes?prefillService=${serviceId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setForm((f) => ({ ...f, serviceId, price: data.basePrice ?? f.price }));
+    }
+  }
+
   async function createDirect(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     const res = await fetch("/api/quotes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "direct", ...form, observations: form.observations || null }),
+      body: JSON.stringify({
+        mode: "direct",
+        ...form,
+        observations: form.observations || null,
+        subscriptionItems: toSubscriptionItemPayload(subscriptionLines),
+      }),
     });
     if (!res.ok) {
       setError((await res.json()).error ?? "Error");
@@ -118,11 +143,11 @@ export function QuotesManager() {
         <QuickAddClient onCreated={handleQuickAddClient} />
         <select
           value={form.serviceId}
-          onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
+          onChange={(e) => void onServiceChange(e.target.value)}
           required
           className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
         >
-          <option value="">Servicio…</option>
+          <option value="">Servicio principal…</option>
           {services.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -138,41 +163,17 @@ export function QuotesManager() {
           className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
         />
         <div className="grid gap-2 md:grid-cols-2">
-          <select
-            value={form.contractType}
-            onChange={(e) =>
-              setForm({ ...form, contractType: e.target.value as "por_evento" | "suscripcion" })
-            }
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            <option value="por_evento">Por evento</option>
-            <option value="suscripcion">Suscripción</option>
-          </select>
-          {form.contractType === "suscripcion" && (
-            <select
-              value={form.periodicityId}
-              onChange={(e) => setForm({ ...form, periodicityId: e.target.value })}
-              required
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            >
-              <option value="">Periodicidad…</option>
-              {periodicities.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
           <MoneyInput
-            label="Precio (MXN)"
+            label="Precio servicio principal (MXN)"
             valueCents={form.price}
             onChangeCents={(price) => setForm({ ...form, price })}
             required
           />
           <label className="text-sm block">
-            <span className="text-[var(--muted)]">Fecha de entrega</span>
+            <span className="text-[var(--muted)]">Tiempo de entrega</span>
             <input
-              type="date"
+              type="text"
+              placeholder="Ej. 15 días hábiles"
               value={form.deliveryTime}
               onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
               required
@@ -193,6 +194,19 @@ export function QuotesManager() {
             ))}
           </select>
         </div>
+        <textarea
+          value={form.observations}
+          onChange={(e) => setForm({ ...form, observations: e.target.value })}
+          placeholder="Observaciones (opcional)"
+          rows={2}
+          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+        />
+        <QuoteSubscriptionLinesEditor
+          lines={subscriptionLines}
+          onChange={setSubscriptionLines}
+          templates={subscriptionTemplates}
+          periodicities={periodicities}
+        />
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         <button type="submit" className="btn btn-primary">
           Crear cotización

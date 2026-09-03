@@ -1,5 +1,17 @@
 import { pgTable, text, timestamp, uuid, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ClientFiscalData, OpportunityStatus, QuoteStatus, ServiceOrderStatus } from "@/shared/commercial";
+import type {
+  ClientFiscalData,
+  InvoiceSendStatus,
+  InvoiceStatus,
+  OpportunityStatus,
+  ProjectPhaseStatus,
+  ProjectStatus,
+  QuoteStatus,
+  ServiceOrderStatus,
+  SubscriptionBillingStatus,
+  SubscriptionCycleStatus,
+  SubscriptionServiceStatus,
+} from "@/shared/commercial";
 
 // --- Auth & users ---
 
@@ -184,8 +196,6 @@ export const quotes = pgTable("quotes", {
     .notNull()
     .references(() => catalogServices.id),
   description: text("description").notNull(),
-  contractType: text("contract_type").$type<"por_evento" | "suscripcion">().notNull(),
-  periodicityId: uuid("periodicity_id").references(() => catalogPeriodicities.id),
   price: integer("price").notNull().default(0),
   deliveryTime: text("delivery_time").notNull(),
   paymentConditionId: uuid("payment_condition_id").references(() => catalogPaymentConditions.id),
@@ -195,6 +205,23 @@ export const quotes = pgTable("quotes", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   createdBy: uuid("created_by"),
   updatedBy: uuid("updated_by"),
+});
+
+export const quoteSubscriptionItems = pgTable("quote_subscription_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  quoteId: uuid("quote_id")
+    .notNull()
+    .references(() => quotes.id, { onDelete: "cascade" }),
+  subscriptionTemplateId: uuid("subscription_template_id")
+    .notNull()
+    .references(() => catalogSubscriptionTemplates.id),
+  description: text("description").notNull(),
+  price: integer("price").notNull().default(0),
+  periodicityId: uuid("periodicity_id")
+    .notNull()
+    .references(() => catalogPeriodicities.id),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // --- Órdenes de Servicio (Fase 3) ---
@@ -219,6 +246,7 @@ export const serviceOrders = pgTable("service_orders", {
   paymentConditionId: uuid("payment_condition_id").references(() => catalogPaymentConditions.id),
   deliveryDate: timestamp("delivery_date", { withTimezone: true }).notNull(),
   observations: text("observations"),
+  programmerId: uuid("programmer_id").references(() => users.id),
   status: text("status").$type<ServiceOrderStatus>().notNull().default("creada"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -229,8 +257,10 @@ export const serviceOrders = pgTable("service_orders", {
 export const bankAccounts = pgTable("bank_accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  bank: text("bank"),
   isFiscal: boolean("is_fiscal").notNull().default(true),
   initialBalance: integer("initial_balance").notNull().default(0),
+  status: text("status").$type<"activa" | "inactiva">().notNull().default("activa"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -263,6 +293,174 @@ export const financialIncomes = pgTable("financial_incomes", {
   categoryId: uuid("category_id").references(() => catalogIncomeCategories.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   createdBy: uuid("created_by"),
+});
+
+// --- Proyectos (Fase 3) ---
+
+export const projects = pgTable("projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  serviceOrderId: uuid("service_order_id")
+    .notNull()
+    .references(() => serviceOrders.id)
+    .unique(),
+  serviceId: uuid("service_id")
+    .notNull()
+    .references(() => catalogServices.id),
+  description: text("description").notNull(),
+  programmerId: uuid("programmer_id").references(() => users.id),
+  deliveryDate: timestamp("delivery_date", { withTimezone: true }).notNull(),
+  status: text("status").$type<ProjectStatus>().notNull().default("en_progreso"),
+  planSourceFileName: text("plan_source_file_name"),
+  planImportedAt: timestamp("plan_imported_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const projectPhases = pgTable("project_phases", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  phaseNumber: integer("phase_number").notNull(),
+  name: text("name").notNull(),
+  objective: text("objective").notNull(),
+  includes: text("includes").notNull(),
+  validationCriteria: text("validation_criteria"),
+  status: text("status").$type<ProjectPhaseStatus>().notNull().default("bloqueada"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  validatedAt: timestamp("validated_at", { withTimezone: true }),
+  validationNotes: text("validation_notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// --- Suscripciones operativas (Fase 4) ---
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  serviceOrderId: uuid("service_order_id")
+    .notNull()
+    .references(() => serviceOrders.id),
+  subscriptionTemplateId: uuid("subscription_template_id").references(() => catalogSubscriptionTemplates.id),
+  description: text("description").notNull(),
+  price: integer("price").notNull().default(0),
+  periodicityId: uuid("periodicity_id")
+    .notNull()
+    .references(() => catalogPeriodicities.id),
+  incomeCategoryId: uuid("income_category_id").references(() => catalogIncomeCategories.id),
+  serviceStatus: text("service_status").$type<SubscriptionServiceStatus>().notNull().default("pendiente_activacion"),
+  billingStatus: text("billing_status").$type<SubscriptionBillingStatus>().notNull().default("al_corriente"),
+  autoInvoice: boolean("auto_invoice").notNull().default(false),
+  activatedAt: timestamp("activated_at", { withTimezone: true }),
+  reactivatedAt: timestamp("reactivated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const subscriptionCycles = pgTable("subscription_cycles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  subscriptionId: uuid("subscription_id")
+    .notNull()
+    .references(() => subscriptions.id, { onDelete: "cascade" }),
+  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+  periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+  dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
+  amount: integer("amount").notNull().default(0),
+  paidAmount: integer("paid_amount").notNull().default(0),
+  status: text("status").$type<SubscriptionCycleStatus>().notNull().default("pendiente"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const subscriptionPayments = pgTable("subscription_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  subscriptionId: uuid("subscription_id")
+    .notNull()
+    .references(() => subscriptions.id),
+  concept: text("concept").notNull(),
+  amount: integer("amount").notNull(),
+  bankAccountId: uuid("bank_account_id")
+    .notNull()
+    .references(() => bankAccounts.id),
+  paymentDate: timestamp("payment_date", { withTimezone: true }).notNull(),
+  isConvenio: boolean("is_convenio").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+});
+
+// --- Finanzas (Fase 5) ---
+
+export const financialExpenses = pgTable("financial_expenses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  concept: text("concept").notNull(),
+  amount: integer("amount").notNull(),
+  bankAccountId: uuid("bank_account_id")
+    .notNull()
+    .references(() => bankAccounts.id),
+  expenseDate: timestamp("expense_date", { withTimezone: true }).notNull(),
+  categoryId: uuid("category_id").references(() => catalogExpenseCategories.id),
+  sourceType: text("source_type"),
+  sourceId: uuid("source_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+});
+
+export const accountsPayable = pgTable("accounts_payable", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  providerId: uuid("provider_id").references(() => catalogProviders.id),
+  concept: text("concept").notNull(),
+  categoryId: uuid("category_id").references(() => catalogExpenseCategories.id),
+  amount: integer("amount").notNull(),
+  paidAmount: integer("paid_amount").notNull().default(0),
+  dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
+  status: text("status").$type<"pendiente" | "parcial" | "pagada" | "vencida">().notNull().default("pendiente"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const accountsPayablePayments = pgTable("accounts_payable_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  accountPayableId: uuid("account_payable_id")
+    .notNull()
+    .references(() => accountsPayable.id),
+  concept: text("concept").notNull(),
+  amount: integer("amount").notNull(),
+  bankAccountId: uuid("bank_account_id")
+    .notNull()
+    .references(() => bankAccounts.id),
+  paymentDate: timestamp("payment_date", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+});
+
+// --- Facturación (Fase 6) ---
+
+export const invoices = pgTable("invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  status: text("status").$type<InvoiceStatus>().notNull().default("borrador"),
+  sendStatus: text("send_status").$type<InvoiceSendStatus>().notNull().default("pendiente"),
+  subtotal: integer("subtotal").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  sourceType: text("source_type"),
+  sourceId: uuid("source_id"),
+  facturapiId: text("facturapi_id"),
+  pdfUrl: text("pdf_url"),
+  xmlUrl: text("xml_url"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // --- Plan de Desarrollo (importable) ---
@@ -308,5 +506,10 @@ export type Client = typeof clients.$inferSelect;
 export type Opportunity = typeof opportunities.$inferSelect;
 export type Quote = typeof quotes.$inferSelect;
 export type ServiceOrder = typeof serviceOrders.$inferSelect;
+export type Project = typeof projects.$inferSelect;
+export type ProjectPhase = typeof projectPhases.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type SubscriptionCycle = typeof subscriptionCycles.$inferSelect;
+export type Invoice = typeof invoices.$inferSelect;
 export type DevelopmentPlan = typeof developmentPlans.$inferSelect;
 export type DevelopmentPlanPhase = typeof developmentPlanPhases.$inferSelect;

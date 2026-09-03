@@ -45,10 +45,17 @@
       "breakpoints": true
     },
     {
-      "idx": 6,
+      "idx": 7,
       "version": "7",
-      "when": 1788415000000,
-      "tag": "0006_phase1_catalogs_v16",
+      "when": 1788420000000,
+      "tag": "0007_phase2_quote_subscription_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788425000000,
+      "tag": "0008_phases3_7_core",
       "breakpoints": true
     }
   ]

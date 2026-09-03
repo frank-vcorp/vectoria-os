@@ -17,8 +17,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       sellerName: quote.sellerName,
       serviceName: quote.serviceName,
       description: quote.description,
-      contractType: quote.contractType,
-      periodicityName: quote.periodicityName,
       price: quote.price,
       deliveryTime: quote.deliveryTime,
       paymentConditionName: quote.paymentConditionName,
@@ -26,6 +24,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       status: quote.status,
       opportunityFolio: quote.opportunityFolio,
       createdAt: quote.createdAt,
+      subscriptionItems: quote.subscriptionItems.map((item) => ({
+        subscriptionTemplateName: item.subscriptionTemplateName,
+        description: item.description,
+        price: item.price,
+        periodicityName: item.periodicityName,
+      })),
     });
 
     return new NextResponse(html, {
