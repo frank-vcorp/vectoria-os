@@ -37,7 +37,7 @@ RUN chmod +x scripts/docker-entrypoint.sh scripts/docker-healthcheck.sh
 USER nextjs
 EXPOSE 43123
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
   CMD scripts/docker-healthcheck.sh
 
 ENTRYPOINT ["scripts/docker-entrypoint.sh"]

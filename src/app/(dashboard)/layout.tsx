@@ -7,6 +7,9 @@ import { LogoutButton } from "@/components/logout-button";
 
 const NAV: { href: string; module: ModuleKey; label: string }[] = [
   { href: "/dashboard", module: "clientes", label: "Inicio" },
+  { href: "/clientes", module: "clientes", label: "Clientes" },
+  { href: "/oportunidades", module: "oportunidades", label: "Oportunidades" },
+  { href: "/cotizaciones", module: "cotizaciones", label: "Cotizaciones" },
   { href: "/admin/usuarios", module: "usuarios_roles", label: "Usuarios" },
   { href: "/admin/permisos", module: "usuarios_roles", label: "Permisos" },
   { href: "/admin/auditoria", module: "usuarios_roles", label: "Auditoría" },

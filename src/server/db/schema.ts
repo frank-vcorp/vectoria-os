@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, uuid, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import type { ClientFiscalData, OpportunityStatus, QuoteStatus } from "@/shared/commercial";
 
 // --- Auth & users ---
 
@@ -98,6 +99,83 @@ export const catalogProviders = pgTable("catalog_providers", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// --- Clientes ---
+
+export const clients = pgTable("clients", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  name: text("name").notNull(),
+  contact: text("contact"),
+  phone: text("phone"),
+  email: text("email"),
+  fiscalData: jsonb("fiscal_data").$type<ClientFiscalData | null>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+  updatedBy: uuid("updated_by"),
+});
+
+// --- Oportunidades ---
+
+export const opportunities = pgTable("opportunities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  sellerId: uuid("seller_id")
+    .notNull()
+    .references(() => users.id),
+  serviceId: uuid("service_id")
+    .notNull()
+    .references(() => catalogServices.id),
+  description: text("description").notNull(),
+  status: text("status").$type<OpportunityStatus>().notNull().default("abierta"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+  updatedBy: uuid("updated_by"),
+});
+
+export const opportunityLogEntries = pgTable("opportunity_log_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  opportunityId: uuid("opportunity_id")
+    .notNull()
+    .references(() => opportunities.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id),
+  note: text("note").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// --- Cotizaciones (mínimo Fase 2; Fase 3 completa flujo) ---
+
+export const quotes = pgTable("quotes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  opportunityId: uuid("opportunity_id").references(() => opportunities.id),
+  sellerId: uuid("seller_id")
+    .notNull()
+    .references(() => users.id),
+  serviceId: uuid("service_id")
+    .notNull()
+    .references(() => catalogServices.id),
+  description: text("description").notNull(),
+  contractType: text("contract_type").$type<"por_evento" | "suscripcion">().notNull(),
+  periodicityId: uuid("periodicity_id").references(() => catalogPeriodicities.id),
+  price: integer("price").notNull().default(0),
+  deliveryTime: text("delivery_time").notNull(),
+  paymentConditionId: uuid("payment_condition_id").references(() => catalogPaymentConditions.id),
+  observations: text("observations"),
+  status: text("status").$type<QuoteStatus>().notNull().default("cotizada"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+  updatedBy: uuid("updated_by"),
+});
+
 // --- Plan de Desarrollo (importable) ---
 
 export const developmentPlans = pgTable("development_plans", {
@@ -137,5 +215,8 @@ export const auditLogs = pgTable("audit_logs", {
 });
 
 export type User = typeof users.$inferSelect;
+export type Client = typeof clients.$inferSelect;
+export type Opportunity = typeof opportunities.$inferSelect;
+export type Quote = typeof quotes.$inferSelect;
 export type DevelopmentPlan = typeof developmentPlans.$inferSelect;
 export type DevelopmentPlanPhase = typeof developmentPlanPhases.$inferSelect;

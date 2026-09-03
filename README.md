@@ -8,7 +8,7 @@ Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, sus
 | **Stack** | Next.js 15 · TypeScript · Drizzle · PostgreSQL · Facturapi |
 | **Puerto** | `43123` |
 | **Documentación** | [`Docs/discovery-vectoria-v1.0.md`](Docs/discovery-vectoria-v1.0.md) · [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) |
-| **Estado** | Fase 1 — alineada a Discovery §16–§18, pendiente verificación |
+| **Estado** | Fase 2 — Clientes y Oportunidades, pendiente verificación |
 
 ---
 
@@ -47,6 +47,16 @@ Referencia: [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vecto
 
 **Fuera de Fase 1:** Planes de Desarrollo importables (Fase 4 — Proyectos).
 
+### Verificación Fase 2 (Discovery §4–§5)
+
+Referencia: [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vectoria-v1.0.md) Fase 2.
+
+1. **Clientes** (§4) — folio auto, nombre, contacto opcional, celular, correo, datos fiscales desplegables, búsqueda, carga rápida
+2. **Oportunidades** (§5) — folio auto, cliente (carga rápida), vendedor heredado, servicio, descripción, estados Abierta / Cotizada / No interesado, bitácora
+3. **Cotización desde Oportunidad** — herencia de cliente, servicio, descripción y defaults del catálogo; completar tiempo de entrega y condiciones de pago
+
+**Fase 3:** autorización, rechazo, PDF y flujo completo de cotizaciones.
+
 Credenciales seed (cambiar en producción):
 
 - Correo: `admin@vector-ia.mx`
@@ -72,8 +82,9 @@ Scripts de Fase 4 (no usados en Fase 1): `npm run test:plan-parser`
 
 - Dockerfile incluido · puerto `43123`
 - Variables: `DATABASE_URL`, `SESSION_SECRET`, `FACTURAPI_API_KEY`
-- Healthcheck: `GET /api/health`
+- Healthcheck: `GET /api/health` · start-period **30s** (Coolify + Dockerfile)
 - El entrypoint ejecuta migraciones al arrancar y el seed en segundo plano (idempotente)
+- Deploy sin espera larga: `./scripts/coolify-deploy.sh` (dispara y sigue; `--wait` espera máx. ~90s)
 
 ---
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePageModule } from "@/server/auth/page-guard";
 
 export default async function DashboardPage() {
@@ -7,30 +8,28 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Inicio</h1>
-        <p className="text-[var(--muted)] mt-1">
-          Fase 1 — Base del sistema, usuarios y catálogos
-        </p>
+        <p className="text-[var(--muted)] mt-1">Fase 2 — Clientes y Oportunidades</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="card">
-          <h2 className="font-medium">Usuarios y roles</h2>
+        <Link href="/clientes" className="card hover:border-[var(--accent)] transition-colors">
+          <h2 className="font-medium">Clientes</h2>
           <p className="text-sm text-[var(--muted)] mt-2">
-            Administra cuentas, roles y permisos por módulo (Discovery §17).
+            Alta, edición, contacto y datos fiscales con carga rápida (Discovery §4).
           </p>
-        </div>
-        <div className="card">
-          <h2 className="font-medium">Catálogos</h2>
+        </Link>
+        <Link href="/oportunidades" className="card hover:border-[var(--accent)] transition-colors">
+          <h2 className="font-medium">Oportunidades</h2>
           <p className="text-sm text-[var(--muted)] mt-2">
-            Servicios, periodicidades, condiciones de pago, ingresos, egresos y proveedores (Discovery §16).
+            Servicio, descripción, bitácora y conversión a cotización (Discovery §5).
           </p>
-        </div>
-        <div className="card">
-          <h2 className="font-medium">Auditoría</h2>
+        </Link>
+        <Link href="/cotizaciones" className="card hover:border-[var(--accent)] transition-colors">
+          <h2 className="font-medium">Cotizaciones</h2>
           <p className="text-sm text-[var(--muted)] mt-2">
-            Registro mínimo de creación, modificación y cancelación (Discovery §2).
+            Herencia desde oportunidades. Flujo completo en Fase 3.
           </p>
-        </div>
+        </Link>
       </div>
     </div>
   );
