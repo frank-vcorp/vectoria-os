@@ -55,8 +55,6 @@ export const folioCounters = pgTable(
 export const catalogServices = pgTable("catalog_services", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  contractType: text("contract_type").$type<"por_evento" | "suscripcion">().notNull(),
-  periodicityId: uuid("periodicity_id"),
   basePrice: integer("base_price").notNull().default(0),
   status: text("status").$type<"activo" | "inactivo">().notNull().default("activo"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

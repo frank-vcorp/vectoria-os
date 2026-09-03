@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { QuickAddField } from "@/components/quick-add-field";
+import { QuickAddClient } from "@/components/quick-add-client";
+import { MoneyInput } from "@/components/money-input";
 import {
-  CONTRACT_TYPE_LABELS,
   QUOTE_STATUS_LABELS,
   formatMoney,
   type QuoteStatus,
@@ -14,8 +14,6 @@ type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = {
   id: string;
   name: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId: string | null;
   basePrice: number;
 };
 type CatalogOption = { id: string; name: string };
@@ -93,14 +91,7 @@ export function QuotesManager() {
     void Promise.all([loadCatalogs(), loadClients(), loadQuotes()]);
   }, []);
 
-  async function quickAddClient(name: string) {
-    const res = await fetch("/api/clients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) throw new Error("Error");
-    const { client } = await res.json();
+  async function handleQuickAddClient(client: { id: string }) {
     await loadClients();
     setForm((f) => ({ ...f, clientId: client.id }));
   }
@@ -114,9 +105,7 @@ export function QuotesManager() {
       setForm((f) => ({
         ...f,
         serviceId,
-        contractType: data.contractType,
-        periodicityId: data.periodicityId ?? "",
-        price: data.basePrice,
+        price: data.basePrice ?? 0,
       }));
     }
   }
@@ -193,7 +182,7 @@ export function QuotesManager() {
             </option>
           ))}
         </select>
-        <QuickAddField placeholder="Carga rápida: cliente" onAdd={quickAddClient} />
+        <QuickAddClient onCreated={handleQuickAddClient} />
         <select
           value={form.serviceId}
           onChange={(e) => void onServiceChange(e.target.value)}
@@ -241,14 +230,11 @@ export function QuotesManager() {
               ))}
             </select>
           )}
-          <input
-            type="number"
-            min={0}
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-            placeholder="Precio (centavos)"
+          <MoneyInput
+            label="Precio"
+            valueCents={form.price}
+            onChangeCents={(price) => setForm({ ...form, price })}
             required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
           <input
             value={form.deliveryTime}

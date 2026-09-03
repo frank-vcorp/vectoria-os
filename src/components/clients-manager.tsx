@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ClientFiscalData } from "@/shared/commercial";
+import { SAT_REGIMEN_FISCAL, SAT_USO_CFDI } from "@/shared/sat-catalogs";
 
 type ClientRow = {
   id: string;
@@ -68,8 +69,8 @@ export function ClientsManager() {
       body: JSON.stringify({
         name: form.name,
         contact: form.contact || null,
-        phone: form.phone || null,
-        email: form.email || null,
+        phone: form.phone.trim(),
+        email: form.email.trim(),
         fiscalData: hasFiscalData(form.fiscalData) ? form.fiscalData : null,
       }),
     });
@@ -132,24 +133,60 @@ export function ClientsManager() {
   }) {
     return (
       <div className="grid gap-2 md:grid-cols-2 mt-2">
-        {(
-          [
-            ["rfc", "RFC"],
-            ["razonSocial", "Razón social"],
-            ["regimenFiscal", "Régimen fiscal"],
-            ["codigoPostal", "Código postal"],
-            ["usoCfdi", "Uso CFDI"],
-          ] as const
-        ).map(([key, label]) => (
-          <label key={key} className="text-sm">
-            <span className="text-[var(--muted)]">{label}</span>
-            <input
-              value={data[key] ?? ""}
-              onChange={(e) => onChange({ ...data, [key]: e.target.value })}
-              className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
-          </label>
-        ))}
+        <label className="text-sm">
+          <span className="text-[var(--muted)]">RFC</span>
+          <input
+            value={data.rfc ?? ""}
+            onChange={(e) => onChange({ ...data, rfc: e.target.value })}
+            className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-[var(--muted)]">Razón social</span>
+          <input
+            value={data.razonSocial ?? ""}
+            onChange={(e) => onChange({ ...data, razonSocial: e.target.value })}
+            className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-[var(--muted)]">Régimen fiscal (SAT)</span>
+          <select
+            value={data.regimenFiscal ?? ""}
+            onChange={(e) => onChange({ ...data, regimenFiscal: e.target.value })}
+            className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          >
+            <option value="">Seleccionar…</option>
+            {SAT_REGIMEN_FISCAL.map((o) => (
+              <option key={o.code} value={o.code}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="text-[var(--muted)]">Código postal</span>
+          <input
+            value={data.codigoPostal ?? ""}
+            onChange={(e) => onChange({ ...data, codigoPostal: e.target.value })}
+            className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+        </label>
+        <label className="text-sm md:col-span-2">
+          <span className="text-[var(--muted)]">Uso CFDI (SAT)</span>
+          <select
+            value={data.usoCfdi ?? ""}
+            onChange={(e) => onChange({ ...data, usoCfdi: e.target.value })}
+            className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          >
+            <option value="">Seleccionar…</option>
+            {SAT_USO_CFDI.map((o) => (
+              <option key={o.code} value={o.code}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     );
   }
@@ -175,16 +212,18 @@ export function ClientsManager() {
             className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
           <input
-            placeholder="Celular"
+            placeholder="Celular *"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            required
             className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
           <input
             type="email"
-            placeholder="Correo"
+            placeholder="Correo *"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
             className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
         </div>

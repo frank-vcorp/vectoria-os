@@ -50,8 +50,6 @@ const createSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("service"),
     name: z.string().min(1),
-    contractType: z.enum(["por_evento", "suscripcion"]),
-    periodicityId: z.string().uuid().nullable().optional(),
     basePrice: z.number().int().nonnegative(),
   }),
   z.object({ type: z.literal("payment_condition"), name: z.string().min(1), description: z.string().optional() }),
@@ -110,8 +108,6 @@ const updateSchema = z.discriminatedUnion("type", [
     type: z.literal("service"),
     id: z.string().uuid(),
     name: z.string().min(1).optional(),
-    contractType: z.enum(["por_evento", "suscripcion"]).optional(),
-    periodicityId: z.string().uuid().nullable().optional(),
     basePrice: z.number().int().nonnegative().optional(),
     status: z.enum(["activo", "inactivo"]).optional(),
   }),

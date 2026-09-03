@@ -31,8 +31,8 @@ export async function GET(request: Request) {
 const createSchema = z.object({
   name: z.string().min(1),
   contact: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable().or(z.literal("")),
+  phone: z.string().min(1, "Celular requerido"),
+  email: z.string().email("Correo inválido"),
   fiscalData: fiscalSchema,
 });
 

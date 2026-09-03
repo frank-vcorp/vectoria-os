@@ -53,7 +53,7 @@ const fromOpportunitySchema = z.object({
   paymentConditionId: z.string().uuid(),
   price: z.number().int().nonnegative().optional(),
   periodicityId: z.string().uuid().nullable().optional(),
-  contractType: z.enum(["por_evento", "suscripcion"]).optional(),
+  contractType: z.enum(["por_evento", "suscripcion"]),
   observations: z.string().optional().nullable(),
 });
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     const status =
       msg === "NOT_FOUND" || msg === "SERVICE_NOT_FOUND"
         ? 404
-        : msg === "INVALID_STATUS" || msg === "PERIODICITY_REQUIRED"
+        : msg === "INVALID_STATUS" || msg === "PERIODICITY_REQUIRED" || msg === "CONTRACT_TYPE_REQUIRED"
           ? 409
           : msg === "UNAUTHORIZED"
             ? 401

@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
+import { MoneyInput } from "@/components/money-input";
 
 type CatalogData = {
   periodicities?: { id: string; name: string; intervalMonths: number; status: string }[];
   services?: {
     id: string;
     name: string;
-    contractType: string;
-    periodicityId: string | null;
     basePrice: number;
     status: string;
   }[];
@@ -61,12 +60,10 @@ function SimpleNameRow({
 export function CatalogsManager() {
   const [data, setData] = useState<CatalogData>({});
   const [periodicity, setPeriodicity] = useState({ name: "", intervalMonths: 1 });
-  const [service, setService] = useState({ name: "", contractType: "por_evento", periodicityId: "", basePrice: 0 });
+  const [service, setService] = useState({ name: "", basePrice: 0 });
   const [payment, setPayment] = useState({ name: "", description: "" });
   const [editPeriodicity, setEditPeriodicity] = useState<{ id: string; name: string; intervalMonths: number } | null>(null);
-  const [editService, setEditService] = useState<{
-    id: string; name: string; contractType: string; periodicityId: string; basePrice: number;
-  } | null>(null);
+  const [editService, setEditService] = useState<{ id: string; name: string; basePrice: number } | null>(null);
   const [editPayment, setEditPayment] = useState<{ id: string; name: string; description: string } | null>(null);
 
   async function load() {
@@ -129,79 +126,89 @@ export function CatalogsManager() {
 
       <section className="card space-y-3">
         <h2 className="font-medium">Servicios</h2>
-        <form className="grid gap-2 md:grid-cols-5" onSubmit={(e) => {
-          e.preventDefault();
-          void post({
-            type: "service",
-            name: service.name,
-            contractType: service.contractType,
-            basePrice: service.basePrice,
-            periodicityId: service.contractType === "suscripcion" && service.periodicityId ? service.periodicityId : null,
-          }).then(() => setService({ name: "", contractType: "por_evento", periodicityId: "", basePrice: 0 }));
-        }}>
-          <input placeholder="Nombre" value={service.name} onChange={(e) => setService({ ...service, name: e.target.value })} required className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2" />
-          <select value={service.contractType} onChange={(e) => setService({ ...service, contractType: e.target.value, periodicityId: "" })} className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2">
-            <option value="por_evento">Por evento</option>
-            <option value="suscripcion">Suscripción</option>
-          </select>
-          {service.contractType === "suscripcion" && (
-            <select value={service.periodicityId} onChange={(e) => setService({ ...service, periodicityId: e.target.value })} required className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2">
-              <option value="">Periodicidad…</option>
-              {data.periodicities?.filter((p) => p.status === "activo").map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          )}
-          <input type="number" min={0} placeholder="Precio base" value={service.basePrice} onChange={(e) => setService({ ...service, basePrice: Number(e.target.value) })} className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2" />
-          <button className="btn btn-primary" type="submit">Agregar</button>
+        <p className="text-xs text-[var(--muted)]">
+          El tipo de contratación se define en cotizaciones y órdenes de servicio, no en el catálogo.
+        </p>
+        <form
+          className="flex flex-wrap gap-2 items-end"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void post({ type: "service", name: service.name, basePrice: service.basePrice }).then(() =>
+              setService({ name: "", basePrice: 0 }),
+            );
+          }}
+        >
+          <input
+            placeholder="Nombre"
+            value={service.name}
+            onChange={(e) => setService({ ...service, name: e.target.value })}
+            required
+            className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+          <MoneyInput
+            label="Precio base"
+            valueCents={service.basePrice}
+            onChangeCents={(basePrice) => setService({ ...service, basePrice })}
+            className="min-w-[10rem]"
+          />
+          <button className="btn btn-primary" type="submit">
+            Agregar
+          </button>
         </form>
         {editService && (
-          <form className="grid gap-2 md:grid-cols-5 p-3 rounded-lg bg-[var(--surface-2)]" onSubmit={(e) => {
-            e.preventDefault();
-            void patch({
-              type: "service",
-              id: editService.id,
-              name: editService.name,
-              contractType: editService.contractType,
-              basePrice: editService.basePrice,
-              periodicityId: editService.contractType === "suscripcion" && editService.periodicityId ? editService.periodicityId : null,
-            }).then(() => setEditService(null));
-          }}>
-            <input value={editService.name} onChange={(e) => setEditService({ ...editService, name: e.target.value })} required className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2" />
-            <select value={editService.contractType} onChange={(e) => setEditService({ ...editService, contractType: e.target.value })} className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2">
-              <option value="por_evento">Por evento</option>
-              <option value="suscripcion">Suscripción</option>
-            </select>
-            {editService.contractType === "suscripcion" && (
-              <select value={editService.periodicityId} onChange={(e) => setEditService({ ...editService, periodicityId: e.target.value })} required className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2">
-                <option value="">Periodicidad…</option>
-                {data.periodicities?.filter((p) => p.status === "activo").map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            )}
-            <input type="number" min={0} value={editService.basePrice} onChange={(e) => setEditService({ ...editService, basePrice: Number(e.target.value) })} className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2" />
-            <div className="flex gap-2">
-              <button className="btn btn-primary" type="submit">Guardar</button>
-              <button type="button" className="btn btn-ghost" onClick={() => setEditService(null)}>Cancelar</button>
-            </div>
+          <form
+            className="flex flex-wrap gap-2 items-end p-3 rounded-lg bg-[var(--surface-2)]"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void patch({
+                type: "service",
+                id: editService.id,
+                name: editService.name,
+                basePrice: editService.basePrice,
+              }).then(() => setEditService(null));
+            }}
+          >
+            <input
+              value={editService.name}
+              onChange={(e) => setEditService({ ...editService, name: e.target.value })}
+              required
+              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+            <MoneyInput
+              label="Precio base"
+              valueCents={editService.basePrice}
+              onChangeCents={(basePrice) => setEditService({ ...editService, basePrice })}
+            />
+            <button className="btn btn-primary" type="submit">
+              Guardar
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setEditService(null)}>
+              Cancelar
+            </button>
           </form>
         )}
         <ul className="text-sm space-y-2">
           {data.services?.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center gap-2 justify-between">
               <span>
-                {s.name} — {s.contractType}
-                {s.periodicityId && ` — ${periodicityName(s.periodicityId)}`}
-                {" — $"}{(s.basePrice / 100).toFixed(2)}
+                {s.name} — ${(s.basePrice / 100).toFixed(2)}
               </span>
               <span className="flex items-center gap-2">
                 <StatusBadge status={s.status} />
-                <button type="button" className="btn btn-ghost text-sm" onClick={() => setEditService({
-                  id: s.id, name: s.name, contractType: s.contractType,
-                  periodicityId: s.periodicityId ?? "", basePrice: s.basePrice,
-                })}>Editar</button>
-                <button type="button" className="btn btn-ghost text-sm" onClick={() => void patch({ type: "service", id: s.id, status: s.status === "activo" ? "inactivo" : "activo" })}>
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={() => setEditService({ id: s.id, name: s.name, basePrice: s.basePrice })}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={() =>
+                    void patch({ type: "service", id: s.id, status: s.status === "activo" ? "inactivo" : "activo" })
+                  }
+                >
                   {s.status === "activo" ? "Desactivar" : "Activar"}
                 </button>
               </span>

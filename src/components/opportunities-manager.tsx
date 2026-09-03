@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { QuickAddField } from "@/components/quick-add-field";
+import { QuickAddClient } from "@/components/quick-add-client";
+import { MoneyInput } from "@/components/money-input";
 import { OPPORTUNITY_STATUS_LABELS, type OpportunityStatus } from "@/shared/commercial";
 
 type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = {
   id: string;
   name: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId: string | null;
   basePrice: number;
 };
 type PeriodicityOption = { id: string; name: string };
@@ -90,14 +89,7 @@ export function OpportunitiesManager() {
     void Promise.all([loadCatalogs(), loadClients(), loadOpportunities()]);
   }, []);
 
-  async function quickAddClient(name: string) {
-    const res = await fetch("/api/clients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) throw new Error("No se pudo crear el cliente");
-    const { client } = await res.json();
+  async function handleQuickAddClient(client: { id: string }) {
     await loadClients();
     setForm((f) => ({ ...f, clientId: client.id }));
   }
@@ -167,8 +159,8 @@ export function OpportunitiesManager() {
       deliveryTime: "",
       paymentConditionId: paymentConditions[0]?.id ?? "",
       price: service?.basePrice ?? 0,
-      contractType: service?.contractType ?? "por_evento",
-      periodicityId: service?.periodicityId ?? "",
+      contractType: "por_evento",
+      periodicityId: "",
       observations: "",
     });
   }
@@ -225,7 +217,7 @@ export function OpportunitiesManager() {
               </select>
             </div>
           </label>
-          <QuickAddField placeholder="Carga rápida: nombre del cliente" onAdd={quickAddClient} />
+          <QuickAddClient onCreated={handleQuickAddClient} />
           <select
             value={form.serviceId}
             onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
@@ -373,14 +365,11 @@ export function OpportunitiesManager() {
                 ))}
               </select>
             )}
-            <input
-              type="number"
-              min={0}
-              value={quoteForm.price}
-              onChange={(e) => setQuoteForm({ ...quoteForm, price: Number(e.target.value) })}
-              placeholder="Precio"
+            <MoneyInput
+              label="Precio"
+              valueCents={quoteForm.price}
+              onChangeCents={(price) => setQuoteForm({ ...quoteForm, price })}
               required
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
             />
             <input
               value={quoteForm.deliveryTime}

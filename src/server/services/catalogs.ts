@@ -53,8 +53,6 @@ export async function createPeriodicity(name: string, intervalMonths: number, us
 export async function createService(
   params: {
     name: string;
-    contractType: "por_evento" | "suscripcion";
-    periodicityId?: string | null;
     basePrice: number;
   },
   userId?: string,
@@ -116,8 +114,6 @@ export async function updateService(
   id: string,
   data: {
     name?: string;
-    contractType?: "por_evento" | "suscripcion";
-    periodicityId?: string | null;
     basePrice?: number;
     status?: "activo" | "inactivo";
   },

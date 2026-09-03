@@ -29,6 +29,13 @@
       "when": 1788400000000,
       "tag": "0003_phase3_quotes_os_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788405000000,
+      "tag": "0004_service_no_contract_type",
+      "breakpoints": true
     }
   ]
 }

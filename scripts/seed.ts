@@ -8,7 +8,6 @@ import {
   createProvider,
   createService,
   listServices,
-  listPeriodicities,
 } from "@/server/services/catalogs";
 import { setRolePermissions } from "@/server/services/permissions";
 import { defaultPermissionsForRole } from "@/shared/modules";
@@ -61,15 +60,8 @@ async function seed() {
 
   const existingServices = await listServices();
   if (existingServices.length === 0) {
-    const periodicities = await listPeriodicities();
-    const mensual = periodicities.find((p) => p.name === "Mensual");
-    await createService({ name: "Consultoría por evento", contractType: "por_evento", basePrice: 0 }).catch(() => null);
-    await createService({
-      name: "Soporte mensual",
-      contractType: "suscripcion",
-      periodicityId: mensual?.id ?? null,
-      basePrice: 0,
-    }).catch(() => null);
+    await createService({ name: "Consultoría por evento", basePrice: 0 }).catch(() => null);
+    await createService({ name: "Soporte mensual", basePrice: 0 }).catch(() => null);
     console.log("Servicios seed creados");
   }
 

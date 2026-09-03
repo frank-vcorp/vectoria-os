@@ -2,7 +2,8 @@
 
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
-import { QuickAddField } from "@/components/quick-add-field";
+import { QuickAddClient } from "@/components/quick-add-client";
+import { MoneyInput } from "@/components/money-input";
 import {
   SERVICE_ORDER_STATUS_LABELS,
   formatMoney,
@@ -13,8 +14,6 @@ type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = {
   id: string;
   name: string;
-  contractType: "por_evento" | "suscripcion";
-  periodicityId: string | null;
   basePrice: number;
 };
 type CatalogOption = { id: string; name: string };
@@ -110,14 +109,7 @@ export function ServiceOrdersManager() {
     void loadAll();
   }, []);
 
-  async function quickAddClient(name: string) {
-    const res = await fetch("/api/clients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) throw new Error("Error");
-    const { client } = await res.json();
+  async function handleQuickAddClient(client: { id: string }) {
     await loadAll();
     setForm((f) => ({ ...f, clientId: client.id }));
   }
@@ -135,9 +127,7 @@ export function ServiceOrdersManager() {
       setForm((f) => ({
         ...f,
         serviceId,
-        contractType: data.contractType,
-        periodicityId: data.periodicityId ?? "",
-        price: data.basePrice,
+        price: data.basePrice ?? 0,
       }));
     }
   }
@@ -235,7 +225,7 @@ export function ServiceOrdersManager() {
             </option>
           ))}
         </select>
-        <QuickAddField placeholder="Carga rápida: cliente" onAdd={quickAddClient} />
+        <QuickAddClient onCreated={handleQuickAddClient} />
         <select
           value={form.serviceId}
           onChange={(e) => void onServiceChange(e.target.value)}
@@ -283,14 +273,11 @@ export function ServiceOrdersManager() {
               ))}
             </select>
           )}
-          <input
-            type="number"
-            min={0}
-            value={form.price}
-            onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-            placeholder="Precio (centavos)"
+          <MoneyInput
+            label="Precio"
+            valueCents={form.price}
+            onChangeCents={(price) => setForm({ ...form, price })}
             required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
           />
           <input
             type="date"
@@ -414,14 +401,11 @@ export function ServiceOrdersManager() {
                               required
                               className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
                             />
-                            <input
-                              type="number"
-                              min={1}
-                              value={payForm.amount || ""}
-                              onChange={(e) => setPayForm({ ...payForm, amount: Number(e.target.value) })}
-                              placeholder="Importe (centavos)"
+                            <MoneyInput
+                              label="Importe"
+                              valueCents={payForm.amount}
+                              onChangeCents={(amount) => setPayForm({ ...payForm, amount })}
                               required
-                              className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
                             />
                             <select
                               value={payForm.bankAccountId}

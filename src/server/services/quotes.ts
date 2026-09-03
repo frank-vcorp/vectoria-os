@@ -175,16 +175,16 @@ export async function createQuoteFromOpportunity(params: {
     .where(eq(catalogServices.id, opp.serviceId))
     .limit(1);
   if (!service) throw new Error("SERVICE_NOT_FOUND");
+  if (!params.contractType) throw new Error("CONTRACT_TYPE_REQUIRED");
 
-  const contractType = params.contractType ?? service.contractType;
   const quote = await insertQuote({
     clientId: opp.clientId,
     opportunityId: opp.id,
     sellerId: opp.sellerId,
     serviceId: opp.serviceId,
     description: opp.description,
-    contractType,
-    periodicityId: params.periodicityId ?? service.periodicityId,
+    contractType: params.contractType,
+    periodicityId: params.periodicityId ?? null,
     price: params.price ?? service.basePrice,
     deliveryTime: params.deliveryTime,
     paymentConditionId: params.paymentConditionId,
@@ -295,13 +295,7 @@ export async function getQuotePrefillFromOpportunity(opportunityId: string) {
 
   return {
     opportunity: opp,
-    service: service
-      ? {
-          contractType: service.contractType,
-          periodicityId: service.periodicityId,
-          basePrice: service.basePrice,
-        }
-      : null,
+    service: service ? { basePrice: service.basePrice } : null,
   };
 }
 
@@ -313,9 +307,5 @@ export async function getQuotePrefillFromService(serviceId: string) {
     .where(eq(catalogServices.id, serviceId))
     .limit(1);
   if (!service) throw new Error("SERVICE_NOT_FOUND");
-  return {
-    contractType: service.contractType,
-    periodicityId: service.periodicityId,
-    basePrice: service.basePrice,
-  };
+  return { basePrice: service.basePrice };
 }
