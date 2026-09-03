@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MoneyInput } from "@/components/money-input";
+import { FormField, FormPanel } from "@/components/form-panel";
 import { formatMoney } from "@/shared/commercial";
 
 type Account = {
@@ -67,38 +68,44 @@ export function BanksManager() {
 
   return (
     <div className="space-y-6">
-      <form className="card space-y-3 max-w-lg" onSubmit={(e) => void create(e)}>
-        <h2 className="font-medium">Nueva cuenta bancaria</h2>
-        <input
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="Nombre de la cuenta *"
-          required
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        />
-        <input
-          value={form.bank}
-          onChange={(e) => setForm({ ...form, bank: e.target.value })}
-          placeholder="Banco"
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        />
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.isFiscal}
-            onChange={(e) => setForm({ ...form, isFiscal: e.target.checked })}
+      <form onSubmit={(e) => void create(e)} className="max-w-lg">
+        <FormPanel
+          title="Nueva cuenta bancaria"
+          description="Cuenta para registrar movimientos y saldos."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Guardar cuenta
+            </button>
+          }
+        >
+          <FormField label="Nombre de la cuenta *">
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+          </FormField>
+          <FormField label="Banco">
+            <input
+              value={form.bank}
+              onChange={(e) => setForm({ ...form, bank: e.target.value })}
+            />
+          </FormField>
+          <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <input
+              type="checkbox"
+              checked={form.isFiscal}
+              onChange={(e) => setForm({ ...form, isFiscal: e.target.checked })}
+            />
+            Cuenta fiscal
+          </label>
+          <MoneyInput
+            label="Saldo inicial"
+            valueCents={form.initialBalance}
+            onChangeCents={(initialBalance) => setForm({ ...form, initialBalance })}
           />
-          Cuenta fiscal
-        </label>
-        <MoneyInput
-          label="Saldo inicial"
-          valueCents={form.initialBalance}
-          onChangeCents={(initialBalance) => setForm({ ...form, initialBalance })}
-        />
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button type="submit" className="btn-primary">
-          Guardar cuenta
-        </button>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
       </form>
 
       <div className="card overflow-x-auto">

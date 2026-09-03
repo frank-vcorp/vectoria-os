@@ -10,6 +10,7 @@ import {
   emptyFiscal,
   hasFiscalData,
 } from "@/components/client-fiscal-fields";
+import { FormField, FormPanel } from "@/components/form-panel";
 
 type ClientRow = {
   id: string;
@@ -92,49 +93,57 @@ export function ClientsManager() {
 
   return (
     <div className="space-y-6">
-      <form className="card space-y-3" onSubmit={(e) => void createClient(e)}>
-        <h2 className="font-medium">Nuevo cliente</h2>
-        <div className="grid gap-2 md:grid-cols-2">
-          <input
-            placeholder="Nombre (persona o empresa) *"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <input
-            placeholder="Contacto (opcional, si es empresa)"
-            value={form.contact}
-            onChange={(e) => setForm({ ...form, contact: e.target.value })}
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <input
-            placeholder="Celular *"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <input
-            type="email"
-            placeholder="Correo *"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-        </div>
-        <details open={showFiscal} onToggle={(e) => setShowFiscal(e.currentTarget.open)}>
-          <summary className="cursor-pointer text-sm font-medium">Datos fiscales (opcional)</summary>
-          <ClientFiscalFields
-            data={form.fiscalData}
-            onChange={(fiscalData) => setForm({ ...form, fiscalData })}
-          />
-        </details>
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button type="submit" className="btn btn-primary">
-          Guardar cliente
-        </button>
+      <form onSubmit={(e) => void createClient(e)}>
+        <FormPanel
+          title="Nuevo cliente"
+          description="Registra persona o empresa con contacto y, si aplica, datos fiscales."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Guardar cliente
+            </button>
+          }
+        >
+          <div className="form-grid cols-2">
+            <FormField label="Nombre *" hint="Persona o empresa">
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Contacto" hint="Opcional, si es empresa">
+              <input
+                value={form.contact}
+                onChange={(e) => setForm({ ...form, contact: e.target.value })}
+              />
+            </FormField>
+            <FormField label="Celular *">
+              <input
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Correo *">
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+              />
+            </FormField>
+          </div>
+          <details open={showFiscal} onToggle={(e) => setShowFiscal(e.currentTarget.open)}>
+            <summary className="form-section-label cursor-pointer">Datos fiscales (opcional)</summary>
+            <div className="mt-3">
+              <ClientFiscalFields
+                data={form.fiscalData}
+                onChange={(fiscalData) => setForm({ ...form, fiscalData })}
+              />
+            </div>
+          </details>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
       </form>
 
       <div className="flex gap-2">
@@ -142,7 +151,7 @@ export function ClientsManager() {
           placeholder="Buscar por folio o nombre…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          className="flex-1"
         />
         <button type="button" className="btn btn-ghost" onClick={() => void load(search)}>
           Buscar

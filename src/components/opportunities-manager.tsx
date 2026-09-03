@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { QuickAddClient } from "@/components/quick-add-client";
+import { FormField, FormPanel } from "@/components/form-panel";
 import { ListSearchInput } from "@/components/list-search-input";
 import { SearchableSelect } from "@/components/searchable-select";
 import { OPPORTUNITY_STATUS_LABELS, type OpportunityStatus } from "@/shared/commercial";
@@ -83,13 +84,19 @@ export function OpportunitiesManager() {
 
   return (
     <div className="space-y-6">
-      <form className="card space-y-3" onSubmit={(e) => void createOpportunity(e)}>
-        <h2 className="font-medium">Nueva oportunidad</h2>
-        <div className="space-y-2">
-          <label className="text-sm block">
-            <span className="text-[var(--muted)]">Cliente</span>
+      <form onSubmit={(e) => void createOpportunity(e)}>
+        <FormPanel
+          title="Nueva oportunidad"
+          description="El vendedor se asigna automáticamente al usuario que crea la oportunidad."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Crear oportunidad
+            </button>
+          }
+        >
+          <FormField label="Cliente *">
             <SearchableSelect
-              className="mt-1 w-full"
+              className="w-full"
               value={form.clientId}
               onChange={(clientId) => setForm({ ...form, clientId })}
               required
@@ -100,32 +107,28 @@ export function OpportunitiesManager() {
                 keywords: `${c.folio} ${c.name}`,
               }))}
             />
-          </label>
+          </FormField>
           <QuickAddClient onCreated={handleQuickAddClient} />
-          <SearchableSelect
-            className="w-full"
-            value={form.serviceId}
-            onChange={(serviceId) => setForm({ ...form, serviceId })}
-            required
-            placeholder="Servicio…"
-            options={services.map((s) => ({ value: s.id, label: s.name }))}
-          />
-          <textarea
-            placeholder="Descripción *"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            required
-            rows={3}
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-        </div>
-        <p className="text-xs text-[var(--muted)]">
-          El vendedor se asigna automáticamente al usuario que crea la oportunidad.
-        </p>
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button type="submit" className="btn btn-primary">
-          Crear oportunidad
-        </button>
+          <FormField label="Servicio *">
+            <SearchableSelect
+              className="w-full"
+              value={form.serviceId}
+              onChange={(serviceId) => setForm({ ...form, serviceId })}
+              required
+              placeholder="Seleccionar…"
+              options={services.map((s) => ({ value: s.id, label: s.name }))}
+            />
+          </FormField>
+          <FormField label="Descripción *">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              required
+              rows={3}
+            />
+          </FormField>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
       </form>
 
       <div className="card space-y-3 overflow-x-auto">

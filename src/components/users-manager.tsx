@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FormField, FormPanel } from "@/components/form-panel";
 import { ROLE_LABELS, ROLES, type RoleKey } from "@/shared/modules";
 
 type UserRow = {
@@ -102,62 +103,73 @@ export function UsersManager() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={createUser} className="card grid gap-4 md:grid-cols-2">
-        <h2 className="md:col-span-2 font-medium">Nuevo usuario</h2>
-        <div className="field">
-          <label>Nombre</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        </div>
-        <div className="field">
-          <label>Correo</label>
-          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-        </div>
-        <div className="field">
-          <label>Contraseña</label>
-          <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
-        </div>
-        <div className="field">
-          <label>Rol</label>
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as RoleKey })}>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-            ))}
-          </select>
-        </div>
-        {error && !editId && <p className="md:col-span-2 text-[var(--danger)] text-sm">{error}</p>}
-        <div className="md:col-span-2">
-          <button type="submit" className="btn btn-primary">Crear usuario</button>
-        </div>
+      <form onSubmit={createUser}>
+        <FormPanel
+          title="Nuevo usuario"
+          description="Cuenta de acceso al sistema operativo."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Crear usuario
+            </button>
+          }
+        >
+          <div className="form-grid cols-2">
+            <FormField label="Nombre">
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </FormField>
+            <FormField label="Correo">
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            </FormField>
+            <FormField label="Contraseña">
+              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+            </FormField>
+            <FormField label="Rol">
+              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as RoleKey })}>
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+          {error && !editId && <p className="text-[var(--danger)] text-sm">{error}</p>}
+        </FormPanel>
       </form>
 
       {editId && (
-        <form onSubmit={saveEdit} className="card grid gap-4 md:grid-cols-2 border border-[var(--border)]">
-          <h2 className="md:col-span-2 font-medium">Editar usuario</h2>
-          <div className="field">
-            <label>Nombre</label>
-            <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
-          </div>
-          <div className="field">
-            <label>Correo</label>
-            <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} required />
-          </div>
-          <div className="field">
-            <label>Nueva contraseña (opcional)</label>
-            <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} minLength={8} />
-          </div>
-          <div className="field">
-            <label>Rol</label>
-            <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as RoleKey })}>
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-              ))}
-            </select>
-          </div>
-          {error && <p className="md:col-span-2 text-[var(--danger)] text-sm">{error}</p>}
-          <div className="md:col-span-2 flex gap-2">
-            <button type="submit" className="btn btn-primary">Guardar</button>
-            <button type="button" className="btn btn-ghost" onClick={() => setEditId(null)}>Cancelar</button>
-          </div>
+        <form onSubmit={saveEdit}>
+          <FormPanel
+            title="Editar usuario"
+            actions={
+              <>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditId(null)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Guardar
+                </button>
+              </>
+            }
+          >
+            <div className="form-grid cols-2">
+              <FormField label="Nombre">
+                <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required />
+              </FormField>
+              <FormField label="Correo">
+                <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} required />
+              </FormField>
+              <FormField label="Nueva contraseña" hint="Opcional">
+                <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} minLength={8} />
+              </FormField>
+              <FormField label="Rol">
+                <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as RoleKey })}>
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+            {error && <p className="text-[var(--danger)] text-sm">{error}</p>}
+          </FormPanel>
         </form>
       )}
 

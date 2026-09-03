@@ -56,7 +56,9 @@ export function AppShell({
   const sidebar = (
     <div className="app-sidebar-inner">
       <div className="app-brand">
-        <Image src="/logo.png" alt="VectorIA" width={140} height={36} className="app-logo" priority />
+        <div className="app-logo-wrap">
+          <Image src="/logo.png" alt="VectorIA" width={140} height={36} className="app-logo" priority />
+        </div>
         <p className="app-user-name">{user.name}</p>
         <span className="badge badge-role">{roleLabel}</span>
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
+import { FormField, FormPanel } from "@/components/form-panel";
 import { MoneyInput } from "@/components/money-input";
 import {
   QuoteSubscriptionLinesEditor,
@@ -133,81 +134,91 @@ export function QuotesManager() {
 
   return (
     <div className="space-y-6">
-      <form className="card space-y-3" onSubmit={(e) => void createDirect(e)}>
-        <h2 className="font-medium">Nueva cotización directa</h2>
-        <SearchableSelect
-          className="w-full"
-          value={form.clientId}
-          onChange={(clientId) => setForm({ ...form, clientId })}
-          required
-          placeholder="Cliente…"
-          options={clients.map((c) => ({
-            value: c.id,
-            label: `${c.folio} — ${c.name}`,
-            keywords: `${c.folio} ${c.name}`,
-          }))}
-        />
-        <QuickAddClient onCreated={handleQuickAddClient} />
-        <SearchableSelect
-          className="w-full"
-          value={form.serviceId}
-          onChange={(serviceId) => void onServiceChange(serviceId)}
-          required
-          placeholder="Servicio principal…"
-          options={services.map((s) => ({ value: s.id, label: s.name }))}
-        />
-        <textarea
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          placeholder="Descripción *"
-          required
-          rows={2}
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        />
-        <div className="grid gap-2 md:grid-cols-2">
-          <MoneyInput
-            label="Precio servicio principal (MXN)"
-            valueCents={form.price}
-            onChangeCents={(price) => setForm({ ...form, price })}
-            required
-          />
-          <label className="text-sm block">
-            <span className="text-[var(--muted)]">Tiempo de entrega</span>
-            <input
-              type="text"
-              placeholder="Ej. 15 días hábiles"
-              value={form.deliveryTime}
-              onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
+      <form onSubmit={(e) => void createDirect(e)}>
+        <FormPanel
+          title="Nueva cotización directa"
+          description="Crea una cotización sin pasar por oportunidad."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Crear cotización
+            </button>
+          }
+        >
+          <FormField label="Cliente *">
+            <SearchableSelect
+              className="w-full"
+              value={form.clientId}
+              onChange={(clientId) => setForm({ ...form, clientId })}
               required
-              className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+              placeholder="Seleccionar…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
             />
-          </label>
-          <SearchableSelect
-            className="md:col-span-2"
-            value={form.paymentConditionId}
-            onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
-            required
-            placeholder="Condiciones de pago…"
-            options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+          </FormField>
+          <QuickAddClient onCreated={handleQuickAddClient} />
+          <FormField label="Servicio principal *">
+            <SearchableSelect
+              className="w-full"
+              value={form.serviceId}
+              onChange={(serviceId) => void onServiceChange(serviceId)}
+              required
+              placeholder="Seleccionar…"
+              options={services.map((s) => ({ value: s.id, label: s.name }))}
+            />
+          </FormField>
+          <FormField label="Descripción *">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              required
+              rows={2}
+            />
+          </FormField>
+          <div className="form-grid cols-2">
+            <MoneyInput
+              label="Precio servicio principal (MXN)"
+              valueCents={form.price}
+              onChangeCents={(price) => setForm({ ...form, price })}
+              required
+            />
+            <FormField label="Tiempo de entrega *">
+              <input
+                type="text"
+                placeholder="Ej. 15 días hábiles"
+                value={form.deliveryTime}
+                onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Condiciones de pago *" className="md:col-span-2">
+              <SearchableSelect
+                className="w-full"
+                value={form.paymentConditionId}
+                onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
+                required
+                placeholder="Seleccionar…"
+                options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+              />
+            </FormField>
+          </div>
+          <FormField label="Observaciones">
+            <textarea
+              value={form.observations}
+              onChange={(e) => setForm({ ...form, observations: e.target.value })}
+              rows={2}
+            />
+          </FormField>
+          <QuoteSubscriptionLinesEditor
+            lines={subscriptionLines}
+            onChange={setSubscriptionLines}
+            templates={subscriptionTemplates}
+            periodicities={periodicities}
           />
-        </div>
-        <textarea
-          value={form.observations}
-          onChange={(e) => setForm({ ...form, observations: e.target.value })}
-          placeholder="Observaciones (opcional)"
-          rows={2}
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        />
-        <QuoteSubscriptionLinesEditor
-          lines={subscriptionLines}
-          onChange={setSubscriptionLines}
-          templates={subscriptionTemplates}
-          periodicities={periodicities}
-        />
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button type="submit" className="btn btn-primary">
-          Crear cotización
-        </button>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
       </form>
 
       <div className="card space-y-3 overflow-x-auto">

@@ -15,3 +15,11 @@ export async function requirePageModule(module: ModuleKey): Promise<User> {
   if (!allowed) redirect("/dashboard");
   return user;
 }
+
+export async function requirePageAnyModule(modules: ModuleKey[]): Promise<User> {
+  const user = await requirePageUser();
+  for (const module of modules) {
+    if (await userHasModule(user, module)) return user;
+  }
+  redirect("/dashboard");
+}

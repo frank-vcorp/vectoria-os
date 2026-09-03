@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
+import { FormField, FormPanel } from "@/components/form-panel";
 import { ListSearchInput } from "@/components/list-search-input";
 import { DateInput } from "@/components/date-input";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -107,88 +108,109 @@ export function ServiceOrdersManager() {
 
   return (
     <div className="space-y-6">
-      <form className="card space-y-3" onSubmit={(e) => void createOrder(e)}>
-        <h2 className="font-medium">Nueva OS directa</h2>
-        <SearchableSelect
-          className="w-full"
-          value={form.clientId}
-          onChange={(clientId) => setForm({ ...form, clientId })}
-          required
-          placeholder="Cliente…"
-          options={clients.map((c) => ({
-            value: c.id,
-            label: `${c.folio} — ${c.name}`,
-            keywords: `${c.folio} ${c.name}`,
-          }))}
-        />
-        <QuickAddClient onCreated={handleQuickAddClient} />
-        <SearchableSelect
-          className="w-full"
-          value={form.programmerId}
-          onChange={(programmerId) => setForm({ ...form, programmerId })}
-          required
-          placeholder="Programador *"
-          options={programmers.map((p) => ({ value: p.id, label: p.name }))}
-        />
-        <SearchableSelect
-          className="w-full"
-          value={form.serviceId}
-          onChange={(serviceId) => setForm({ ...form, serviceId })}
-          required
-          placeholder="Servicio…"
-          options={services.map((s) => ({ value: s.id, label: s.name }))}
-        />
-        <textarea
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          placeholder="Descripción *"
-          required
-          rows={2}
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-        />
-        <div className="grid gap-2 md:grid-cols-2">
-          <select
-            value={form.contractType}
-            onChange={(e) =>
-              setForm({ ...form, contractType: e.target.value as "por_evento" | "suscripcion" })
-            }
-            className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          >
-            <option value="por_evento">Por evento</option>
-            <option value="suscripcion">Suscripción</option>
-          </select>
-          {form.contractType === "suscripcion" && (
+      <form onSubmit={(e) => void createOrder(e)}>
+        <FormPanel
+          title="Nueva OS directa"
+          description="Orden de servicio sin cotización previa."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Crear OS
+            </button>
+          }
+        >
+          <FormField label="Cliente *">
             <SearchableSelect
-              value={form.periodicityId}
-              onChange={(periodicityId) => setForm({ ...form, periodicityId })}
+              className="w-full"
+              value={form.clientId}
+              onChange={(clientId) => setForm({ ...form, clientId })}
               required
-              placeholder="Periodicidad…"
-              options={periodicities.map((p) => ({ value: p.id, label: p.name }))}
+              placeholder="Seleccionar…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
             />
-          )}
-          <MoneyInput
-            label="Precio (MXN)"
-            valueCents={form.price}
-            onChangeCents={(price) => setForm({ ...form, price })}
-            required
-          />
-          <DateInput
-            value={form.deliveryDate}
-            onChange={(deliveryDate) => setForm({ ...form, deliveryDate })}
-            required
-          />
-          <SearchableSelect
-            className="md:col-span-2"
-            value={form.paymentConditionId}
-            onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
-            placeholder="Condiciones de pago (opcional)"
-            options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
-          />
-        </div>
-        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        <button type="submit" className="btn btn-primary">
-          Crear OS
-        </button>
+          </FormField>
+          <QuickAddClient onCreated={handleQuickAddClient} />
+          <div className="form-grid cols-2">
+            <FormField label="Programador *">
+              <SearchableSelect
+                className="w-full"
+                value={form.programmerId}
+                onChange={(programmerId) => setForm({ ...form, programmerId })}
+                required
+                placeholder="Seleccionar…"
+                options={programmers.map((p) => ({ value: p.id, label: p.name }))}
+              />
+            </FormField>
+            <FormField label="Servicio *">
+              <SearchableSelect
+                className="w-full"
+                value={form.serviceId}
+                onChange={(serviceId) => setForm({ ...form, serviceId })}
+                required
+                placeholder="Seleccionar…"
+                options={services.map((s) => ({ value: s.id, label: s.name }))}
+              />
+            </FormField>
+          </div>
+          <FormField label="Descripción *">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              required
+              rows={2}
+            />
+          </FormField>
+          <div className="form-grid cols-2">
+            <FormField label="Tipo de contrato">
+              <select
+                value={form.contractType}
+                onChange={(e) =>
+                  setForm({ ...form, contractType: e.target.value as "por_evento" | "suscripcion" })
+                }
+              >
+                <option value="por_evento">Por evento</option>
+                <option value="suscripcion">Suscripción</option>
+              </select>
+            </FormField>
+            {form.contractType === "suscripcion" && (
+              <FormField label="Periodicidad *">
+                <SearchableSelect
+                  value={form.periodicityId}
+                  onChange={(periodicityId) => setForm({ ...form, periodicityId })}
+                  required
+                  placeholder="Seleccionar…"
+                  options={periodicities.map((p) => ({ value: p.id, label: p.name }))}
+                />
+              </FormField>
+            )}
+            <MoneyInput
+              label="Precio (MXN)"
+              valueCents={form.price}
+              onChangeCents={(price) => setForm({ ...form, price })}
+              required
+            />
+            <FormField label="Fecha de entrega *">
+              <DateInput
+                value={form.deliveryDate}
+                onChange={(deliveryDate) => setForm({ ...form, deliveryDate })}
+                required
+              />
+            </FormField>
+            <FormField label="Condiciones de pago" className="md:col-span-2">
+              <SearchableSelect
+                className="w-full"
+                value={form.paymentConditionId}
+                onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
+                placeholder="Opcional…"
+                options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+              />
+            </FormField>
+          </div>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
       </form>
 
       <div className="card space-y-3 overflow-x-auto">

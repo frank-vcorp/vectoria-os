@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePageUser } from "@/server/auth/page-guard";
 import { getRoleModules } from "@/server/services/permissions";
+import { BrandChevron } from "@/components/brand-chevron";
 import { PageHeader } from "@/components/page-header";
 import { ROLE_LABELS, type ModuleKey, type RoleKey } from "@/shared/modules";
 
@@ -14,14 +15,25 @@ const HOME_MODULES: { href: string; module: ModuleKey; title: string; descriptio
   { href: "/bancos", module: "bancos", title: "Bancos", description: "Cuentas y saldos" },
   { href: "/finanzas", module: "flujo_financiero", title: "Finanzas", description: "Flujo, CxC, CxP y reporte" },
   { href: "/facturacion", module: "facturacion", title: "Facturación", description: "Timbrado y envío CFDI" },
-  { href: "/catalogos", module: "catalogos", title: "Catálogos", description: "Servicios, integraciones y configuración" },
-  { href: "/admin/usuarios", module: "usuarios_roles", title: "Usuarios y permisos", description: "Accesos, roles y auditoría" },
+  {
+    href: "/admin",
+    module: "usuarios_roles",
+    title: "Administración",
+    description: "Usuarios, permisos, auditoría y catálogos",
+  },
 ];
+
+function homeModuleVisible(href: string, module: ModuleKey, modules: ModuleKey[]) {
+  if (href === "/admin") {
+    return modules.includes("usuarios_roles") || modules.includes("catalogos");
+  }
+  return modules.includes(module);
+}
 
 export default async function DashboardPage() {
   const user = await requirePageUser();
   const modules = await getRoleModules(user.role as RoleKey);
-  const items = HOME_MODULES.filter((c) => modules.includes(c.module));
+  const items = HOME_MODULES.filter((c) => homeModuleVisible(c.href, c.module, modules));
 
   return (
     <div className="space-y-6">
@@ -41,7 +53,7 @@ export default async function DashboardPage() {
                 <p>{item.description}</p>
               </div>
               <span className="module-list-arrow" aria-hidden>
-                →
+                <BrandChevron />
               </span>
             </Link>
           ))}

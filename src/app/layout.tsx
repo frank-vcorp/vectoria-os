@@ -1,9 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OfflineProvider } from "@/components/offline-provider";
 import { PwaServiceWorkerRegister, PwaUpdateNotifier } from "@/components/pwa-manager";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,7 +42,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#0A1F44" },
-    { media: "(prefers-color-scheme: dark)", color: "#121a26" },
+    { media: "(prefers-color-scheme: dark)", color: "#0A1F44" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -53,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className={inter.variable}>
+      <body className={`${montserrat.variable} ${inter.variable}`}>
         <ThemeProvider>
           <OfflineProvider>
             <PwaServiceWorkerRegister />

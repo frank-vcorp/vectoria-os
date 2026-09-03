@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PwaInstallPrompt } from "@/components/pwa-manager";
@@ -39,7 +38,7 @@ export default function LoginPage() {
       <PwaInstallPrompt />
       <div className="auth-card">
         <div className="auth-brand">
-          <Image src="/logo.png" alt="VectorIA" width={160} height={42} priority />
+          <Image src="/logo.png" alt="VectorIA" width={168} height={44} priority />
           <p>Sistema operativo interno</p>
         </div>
 

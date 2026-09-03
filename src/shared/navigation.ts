@@ -51,22 +51,23 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "admin",
     title: "Administración",
-    items: [
-      { href: "/admin/usuarios", module: "usuarios_roles", label: "Usuarios" },
-      { href: "/admin/permisos", module: "usuarios_roles", label: "Permisos" },
-      { href: "/admin/auditoria", module: "usuarios_roles", label: "Auditoría" },
-      { href: "/catalogos", module: "catalogos", label: "Catálogos" },
-    ],
+    items: [{ href: "/admin", module: "usuarios_roles", label: "Administración" }],
   },
 ];
+
+const ADMIN_HUB_MODULES: ModuleKey[] = ["usuarios_roles", "catalogos"];
 
 export function filterNavGroups(groups: NavGroup[], allowedModules: ModuleKey[]) {
   return groups
     .map((group) => ({
       ...group,
-      items: group.items.filter(
-        (item) => item.href === "/dashboard" || allowedModules.includes(item.module),
-      ),
+      items: group.items.filter((item) => {
+        if (item.href === "/dashboard") return true;
+        if (item.href === "/admin") {
+          return ADMIN_HUB_MODULES.some((module) => allowedModules.includes(module));
+        }
+        return allowedModules.includes(item.module);
+      }),
     }))
     .filter((group) => group.items.length > 0);
 }
