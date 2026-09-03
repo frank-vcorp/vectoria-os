@@ -1,4 +1,9 @@
 import { CONTRACT_TYPE_LABELS, formatMoney } from "@/shared/commercial";
+import {
+  renderCompactListTable,
+  renderKeyValueTable,
+  wrapPrintableDocument,
+} from "@/shared/document-letterhead";
 
 type QuoteSubscriptionDoc = {
   subscriptionTemplateName: string;
@@ -41,33 +46,6 @@ type ServiceOrderDoc = {
   balance?: number;
 };
 
-function baseHtml(title: string, body: string) {
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>${title}</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; color: #111; }
-    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; }
-    .meta { color: #555; font-size: 0.875rem; margin-bottom: 1.5rem; }
-    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; vertical-align: top; }
-    th { width: 35%; color: #444; font-weight: 600; }
-    .sub-card { border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
-    @media print { body { margin: 1rem; } .no-print { display: none; } }
-  </style>
-</head>
-<body>
-  ${body}
-  <p class="no-print" style="margin-top:2rem">
-    <button onclick="window.print()">Imprimir / Guardar PDF</button>
-  </p>
-</body>
-</html>`;
-}
-
 export function renderQuoteHtml(quote: QuoteDoc) {
   const mainRows = [
     ["Cliente", quote.clientName],
@@ -84,25 +62,31 @@ export function renderQuoteHtml(quote: QuoteDoc) {
 
   const subscriptions =
     quote.subscriptionItems && quote.subscriptionItems.length > 0
-      ? `<h2>Suscripciones propuestas</h2>${quote.subscriptionItems
-          .map(
-            (item) => `<div class="sub-card">
-              <strong>${escapeHtml(item.subscriptionTemplateName)}</strong>
-              <p>${escapeHtml(item.description)}</p>
-              <p>${escapeHtml(formatMoney(item.price))} · ${escapeHtml(item.periodicityName)}</p>
-            </div>`,
-          )
-          .join("")}`
+      ? `<h2 class="doc-section-title">Suscripciones propuestas</h2>${renderCompactListTable(
+          ["Concepto", "Descripción", "Precio"],
+          quote.subscriptionItems.map((item) => ({
+            name: item.subscriptionTemplateName,
+            detail: item.description,
+            price: `${formatMoney(item.price)} · ${item.periodicityName}`,
+          })),
+        )}`
       : "";
 
   const body = `
-    <h1>Cotización ${quote.folio}</h1>
-    <p class="meta">VectorIA · ${new Date(quote.createdAt).toLocaleDateString("es-MX")}</p>
-    <h2>Servicio principal</h2>
-    <table>${mainRows.map(([k, v]) => `<tr><th>${k}</th><td>${escapeHtml(v)}</td></tr>`).join("")}</table>
+    <h2 class="doc-section-title">Servicio principal</h2>
+    ${renderKeyValueTable(mainRows)}
     ${subscriptions}
   `;
-  return baseHtml(`Cotización ${quote.folio}`, body);
+
+  return wrapPrintableDocument({
+    title: "Cotización",
+    pageTitle: `Cotización ${quote.folio}`,
+    docLabel: "Folio",
+    docNumber: quote.folio,
+    dateLabel: "Fecha de emisión",
+    dateText: new Date(quote.createdAt).toLocaleDateString("es-MX"),
+    body,
+  });
 }
 
 export function renderServiceOrderHtml(order: ServiceOrderDoc) {
@@ -127,17 +111,17 @@ export function renderServiceOrderHtml(order: ServiceOrderDoc) {
   ].filter(Boolean) as [string, string][];
 
   const body = `
-    <h1>Orden de Servicio ${order.folio}</h1>
-    <p class="meta">VectorIA · ${new Date(order.deliveryDate).toLocaleDateString("es-MX")}</p>
-    <table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${escapeHtml(v)}</td></tr>`).join("")}</table>
+    <h2 class="doc-section-title">Detalle de la orden</h2>
+    ${renderKeyValueTable(rows)}
   `;
-  return baseHtml(`OS ${order.folio}`, body);
-}
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return wrapPrintableDocument({
+    title: "Orden de Servicio",
+    pageTitle: `Orden de Servicio ${order.folio}`,
+    docLabel: "Folio",
+    docNumber: order.folio,
+    dateLabel: "Fecha de entrega",
+    dateText: new Date(order.deliveryDate).toLocaleDateString("es-MX"),
+    body,
+  });
 }

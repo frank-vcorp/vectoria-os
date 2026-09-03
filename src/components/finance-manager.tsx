@@ -6,6 +6,10 @@ import { MoneyInput } from "@/components/money-input";
 import { DateInput } from "@/components/date-input";
 import { SearchableSelect } from "@/components/searchable-select";
 import { formatMoney } from "@/shared/commercial";
+import {
+  renderDataTable,
+  wrapPrintableDocument,
+} from "@/shared/document-letterhead";
 
 type Balance = { id: string; name: string; bank: string | null; balance: number };
 type Receivable = {
@@ -86,15 +90,35 @@ function exportExcel(rows: MovementRow[]) {
 }
 
 function exportPdf(rows: MovementRow[]) {
-  const tableRows = rows
-    .map(
-      (m) =>
-        `<tr><td>${new Date(m.date).toLocaleDateString("es-MX")}</td><td>${m.type}</td><td>${m.concept}</td><td>${m.category ?? ""}</td><td>${m.bank}</td><td>${(m.amount / 100).toFixed(2)}</td><td>${SOURCE_LABELS[m.sourceType ?? ""] ?? m.sourceType ?? ""}</td></tr>`,
-    )
-    .join("");
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte financiero</title>
-<style>body{font-family:sans-serif;padding:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px;font-size:12px}th{background:#f5f5f5}</style></head>
-<body><h1>Reporte financiero</h1><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Categoría</th><th>Banco</th><th>Importe</th><th>Origen</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
+  const tableRows = rows.map((m) => [
+    new Date(m.date).toLocaleDateString("es-MX"),
+    m.type,
+    m.concept,
+    m.category ?? "",
+    m.bank,
+    formatMoney(m.amount),
+    SOURCE_LABELS[m.sourceType ?? ""] ?? m.sourceType ?? "",
+  ]);
+  const today = new Date().toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const html = wrapPrintableDocument({
+    title: "Reporte financiero",
+    docLabel: "Reporte",
+    docNumber: new Date().toISOString().slice(0, 10),
+    dateLabel: "Generado",
+    dateText: today,
+    body: `
+      <h2 class="doc-section-title">Movimientos</h2>
+      ${renderDataTable(
+        ["Fecha", "Tipo", "Concepto", "Categoría", "Banco", "Importe", "Origen"],
+        tableRows,
+      )}
+    `,
+    logoUrl: "/logo.png",
+  });
   const w = window.open("", "_blank");
   if (!w) return;
   w.document.write(html);

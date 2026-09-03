@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orden de Servicio OS-2026-0027</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap');
+    @page {
+      size: letter;
+      margin: 12mm 14mm 14mm 14mm;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      color: #0A1F44;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .doc-page {
+      width: 100%;
+      max-width: 7.5in;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .doc-header {
+      background: linear-gradient(135deg, #0A1F44 0%, #152d5c 100%);
+      color: #fff;
+      padding: 0.7rem 0.85rem 0.55rem;
+      border-radius: 6px 6px 0 0;
+    }
+    .doc-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .doc-logo-wrap {
+      background: #fff;
+      border-radius: 6px;
+      padding: 0.3rem 0.45rem;
+      flex-shrink: 0;
+    }
+    .doc-logo {
+      height: 30px;
+      width: auto;
+      display: block;
+    }
+    .doc-header-title {
+      flex: 1;
+      min-width: 0;
+      padding: 0 0.4rem;
+    }
+    .doc-header-title h1 {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 13pt;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+    .doc-header-title p {
+      margin: 0.15rem 0 0;
+      font-size: 9pt;
+      color: rgb(255 255 255 / 0.82);
+      line-height: 1.3;
+    }
+    .doc-badge {
+      flex-shrink: 0;
+      padding: 0.35rem 0.55rem;
+      border-radius: 6px;
+      background: rgb(255 255 255 / 0.12);
+      border: 1px solid rgb(255 255 255 / 0.22);
+      color: #fff;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-align: right;
+      line-height: 1.25;
+    }
+    .doc-badge span {
+      display: block;
+      font-size: 7.5pt;
+      font-weight: 600;
+      opacity: 0.8;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .doc-accent {
+      height: 3px;
+      background: #D35400;
+      margin-top: 0.5rem;
+    }
+    .doc-body {
+      flex: 1;
+      padding: 0.75rem 0 0.5rem;
+    }
+    .doc-section-title {
+      margin: 0.75rem 0 0.4rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #2C3E50;
+    }
+    .doc-section-title:first-child { margin-top: 0; }
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+      font-size: 10pt;
+      page-break-inside: auto;
+    }
+    .doc-table tr { page-break-inside: avoid; page-break-after: auto; }
+    .doc-table th,
+    .doc-table td {
+      text-align: left;
+      padding: 0.38rem 0.5rem;
+      border-bottom: 1px solid #D8DEE9;
+      vertical-align: top;
+      line-height: 1.4;
+    }
+    .doc-table th {
+      width: 32%;
+      color: #2C3E50;
+      font-weight: 600;
+      font-size: 9pt;
+      background: #F6F8FB;
+    }
+    .doc-table tr:last-child th,
+    .doc-table tr:last-child td { border-bottom: none; }
+    .doc-data-table th {
+      width: auto;
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.35rem 0.45rem;
+    }
+    .doc-data-table td { font-size: 9.5pt; padding: 0.35rem 0.45rem; }
+    .doc-data-table thead { display: table-header-group; }
+    .doc-kv-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+    .doc-inline-table .doc-table th { width: 38%; }
+    .doc-card {
+      border: 1px solid #D8DEE9;
+      border-radius: 4px;
+      padding: 0.35rem 0.45rem;
+      margin-bottom: 0.35rem;
+      background: #F6F8FB;
+      page-break-inside: avoid;
+      font-size: 9pt;
+    }
+    .doc-card strong {
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 9pt;
+      color: #0A1F44;
+    }
+    .doc-card p { margin: 0.15rem 0 0; line-height: 1.3; }
+    .doc-footer {
+      margin-top: 0.65rem;
+      padding-top: 0.4rem;
+      border-top: 1.5px solid #D8DEE9;
+      font-size: 7.5pt;
+      line-height: 1.35;
+      color: #2C3E50;
+      break-inside: avoid;
+      break-before: avoid;
+      page-break-inside: avoid;
+    }
+    .doc-footer-line {
+      display: block;
+      font-size: 7.5pt;
+    }
+    .doc-footer-line a {
+      color: #0A1F44;
+      text-decoration: none;
+    }
+    .doc-footer-sep {
+      color: #64748B;
+      padding: 0 0.25rem;
+    }
+    .doc-footer-brand {
+      margin: 0.2rem 0 0;
+      font-size: 7pt;
+      color: #64748B;
+      text-align: center;
+    }
+    .no-print { margin: 0.75rem 0 0; }
+    .no-print button {
+      background: #D35400;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      font-size: 9pt;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: Inter, sans-serif;
+    }
+    @media screen {
+      body { padding: 0.5rem; background: #eef1f6; }
+      .doc-page {
+        background: #fff;
+        box-shadow: 0 2px 12px rgb(10 31 68 / 0.08);
+        padding: 0 0.65rem 0.5rem;
+        min-height: 11in;
+      }
+      .doc-footer { margin-top: auto; }
+    }
+    @media print {
+      html, body { background: #fff; }
+      .doc-page {
+        max-width: none;
+        min-height: 0;
+        box-shadow: none;
+        padding: 0;
+        display: block;
+      }
+      .doc-body { padding-bottom: 0.25rem; }
+      .doc-header { border-radius: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-page">
+    <header class="doc-header">
+      <div class="doc-header-row">
+        
+    <div class="doc-logo-wrap">
+      <img class="doc-logo" src="https://vectoria-os.vector-ia.mx/logo.png" alt="VectorIA" />
+    </div>
+  
+        <div class="doc-header-title">
+          <h1>Orden de Servicio</h1>
+          <p>Fecha de entrega: 18/4/2026</p>
+        </div>
+        <div class="doc-badge">
+          <span>Folio</span>
+          OS-2026-0027
+        </div>
+      </div>
+      <div class="doc-accent"></div>
+    </header>
+    <div class="doc-body">
+      
+    <h2 class="doc-section-title">Detalle de la orden</h2>
+    <div class="doc-kv-grid doc-inline-table"><table class="doc-table"><tr><th>Cliente</th><td>Acme Industrial S.A. de C.V.</td></tr><tr><th>Vendedor</th><td>María González</td></tr><tr><th>Servicio</th><td>Desarrollo de plataforma web</td></tr><tr><th>Descripción</th><td>Orden de servicio derivada de cotización COT-2026-0042.</td></tr><tr><th>Tipo de contratación</th><td>Por evento</td></tr><tr><th>Precio</th><td>$185,000.00</td></tr><tr><th>Condiciones de pago</th><td>50% anticipo · 50% contra entrega</td></tr></table><table class="doc-table"><tr><th>Fecha de entrega</th><td>18/4/2026</td></tr><tr><th>Observaciones</th><td>Programador asignado: Carlos Ruiz.</td></tr><tr><th>Cotización</th><td>COT-2026-0042</td></tr><tr><th>Estatus</th><td>activa</td></tr><tr><th>Total pagado</th><td>$92,500.00</td></tr><tr><th>Saldo pendiente</th><td>$92,500.00</td></tr></table></div>
+  
+    </div>
+    
+    <footer class="doc-footer">
+      <div class="doc-footer-line">
+        <a href="https://vector-ia.mx">vector-ia.mx</a><span class="doc-footer-sep">·</span><a href="mailto:contacto@vector-ia.mx">contacto@vector-ia.mx</a><span class="doc-footer-sep">·</span>+52 1 442 453 2415<span class="doc-footer-sep">·</span><a href="https://wa.me/524424532415">WhatsApp +52 1 442 453 2415</a><span class="doc-footer-sep">·</span>Circuito Puerta del Sol 755, Cd. del Sol, Querétaro, Qro.
+      </div>
+      <p class="doc-footer-brand">VectorIA · Soluciones tecnológicas</p>
+    </footer>
+  
+    <p class="no-print"><button type="button" onclick="window.print()">Imprimir / Guardar PDF</button></p>
+  </div>
+</body>
+</html>

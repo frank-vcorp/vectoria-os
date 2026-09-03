@@ -19,6 +19,32 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
   );
 }
 
+function MenuIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 6l12 12M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function AppShell({
   groups,
   user,
@@ -31,11 +57,6 @@ export function AppShell({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const roleLabel = ROLE_LABELS[user.role as RoleKey] ?? user.role;
-
-  const mobileTabs = groups
-    .flatMap((g) => g.items)
-    .filter((item) => item.mobilePrimary)
-    .slice(0, 5);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -105,7 +126,21 @@ export function AppShell({
         />
       )}
 
-      <aside className={`app-drawer mobile-only${drawerOpen ? " app-drawer-open" : ""}`} aria-hidden={!drawerOpen}>
+      <aside
+        className={`app-drawer mobile-only${drawerOpen ? " app-drawer-open" : ""}`}
+        aria-hidden={!drawerOpen}
+        inert={drawerOpen ? undefined : true}
+      >
+        <div className="app-drawer-header">
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon"
+            aria-label="Cerrar menú"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <CloseIcon />
+          </button>
+        </div>
         {sidebar}
       </aside>
 
@@ -117,29 +152,16 @@ export function AppShell({
             type="button"
             className="btn btn-ghost btn-icon"
             aria-label="Abrir menú"
+            aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
           >
-            ☰
+            <MenuIcon />
           </button>
           <Image src="/logo.png" alt="VectorIA" width={108} height={28} className="app-logo-top" priority />
           <ThemeToggle />
         </header>
 
         <main className="app-main">{children}</main>
-
-        {mobileTabs.length > 0 && (
-          <nav className="app-tabbar mobile-only" aria-label="Accesos rápidos">
-            {mobileTabs.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`app-tab${isActive(item.href) ? " app-tab-active" : ""}`}
-              >
-                <span className="app-tab-label">{item.label.split(" ")[0]}</span>
-              </Link>
-            ))}
-          </nav>
-        )}
       </div>
     </div>
   );
