@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { cacheSet } from "@/client/offline/db";
+import { cachedGet, OfflineNoCacheError, queuedWrite } from "@/client/offline/fetch";
+import { applyProjectPatchOptimistic } from "@/client/offline/projects-optimistic";
+import { cacheKey } from "@/client/offline/types";
+import { useOffline } from "@/components/offline-provider";
 import {
   DetailField,
   DetailGrid,
@@ -85,6 +90,7 @@ function pendingChecks(phase: Phase) {
 
 export function ProjectDetailView({ id }: { id: string }) {
   const router = useRouter();
+  const { setFromCache, refreshPending } = useOffline();
   const [project, setProject] = useState<Project | null>(null);
   const [phases, setPhases] = useState<Phase[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
@@ -101,6 +107,11 @@ export function ProjectDetailView({ id }: { id: string }) {
   const [planFileName, setPlanFileName] = useState("plan-validacion.md");
   const [evidenceDraft, setEvidenceDraft] = useState("");
   const [returnNotes, setReturnNotes] = useState("");
+  const [offlineHint, setOfflineHint] = useState("");
+
+  async function persistProjectCache(data: { project: Project; phases: Phase[] }) {
+    await cacheSet(cacheKey("proyectos", `detail:${id}`), data);
+  }
 
   const selectedPhase = useMemo(
     () => phases.find((p) => p.id === selectedPhaseId) ?? phases[0] ?? null,
@@ -128,40 +139,61 @@ export function ProjectDetailView({ id }: { id: string }) {
   }, [phases, selectedPhase]);
 
   async function load() {
-    const [projectRes, meRes] = await Promise.all([
-      fetch(`/api/projects?id=${id}`),
-      fetch("/api/auth/me"),
-    ]);
-    if (projectRes.status === 404) {
-      router.replace("/proyectos");
-      return;
-    }
-    if (!projectRes.ok) {
-      setError((await projectRes.json()).error ?? "Error");
+    setOfflineHint("");
+    try {
+      const { data, fromCache } = await cachedGet<{ project: Project; phases: Phase[] }>(
+        "proyectos",
+        `detail:${id}`,
+        `/api/projects?id=${id}`,
+      );
+      setFromCache(fromCache);
+      if (fromCache) {
+        setOfflineHint("Datos guardados localmente. Algunas acciones se sincronizarán al reconectar.");
+      }
+
+      const meRes = await fetch("/api/auth/me").catch(() => null);
+      if (meRes?.ok) {
+        const me = await meRes.json();
+        setIsAdmin(me.user?.role === "administrador");
+        setCanWrite(Boolean(me.permissions?.proyectos?.canWrite));
+      }
+
+      if (!data.project) {
+        router.replace("/proyectos");
+        return;
+      }
+
+      setProject(data.project);
+      const loadedPhases: Phase[] = data.phases ?? [];
+      setPhases(loadedPhases);
+      setSelectedPhaseId((prev) => {
+        if (prev && loadedPhases.some((p) => p.id === prev)) return prev;
+        const current =
+          loadedPhases.find((p) => p.status === "disponible" || p.status === "en_validacion") ??
+          loadedPhases[0];
+        return current?.id ?? null;
+      });
       setLoading(false);
-      return;
+    } catch (e) {
+      if (e instanceof OfflineNoCacheError) {
+        setError("Sin conexión y sin datos guardados de este proyecto.");
+      } else {
+        setError("Error al cargar el proyecto");
+      }
+      setLoading(false);
     }
-    if (meRes.ok) {
-      const me = await meRes.json();
-      setIsAdmin(me.user?.role === "administrador");
-      setCanWrite(Boolean(me.permissions?.proyectos?.canWrite));
-    }
-    const data = await projectRes.json();
-    setProject(data.project);
-    const loadedPhases: Phase[] = data.phases ?? [];
-    setPhases(loadedPhases);
-    setSelectedPhaseId((prev) => {
-      if (prev && loadedPhases.some((p) => p.id === prev)) return prev;
-      const current =
-        loadedPhases.find((p) => p.status === "disponible" || p.status === "en_validacion") ??
-        loadedPhases[0];
-      return current?.id ?? null;
-    });
-    setLoading(false);
   }
 
   useEffect(() => {
     void load();
+  }, [id]);
+
+  useEffect(() => {
+    function onSynced() {
+      void load();
+    }
+    window.addEventListener("vectoria:offline-synced", onSynced);
+    return () => window.removeEventListener("vectoria:offline-synced", onSynced);
   }, [id]);
 
   useEffect(() => {
@@ -170,6 +202,10 @@ export function ProjectDetailView({ id }: { id: string }) {
 
   async function importPlan(replace = false) {
     setError("");
+    if (!navigator.onLine) {
+      setError("Importar plan requiere conexión.");
+      return;
+    }
     const res = await fetch("/api/projects", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -207,44 +243,64 @@ export function ProjectDetailView({ id }: { id: string }) {
     extra?: { force?: boolean; notes?: string },
   ) {
     setError("");
-    const res = await fetch("/api/projects", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        action === "unlock_next_phase"
-          ? { action, projectId: id, fromPhaseId: phaseId }
-          : {
-              action,
-              projectId: id,
-              phaseId,
-              force: extra?.force,
-              notes: extra?.notes,
-            },
-      ),
+    const body =
+      action === "unlock_next_phase"
+        ? { action, projectId: id, fromPhaseId: phaseId }
+        : {
+            action,
+            projectId: id,
+            phaseId,
+            force: extra?.force,
+            notes: extra?.notes,
+          };
+
+    const result = await queuedWrite<{ phases?: Phase[] }>("proyectos", body, {
+      url: "/api/projects",
     });
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Error");
+
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
-    const data = await res.json();
-    setPhases(data.phases ?? []);
+
+    if (result.queued) {
+      setPhases((prev) => {
+        const next = applyProjectPatchOptimistic(prev, body);
+        if (project) void persistProjectCache({ project, phases: next });
+        return next;
+      });
+      setOfflineHint("Cambio guardado localmente; se sincronizará al reconectar.");
+      await refreshPending();
+    } else if (result.data.phases) {
+      setPhases(result.data.phases);
+      if (project) void persistProjectCache({ project, phases: result.data.phases });
+      await load();
+    }
+
     setShowUnlockConfirm(false);
     setShowSendConfirm(false);
     setReturnNotes("");
-    await load();
   }
 
   async function toggleCheck(checkId: string, patch: { checked?: boolean; notApplicable?: boolean }) {
     if (!canWrite) return;
-    const res = await fetch("/api/projects", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "toggle_check", projectId: id, checkId, ...patch }),
+    const body = { action: "toggle_check", projectId: id, checkId, ...patch };
+    const result = await queuedWrite<{ phases?: Phase[] }>("proyectos", body, {
+      url: "/api/projects",
     });
-    if (res.ok) {
-      const data = await res.json();
-      setPhases(data.phases ?? []);
+
+    if (!result.ok) return;
+
+    if (result.queued) {
+      setPhases((prev) => {
+        const next = applyProjectPatchOptimistic(prev, body);
+        if (project) void persistProjectCache({ project, phases: next });
+        return next;
+      });
+      await refreshPending();
+    } else if (result.data.phases) {
+      setPhases(result.data.phases);
+      if (project) void persistProjectCache({ project, phases: result.data.phases });
     }
   }
 
@@ -266,19 +322,29 @@ export function ProjectDetailView({ id }: { id: string }) {
 
   async function saveEvidence() {
     if (!selectedPhase || !canWrite) return;
-    const res = await fetch("/api/projects", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "update_evidence",
-        projectId: id,
-        phaseId: selectedPhase.id,
-        evidenceNotes: evidenceDraft.trim() || null,
-      }),
+    const body = {
+      action: "update_evidence",
+      projectId: id,
+      phaseId: selectedPhase.id,
+      evidenceNotes: evidenceDraft.trim() || null,
+    };
+    const result = await queuedWrite<{ phases?: Phase[] }>("proyectos", body, {
+      url: "/api/projects",
     });
-    if (res.ok) {
-      const data = await res.json();
-      setPhases(data.phases ?? []);
+
+    if (!result.ok) return;
+
+    if (result.queued) {
+      setPhases((prev) => {
+        const next = applyProjectPatchOptimistic(prev, body);
+        if (project) void persistProjectCache({ project, phases: next });
+        return next;
+      });
+      setOfflineHint("Evidencia guardada localmente.");
+      await refreshPending();
+    } else if (result.data.phases) {
+      setPhases(result.data.phases);
+      if (project) void persistProjectCache({ project, phases: result.data.phases });
     }
   }
 
@@ -296,6 +362,7 @@ export function ProjectDetailView({ id }: { id: string }) {
       statusBadge={<span className="badge">{PROJECT_STATUS_LABELS[project.status]}</span>}
     >
       {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+      {offlineHint && <p className="text-sm text-[var(--warning)]">{offlineHint}</p>}
 
       <div className="card flex flex-wrap gap-6 text-sm">
         <div>

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cachedGet, OfflineNoCacheError } from "@/client/offline/fetch";
 import { ListSearchInput } from "@/components/list-search-input";
+import { useOffline } from "@/components/offline-provider";
 import { PROJECT_STATUS_LABELS, type ProjectStatus } from "@/shared/commercial";
 
 type ProjectRow = {
@@ -18,15 +20,30 @@ type ProjectRow = {
 };
 
 export function ProjectsManager() {
+  const { setFromCache } = useOffline();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [cacheNote, setCacheNote] = useState("");
 
   async function load(q = search) {
     setLoading(true);
+    setCacheNote("");
     const params = q.trim() ? `?search=${encodeURIComponent(q.trim())}` : "";
-    const res = await fetch(`/api/projects${params}`);
-    if (res.ok) setProjects((await res.json()).projects ?? []);
+    const cacheId = q.trim() ? `list:${q.trim()}` : "list:";
+    try {
+      const { data, fromCache } = await cachedGet<{ projects: ProjectRow[] }>(
+        "proyectos",
+        cacheId,
+        `/api/projects${params}`,
+      );
+      setProjects(data.projects ?? []);
+      setFromCache(fromCache);
+      if (fromCache) setCacheNote("Listado desde datos guardados.");
+    } catch (e) {
+      if (e instanceof OfflineNoCacheError) setCacheNote("Sin conexión y sin listado guardado.");
+      setProjects([]);
+    }
     setLoading(false);
   }
 
@@ -45,6 +62,7 @@ export function ProjectsManager() {
         onChange={setSearch}
         onSearch={() => void load(search)}
       />
+      {cacheNote && <p className="text-xs text-[var(--muted)]">{cacheNote}</p>}
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-[var(--muted)] border-b border-[var(--border)]">

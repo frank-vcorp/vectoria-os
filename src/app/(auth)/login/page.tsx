@@ -1,7 +1,10 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PwaInstallPrompt } from "@/components/pwa-manager";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,11 +35,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card w-full max-w-md">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold">VectorIA OS</h1>
-          <p className="text-[var(--muted)] mt-1">Inicia sesión para continuar</p>
+    <div className="auth-screen">
+      <PwaInstallPrompt />
+      <div className="auth-card">
+        <div className="auth-brand">
+          <Image src="/logo.png" alt="VectorIA" width={160} height={42} priority />
+          <p>Sistema operativo interno</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,7 +68,7 @@ export default function LoginPage() {
           </div>
           {error && <p className="text-[var(--danger)] text-sm">{error}</p>}
           <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? "Entrando…" : "Entrar"}
+            {loading ? "Entrando…" : "Iniciar sesión"}
           </button>
         </form>
       </div>

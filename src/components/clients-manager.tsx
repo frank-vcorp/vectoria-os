@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ClientFiscalData } from "@/shared/commercial";
+import { cachedGet, OfflineNoCacheError } from "@/client/offline/fetch";
+import { useOffline } from "@/components/offline-provider";
 import {
   ClientFiscalFields,
   emptyFiscal,
@@ -20,10 +22,12 @@ type ClientRow = {
 };
 
 export function ClientsManager() {
+  const { setFromCache } = useOffline();
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cacheNote, setCacheNote] = useState("");
   const [showFiscal, setShowFiscal] = useState(false);
 
   const [form, setForm] = useState({
@@ -35,11 +39,23 @@ export function ClientsManager() {
   });
 
   async function load(q?: string) {
-    const url = q ? `/api/clients?q=${encodeURIComponent(q)}` : "/api/clients";
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      setClients(data.clients);
+    const query = q ?? search;
+    const url = query.trim() ? `/api/clients?q=${encodeURIComponent(query.trim())}` : "/api/clients";
+    const cacheId = query.trim() ? `list:${query.trim()}` : "list:";
+    setCacheNote("");
+    try {
+      const { data, fromCache } = await cachedGet<{ clients: ClientRow[] }>(
+        "clientes",
+        cacheId,
+        url,
+      );
+      setClients(data.clients ?? []);
+      setFromCache(fromCache);
+      if (fromCache) setCacheNote("Listado desde datos guardados.");
+    } catch (e) {
+      if (e instanceof OfflineNoCacheError) {
+        setError("Sin conexión y sin datos guardados de clientes.");
+      }
     }
     setLoading(false);
   }
@@ -132,6 +148,8 @@ export function ClientsManager() {
           Buscar
         </button>
       </div>
+
+      {cacheNote && <p className="text-xs text-[var(--muted)]">{cacheNote}</p>}
 
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
