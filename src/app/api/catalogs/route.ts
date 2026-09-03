@@ -4,18 +4,21 @@ import { requireUser, requireModule } from "@/server/auth/session";
 import {
   listPeriodicities,
   listServices,
+  listSubscriptionTemplates,
   listPaymentConditions,
   listIncomeCategories,
   listExpenseCategories,
   listProviders,
   createPeriodicity,
   createService,
+  createSubscriptionTemplate,
   createPaymentCondition,
   createIncomeCategory,
   createExpenseCategory,
   createProvider,
   updatePeriodicity,
   updateService,
+  updateSubscriptionTemplate,
   updatePaymentCondition,
   updateIncomeCategory,
   updateExpenseCategory,
@@ -32,6 +35,8 @@ export async function GET(request: Request) {
     const data: Record<string, unknown> = {};
     if (type === "all" || type === "periodicities") data.periodicities = await listPeriodicities();
     if (type === "all" || type === "services") data.services = await listServices();
+    if (type === "all" || type === "subscription_templates")
+      data.subscriptionTemplates = await listSubscriptionTemplates();
     if (type === "all" || type === "payment_conditions")
       data.paymentConditions = await listPaymentConditions();
     if (type === "all" || type === "income") data.incomeCategories = await listIncomeCategories();
@@ -46,9 +51,31 @@ export async function GET(request: Request) {
 }
 
 const createSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("periodicity"), name: z.string().min(1), intervalMonths: z.number().int().positive() }),
-  z.object({ type: z.literal("service"), name: z.string().min(1) }),
-  z.object({ type: z.literal("payment_condition"), name: z.string().min(1) }),
+  z.object({
+    type: z.literal("periodicity"),
+    name: z.string().min(1),
+    intervalMonths: z.number().int().positive(),
+  }),
+  z.object({
+    type: z.literal("service"),
+    name: z.string().min(1),
+    basePrice: z.number().int().min(0),
+    incomeCategoryId: z.string().uuid(),
+    generatesProject: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("subscription_template"),
+    name: z.string().min(1),
+    description: z.string().optional().nullable(),
+    basePrice: z.number().int().min(0),
+    periodicityId: z.string().uuid(),
+    incomeCategoryId: z.string().uuid(),
+  }),
+  z.object({
+    type: z.literal("payment_condition"),
+    name: z.string().min(1),
+    description: z.string().optional().nullable(),
+  }),
   z.object({ type: z.literal("income"), name: z.string().min(1) }),
   z.object({ type: z.literal("expense"), name: z.string().min(1) }),
   z.object({ type: z.literal("provider"), name: z.string().min(1) }),
@@ -66,10 +93,30 @@ export async function POST(request: Request) {
         item = await createPeriodicity(body.name, body.intervalMonths, user.id);
         break;
       case "service":
-        item = await createService({ name: body.name }, user.id);
+        item = await createService(
+          {
+            name: body.name,
+            basePrice: body.basePrice,
+            incomeCategoryId: body.incomeCategoryId,
+            generatesProject: body.generatesProject,
+          },
+          user.id,
+        );
+        break;
+      case "subscription_template":
+        item = await createSubscriptionTemplate(
+          {
+            name: body.name,
+            description: body.description,
+            basePrice: body.basePrice,
+            periodicityId: body.periodicityId,
+            incomeCategoryId: body.incomeCategoryId,
+          },
+          user.id,
+        );
         break;
       case "payment_condition":
-        item = await createPaymentCondition(body.name, user.id);
+        item = await createPaymentCondition(body.name, body.description, user.id);
         break;
       case "income":
         item = await createIncomeCategory(body.name, user.id);
@@ -104,12 +151,26 @@ const updateSchema = z.discriminatedUnion("type", [
     type: z.literal("service"),
     id: z.string().uuid(),
     name: z.string().min(1).optional(),
+    basePrice: z.number().int().min(0).optional(),
+    incomeCategoryId: z.string().uuid().optional(),
+    generatesProject: z.boolean().optional(),
+    status: z.enum(["activo", "inactivo"]).optional(),
+  }),
+  z.object({
+    type: z.literal("subscription_template"),
+    id: z.string().uuid(),
+    name: z.string().min(1).optional(),
+    description: z.string().optional().nullable(),
+    basePrice: z.number().int().min(0).optional(),
+    periodicityId: z.string().uuid().optional(),
+    incomeCategoryId: z.string().uuid().optional(),
     status: z.enum(["activo", "inactivo"]).optional(),
   }),
   z.object({
     type: z.literal("payment_condition"),
     id: z.string().uuid(),
     name: z.string().min(1).optional(),
+    description: z.string().optional().nullable(),
     status: z.enum(["activo", "cancelado"]).optional(),
   }),
   z.object({
@@ -145,6 +206,11 @@ export async function PATCH(request: Request) {
       case "service": {
         const { type: _, id, ...data } = body;
         item = await updateService(id, data, user.id);
+        break;
+      }
+      case "subscription_template": {
+        const { type: _, id, ...data } = body;
+        item = await updateSubscriptionTemplate(id, data, user.id);
         break;
       }
       case "payment_condition": {

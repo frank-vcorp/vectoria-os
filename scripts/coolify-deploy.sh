@@ -12,6 +12,17 @@ if [[ "${2:-}" == "--wait" || "${1:-}" == "--wait" ]]; then
   [[ "${1:-}" == "--wait" ]] && COMMIT_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
 fi
 
+# Coolify hace `git fetch origin <sha>`; requiere SHA completo (40 chars), no abreviado.
+if [[ -n "$COMMIT_SHA" ]] && command -v git >/dev/null 2>&1; then
+  if git rev-parse --verify "${COMMIT_SHA}^{commit}" >/dev/null 2>&1; then
+    COMMIT_SHA="$(git rev-parse "${COMMIT_SHA}^{commit}")"
+  fi
+fi
+if [[ -n "$COMMIT_SHA" && ${#COMMIT_SHA} -ne 40 ]]; then
+  echo "Error: Coolify requiere git_commit_sha completo (40 caracteres), recibido: ${COMMIT_SHA}" >&2
+  exit 1
+fi
+
 if [[ -z "${COOLIFY_WRITE_TOKEN:-}" || -z "${COOLIFY_READ_TOKEN:-}" ]]; then
   if [[ -f "$HOME/.config/kilo/integra.secrets.env" ]]; then
     set -a

@@ -52,31 +52,6 @@ export const folioCounters = pgTable(
 
 // --- Catálogos ---
 
-export const catalogServices = pgTable("catalog_services", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  status: text("status").$type<"activo" | "inactivo">().notNull().default("activo"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const catalogPeriodicities = pgTable("catalog_periodicities", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  intervalMonths: integer("interval_months").notNull(),
-  status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const catalogPaymentConditions = pgTable("catalog_payment_conditions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
 export const catalogIncomeCategories = pgTable("catalog_income_categories", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
@@ -93,6 +68,56 @@ export const catalogProviders = pgTable("catalog_providers", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const catalogPeriodicities = pgTable("catalog_periodicities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  intervalMonths: integer("interval_months").notNull(),
+  status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const catalogServices = pgTable("catalog_services", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  basePrice: integer("base_price").notNull().default(0),
+  incomeCategoryId: uuid("income_category_id").references(() => catalogIncomeCategories.id),
+  generatesProject: boolean("generates_project").notNull().default(false),
+  status: text("status").$type<"activo" | "inactivo">().notNull().default("activo"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const catalogPaymentConditions = pgTable("catalog_payment_conditions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Catálogo de suscripciones / servicios recurrentes (Discovery §16.2). */
+export const catalogSubscriptionTemplates = pgTable("catalog_subscription_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  basePrice: integer("base_price").notNull().default(0),
+  periodicityId: uuid("periodicity_id")
+    .notNull()
+    .references(() => catalogPeriodicities.id),
+  incomeCategoryId: uuid("income_category_id").references(() => catalogIncomeCategories.id),
+  status: text("status").$type<"activo" | "inactivo">().notNull().default("activo"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // --- Clientes ---
