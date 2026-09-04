@@ -53,7 +53,6 @@ export async function getBankBalances() {
       return {
         id: account.id,
         name: account.name,
-        bank: account.bank,
         initialBalance: account.initialBalance,
         balance,
       };

@@ -78,6 +78,13 @@
       "when": 1788440000000,
       "tag": "0011_phase_evidence_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788445000000,
+      "tag": "0012_mane_requirements",
+      "breakpoints": true
     }
   ]
 }

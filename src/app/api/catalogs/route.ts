@@ -68,8 +68,6 @@ const createSchema = z.discriminatedUnion("type", [
     name: z.string().min(1),
     description: z.string().optional().nullable(),
     basePrice: z.number().int().min(0),
-    periodicityId: z.string().uuid(),
-    incomeCategoryId: z.string().uuid(),
   }),
   z.object({
     type: z.literal("payment_condition"),
@@ -108,8 +106,6 @@ export async function POST(request: Request) {
             name: body.name,
             description: body.description,
             basePrice: body.basePrice,
-            periodicityId: body.periodicityId,
-            incomeCategoryId: body.incomeCategoryId,
           },
           user.id,
         );
@@ -161,8 +157,6 @@ const updateSchema = z.discriminatedUnion("type", [
     name: z.string().min(1).optional(),
     description: z.string().optional().nullable(),
     basePrice: z.number().int().min(0).optional(),
-    periodicityId: z.string().uuid().optional(),
-    incomeCategoryId: z.string().uuid().optional(),
     status: z.enum(["activo", "inactivo"]).optional(),
   }),
   z.object({

@@ -8,6 +8,13 @@ async function getDefaultIncomeCategoryId() {
   return category?.id ?? null;
 }
 
+export async function deleteIncomeBySource(sourceType: string, sourceId: string) {
+  const db = getDb();
+  await db
+    .delete(financialIncomes)
+    .where(and(eq(financialIncomes.sourceType, sourceType), eq(financialIncomes.sourceId, sourceId)));
+}
+
 export async function createIncomeFromOsPayment(params: {
   concept: string;
   amount: number;

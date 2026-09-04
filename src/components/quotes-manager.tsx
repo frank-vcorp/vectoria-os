@@ -105,7 +105,12 @@ export function QuotesManager() {
     const res = await fetch(`/api/quotes?prefillService=${serviceId}`);
     if (res.ok) {
       const data = await res.json();
-      setForm((f) => ({ ...f, serviceId, price: data.basePrice ?? f.price }));
+      setForm((f) => ({
+        ...f,
+        serviceId,
+        price: data.basePrice ?? f.price,
+        description: f.description || data.name || data.description || f.description,
+      }));
     }
   }
 
@@ -134,93 +139,6 @@ export function QuotesManager() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={(e) => void createDirect(e)}>
-        <FormPanel
-          title="Nueva cotización directa"
-          description="Crea una cotización sin pasar por oportunidad."
-          actions={
-            <button type="submit" className="btn btn-primary">
-              Crear cotización
-            </button>
-          }
-        >
-          <FormField label="Cliente *">
-            <SearchableSelect
-              className="w-full"
-              value={form.clientId}
-              onChange={(clientId) => setForm({ ...form, clientId })}
-              required
-              placeholder="Seleccionar…"
-              options={clients.map((c) => ({
-                value: c.id,
-                label: `${c.folio} — ${c.name}`,
-                keywords: `${c.folio} ${c.name}`,
-              }))}
-            />
-          </FormField>
-          <QuickAddClient onCreated={handleQuickAddClient} />
-          <FormField label="Servicio principal *">
-            <SearchableSelect
-              className="w-full"
-              value={form.serviceId}
-              onChange={(serviceId) => void onServiceChange(serviceId)}
-              required
-              placeholder="Seleccionar…"
-              options={services.map((s) => ({ value: s.id, label: s.name }))}
-            />
-          </FormField>
-          <FormField label="Descripción *">
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              required
-              rows={2}
-            />
-          </FormField>
-          <div className="form-grid cols-2">
-            <MoneyInput
-              label="Precio servicio principal (MXN)"
-              valueCents={form.price}
-              onChangeCents={(price) => setForm({ ...form, price })}
-              required
-            />
-            <FormField label="Tiempo de entrega *">
-              <input
-                type="text"
-                placeholder="Ej. 15 días hábiles"
-                value={form.deliveryTime}
-                onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
-                required
-              />
-            </FormField>
-            <FormField label="Condiciones de pago *" className="md:col-span-2">
-              <SearchableSelect
-                className="w-full"
-                value={form.paymentConditionId}
-                onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
-                required
-                placeholder="Seleccionar…"
-                options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
-              />
-            </FormField>
-          </div>
-          <FormField label="Observaciones">
-            <textarea
-              value={form.observations}
-              onChange={(e) => setForm({ ...form, observations: e.target.value })}
-              rows={2}
-            />
-          </FormField>
-          <QuoteSubscriptionLinesEditor
-            lines={subscriptionLines}
-            onChange={setSubscriptionLines}
-            templates={subscriptionTemplates}
-            periodicities={periodicities}
-          />
-          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        </FormPanel>
-      </form>
-
       <div className="card space-y-3 overflow-x-auto">
         <ListSearchInput
           value={search}
@@ -288,6 +206,94 @@ export function QuotesManager() {
           </tbody>
         </table>
       </div>
+
+      <form onSubmit={(e) => void createDirect(e)}>
+        <FormPanel
+          title="Nueva cotización directa"
+          description="Crea una cotización sin pasar por oportunidad."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Crear cotización
+            </button>
+          }
+        >
+          <FormField label="Cliente *">
+            <SearchableSelect
+              className="w-full"
+              value={form.clientId}
+              onChange={(clientId) => setForm({ ...form, clientId })}
+              required
+              placeholder="Seleccionar…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
+            />
+          </FormField>
+          <QuickAddClient onCreated={handleQuickAddClient} />
+          <FormField label="Servicio principal *">
+            <SearchableSelect
+              className="w-full"
+              value={form.serviceId}
+              onChange={(serviceId) => void onServiceChange(serviceId)}
+              required
+              placeholder="Seleccionar…"
+              options={services.map((s) => ({ value: s.id, label: s.name }))}
+            />
+          </FormField>
+          <FormField label="Descripción *">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              required
+              rows={2}
+            />
+          </FormField>
+          <div className="form-grid cols-2">
+            <MoneyInput
+              label="Precio servicio principal (MXN)"
+              valueCents={form.price}
+              onChangeCents={(price) => setForm({ ...form, price })}
+              required
+            />
+            <FormField label="Tiempo de entrega (días) *">
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Ej. 15"
+                value={form.deliveryTime}
+                onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Condiciones de pago *" className="md:col-span-2">
+              <SearchableSelect
+                className="w-full"
+                value={form.paymentConditionId}
+                onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
+                required
+                placeholder="Seleccionar…"
+                options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
+              />
+            </FormField>
+          </div>
+          <FormField label="Observaciones">
+            <textarea
+              value={form.observations}
+              onChange={(e) => setForm({ ...form, observations: e.target.value })}
+              rows={2}
+            />
+          </FormField>
+          <QuoteSubscriptionLinesEditor
+            lines={subscriptionLines}
+            onChange={setSubscriptionLines}
+            templates={subscriptionTemplates}
+            periodicities={periodicities}
+          />
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
+      </form>
     </div>
   );
 }

@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     }
 
     const parsed = fromOpportunitySchema.parse(body);
-    const quote = await createQuoteFromOpportunity({ ...parsed, userId: user.id });
+    const quote = await createQuoteFromOpportunity({ ...parsed, sellerId: user.id, userId: user.id });
     return NextResponse.json({ quote }, { status: 201 });
   } catch (e) {
     if (e instanceof z.ZodError) {

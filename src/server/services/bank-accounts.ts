@@ -61,7 +61,6 @@ export async function listActiveBankAccounts() {
 
 export async function createBankAccount(params: {
   name: string;
-  bank?: string | null;
   isFiscal: boolean;
   initialBalance: number;
   userId?: string;
@@ -71,7 +70,6 @@ export async function createBankAccount(params: {
     .insert(bankAccounts)
     .values({
       name: params.name.trim(),
-      bank: params.bank?.trim() || null,
       isFiscal: params.isFiscal,
       initialBalance: params.initialBalance,
       status: "activa",
@@ -92,7 +90,6 @@ export async function createBankAccount(params: {
 export async function updateBankAccount(params: {
   id: string;
   name?: string;
-  bank?: string | null;
   isFiscal?: boolean;
   initialBalance?: number;
   status?: "activa" | "inactiva";
@@ -101,7 +98,6 @@ export async function updateBankAccount(params: {
   const db = getDb();
   const updates: Partial<typeof bankAccounts.$inferInsert> = {};
   if (params.name !== undefined) updates.name = params.name.trim();
-  if (params.bank !== undefined) updates.bank = params.bank?.trim() || null;
   if (params.isFiscal !== undefined) updates.isFiscal = params.isFiscal;
   if (params.initialBalance !== undefined) updates.initialBalance = params.initialBalance;
   if (params.status !== undefined) updates.status = params.status;

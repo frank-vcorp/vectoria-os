@@ -350,7 +350,7 @@ export function OpportunityDetailView({ id }: { id: string }) {
               required
             />
             <label className="text-sm block">
-              <span className="text-[var(--muted)]">Tiempo de entrega</span>
+              <span className="text-[var(--muted)]">Tiempo de entrega (días)</span>
               <input
                 type="text"
                 placeholder="Ej. 15 días hábiles"

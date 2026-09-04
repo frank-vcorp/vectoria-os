@@ -43,20 +43,11 @@ export async function listSubscriptionTemplates() {
       name: catalogSubscriptionTemplates.name,
       description: catalogSubscriptionTemplates.description,
       basePrice: catalogSubscriptionTemplates.basePrice,
-      periodicityId: catalogSubscriptionTemplates.periodicityId,
-      periodicityName: catalogPeriodicities.name,
-      incomeCategoryId: catalogSubscriptionTemplates.incomeCategoryId,
-      incomeCategoryName: catalogIncomeCategories.name,
       status: catalogSubscriptionTemplates.status,
       createdAt: catalogSubscriptionTemplates.createdAt,
       updatedAt: catalogSubscriptionTemplates.updatedAt,
     })
     .from(catalogSubscriptionTemplates)
-    .innerJoin(catalogPeriodicities, eq(catalogSubscriptionTemplates.periodicityId, catalogPeriodicities.id))
-    .leftJoin(
-      catalogIncomeCategories,
-      eq(catalogSubscriptionTemplates.incomeCategoryId, catalogIncomeCategories.id),
-    )
     .orderBy(asc(catalogSubscriptionTemplates.name));
 }
 
@@ -118,8 +109,6 @@ export async function createSubscriptionTemplate(
     name: string;
     description?: string | null;
     basePrice: number;
-    periodicityId: string;
-    incomeCategoryId: string;
   },
   userId?: string,
 ) {
@@ -130,8 +119,6 @@ export async function createSubscriptionTemplate(
       name: params.name,
       description: params.description?.trim() || null,
       basePrice: params.basePrice,
-      periodicityId: params.periodicityId,
-      incomeCategoryId: params.incomeCategoryId,
     })
     .returning();
   await writeAudit({ entity: "catalog_subscription_template", entityId: row.id, action: "create", userId });
@@ -210,8 +197,6 @@ export async function updateSubscriptionTemplate(
     name?: string;
     description?: string | null;
     basePrice?: number;
-    periodicityId?: string;
-    incomeCategoryId?: string;
     status?: "activo" | "inactivo";
   },
   userId?: string,
@@ -223,8 +208,6 @@ export async function updateSubscriptionTemplate(
   if (data.name !== undefined) updates.name = data.name;
   if (data.description !== undefined) updates.description = data.description?.trim() || null;
   if (data.basePrice !== undefined) updates.basePrice = data.basePrice;
-  if (data.periodicityId) updates.periodicityId = data.periodicityId;
-  if (data.incomeCategoryId) updates.incomeCategoryId = data.incomeCategoryId;
   if (data.status) updates.status = data.status;
 
   const [row] = await db

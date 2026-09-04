@@ -78,7 +78,6 @@ export function SubscriptionDetailView({ id }: { id: string }) {
   const [error, setError] = useState("");
   const [invoicedCycles, setInvoicedCycles] = useState<Record<string, boolean>>({});
   const [payForm, setPayForm] = useState({
-    concept: "Pago suscripción",
     amount: 0,
     bankAccountId: "",
     paymentDate: new Date().toISOString().slice(0, 10),
@@ -145,6 +144,21 @@ export function SubscriptionDetailView({ id }: { id: string }) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "payment", id, ...payForm }),
+    });
+    if (!res.ok) {
+      setError((await res.json()).error ?? "Error");
+      return;
+    }
+    await load();
+  }
+
+  async function deletePayment(paymentId: string) {
+    if (!confirm("¿Eliminar este pago? Se revertirá el ingreso y los ciclos afectados.")) return;
+    setError("");
+    const res = await fetch("/api/subscriptions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_payment", id, paymentId }),
     });
     if (!res.ok) {
       setError((await res.json()).error ?? "Error");
@@ -333,12 +347,6 @@ export function SubscriptionDetailView({ id }: { id: string }) {
 
       <DetailSection title="Pagos">
         <form className="card space-y-3 mb-4" onSubmit={(e) => void addPayment(e)}>
-          <input
-            value={payForm.concept}
-            onChange={(e) => setPayForm({ ...payForm, concept: e.target.value })}
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            required
-          />
           <MoneyInput
             valueCents={payForm.amount}
             onChangeCents={(amount) => setPayForm({ ...payForm, amount })}
@@ -365,15 +373,19 @@ export function SubscriptionDetailView({ id }: { id: string }) {
             />
             Aplicar convenio de pago
           </label>
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="btn btn-primary">
             Registrar pago
           </button>
         </form>
         {payments.map((p) => (
-          <div key={p.id} className="text-sm py-1">
-            {p.concept} — {formatMoney(p.amount)} — {new Date(p.paymentDate).toLocaleDateString("es-MX")} (
-            {p.bankAccountName})
-            {p.isConvenio ? " — Convenio" : ""}
+          <div key={p.id} className="text-sm py-1 flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {formatMoney(p.amount)} — {new Date(p.paymentDate).toLocaleDateString("es-MX")} ({p.bankAccountName})
+              {p.isConvenio ? " — Convenio" : ""}
+            </span>
+            <button type="button" className="btn btn-ghost text-xs" onClick={() => void deletePayment(p.id)}>
+              Eliminar
+            </button>
           </div>
         ))}
       </DetailSection>

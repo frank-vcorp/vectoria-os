@@ -117,10 +117,6 @@ export const catalogSubscriptionTemplates = pgTable("catalog_subscription_templa
   name: text("name").notNull(),
   description: text("description"),
   basePrice: integer("base_price").notNull().default(0),
-  periodicityId: uuid("periodicity_id")
-    .notNull()
-    .references(() => catalogPeriodicities.id),
-  incomeCategoryId: uuid("income_category_id").references(() => catalogIncomeCategories.id),
   status: text("status").$type<"activo" | "inactivo">().notNull().default("activo"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -257,7 +253,6 @@ export const serviceOrders = pgTable("service_orders", {
 export const bankAccounts = pgTable("bank_accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  bank: text("bank"),
   isFiscal: boolean("is_fiscal").notNull().default(true),
   initialBalance: integer("initial_balance").notNull().default(0),
   status: text("status").$type<"activa" | "inactiva">().notNull().default("activa"),

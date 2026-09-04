@@ -15,7 +15,7 @@ import type { SubscriptionBillingStatus, SubscriptionServiceStatus } from "@/sha
 import { getClientById } from "@/server/services/clients";
 import { isFiscalComplete } from "@/server/services/invoices";
 import { writeAudit } from "@/server/services/audit";
-import { createIncomeFromSubscriptionPayment } from "@/server/services/financial-incomes";
+import { createIncomeFromSubscriptionPayment, deleteIncomeBySource } from "@/server/services/financial-incomes";
 import { nextFolio } from "@/server/services/folios";
 
 import { getOperationalTimezone } from "@/server/services/settings";
@@ -62,12 +62,6 @@ export async function createSubscriptionsFromQuoteItems(params: {
   const created = [];
 
   for (const item of params.items) {
-    const [template] = await db
-      .select({ incomeCategoryId: catalogSubscriptionTemplates.incomeCategoryId })
-      .from(catalogSubscriptionTemplates)
-      .where(eq(catalogSubscriptionTemplates.id, item.subscriptionTemplateId))
-      .limit(1);
-
     const folio = await nextFolio("suscripcion");
     const [sub] = await db
       .insert(subscriptions)
@@ -79,7 +73,7 @@ export async function createSubscriptionsFromQuoteItems(params: {
         description: item.description,
         price: item.price,
         periodicityId: item.periodicityId,
-        incomeCategoryId: template?.incomeCategoryId ?? null,
+        incomeCategoryId: null,
         serviceStatus: "pendiente_activacion",
         billingStatus: "al_corriente",
       })
@@ -461,9 +455,31 @@ async function applyPaymentToCycles(subscriptionId: string, amount: number) {
   }
 }
 
+async function reversePaymentFromCycles(subscriptionId: string, amount: number) {
+  const db = getDb();
+  const cycles = await db
+    .select()
+    .from(subscriptionCycles)
+    .where(eq(subscriptionCycles.subscriptionId, subscriptionId))
+    .orderBy(desc(subscriptionCycles.dueDate));
+
+  let remaining = amount;
+  for (const cycle of cycles) {
+    if (remaining <= 0) break;
+    if (cycle.paidAmount <= 0) continue;
+    const revert = Math.min(remaining, cycle.paidAmount);
+    const newPaid = cycle.paidAmount - revert;
+    const newStatus = newPaid >= cycle.amount ? "pagado" : "pendiente";
+    await db
+      .update(subscriptionCycles)
+      .set({ paidAmount: newPaid, status: newStatus })
+      .where(eq(subscriptionCycles.id, cycle.id));
+    remaining -= revert;
+  }
+}
+
 export async function addSubscriptionPayment(params: {
   subscriptionId: string;
-  concept: string;
   amount: number;
   bankAccountId: string;
   paymentDate: Date;
@@ -482,12 +498,13 @@ export async function addSubscriptionPayment(params: {
     throw new Error("PAYMENT_EXCEEDS_BALANCE");
   }
 
+  const concept = `Pago suscripción ${sub.folio}`;
   const db = getDb();
   const [payment] = await db
     .insert(subscriptionPayments)
     .values({
       subscriptionId: params.subscriptionId,
-      concept: params.concept.trim(),
+      concept,
       amount: params.amount,
       bankAccountId: params.bankAccountId,
       paymentDate: params.paymentDate,
@@ -499,7 +516,7 @@ export async function addSubscriptionPayment(params: {
   if (!params.isConvenio) {
     await applyPaymentToCycles(params.subscriptionId, params.amount);
     await createIncomeFromSubscriptionPayment({
-      concept: params.concept.trim(),
+      concept,
       amount: params.amount,
       bankAccountId: params.bankAccountId,
       paymentDate: params.paymentDate,
@@ -520,6 +537,41 @@ export async function addSubscriptionPayment(params: {
   });
 
   return payment;
+}
+
+export async function deleteSubscriptionPayment(params: {
+  subscriptionId: string;
+  paymentId: string;
+  userId?: string;
+}) {
+  const db = getDb();
+  const [payment] = await db
+    .select()
+    .from(subscriptionPayments)
+    .where(
+      and(
+        eq(subscriptionPayments.id, params.paymentId),
+        eq(subscriptionPayments.subscriptionId, params.subscriptionId),
+      ),
+    )
+    .limit(1);
+  if (!payment) throw new Error("NOT_FOUND");
+
+  if (!payment.isConvenio) {
+    await reversePaymentFromCycles(params.subscriptionId, payment.amount);
+    await deleteIncomeBySource("subscription_payment", payment.id);
+  }
+
+  await db.delete(subscriptionPayments).where(eq(subscriptionPayments.id, payment.id));
+  await updateBillingStatus(params.subscriptionId);
+
+  await writeAudit({
+    entity: "subscription_payment",
+    entityId: payment.id,
+    action: "cancel",
+    userId: params.userId,
+    payload: { subscriptionId: params.subscriptionId, amount: payment.amount },
+  });
 }
 
 async function updateBillingStatus(subscriptionId: string) {

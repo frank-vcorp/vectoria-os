@@ -84,53 +84,6 @@ export function OpportunitiesManager() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={(e) => void createOpportunity(e)}>
-        <FormPanel
-          title="Nueva oportunidad"
-          description="El vendedor se asigna automáticamente al usuario que crea la oportunidad."
-          actions={
-            <button type="submit" className="btn btn-primary">
-              Crear oportunidad
-            </button>
-          }
-        >
-          <FormField label="Cliente *">
-            <SearchableSelect
-              className="w-full"
-              value={form.clientId}
-              onChange={(clientId) => setForm({ ...form, clientId })}
-              required
-              placeholder="Seleccionar…"
-              options={clients.map((c) => ({
-                value: c.id,
-                label: `${c.folio} — ${c.name}`,
-                keywords: `${c.folio} ${c.name}`,
-              }))}
-            />
-          </FormField>
-          <QuickAddClient onCreated={handleQuickAddClient} />
-          <FormField label="Servicio *">
-            <SearchableSelect
-              className="w-full"
-              value={form.serviceId}
-              onChange={(serviceId) => setForm({ ...form, serviceId })}
-              required
-              placeholder="Seleccionar…"
-              options={services.map((s) => ({ value: s.id, label: s.name }))}
-            />
-          </FormField>
-          <FormField label="Descripción *">
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              required
-              rows={3}
-            />
-          </FormField>
-          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
-        </FormPanel>
-      </form>
-
       <div className="card space-y-3 overflow-x-auto">
         <ListSearchInput
           value={search}
@@ -181,6 +134,53 @@ export function OpportunitiesManager() {
           </tbody>
         </table>
       </div>
+
+      <form onSubmit={(e) => void createOpportunity(e)}>
+        <FormPanel
+          title="Nueva oportunidad"
+          description="El vendedor se asigna automáticamente al usuario que crea la oportunidad."
+          actions={
+            <button type="submit" className="btn btn-primary">
+              Crear oportunidad
+            </button>
+          }
+        >
+          <FormField label="Cliente *">
+            <SearchableSelect
+              className="w-full"
+              value={form.clientId}
+              onChange={(clientId) => setForm({ ...form, clientId })}
+              required
+              placeholder="Seleccionar…"
+              options={clients.map((c) => ({
+                value: c.id,
+                label: `${c.folio} — ${c.name}`,
+                keywords: `${c.folio} ${c.name}`,
+              }))}
+            />
+          </FormField>
+          <QuickAddClient onCreated={handleQuickAddClient} />
+          <FormField label="Servicio *">
+            <SearchableSelect
+              className="w-full"
+              value={form.serviceId}
+              onChange={(serviceId) => setForm({ ...form, serviceId })}
+              required
+              placeholder="Seleccionar…"
+              options={services.map((s) => ({ value: s.id, label: s.name }))}
+            />
+          </FormField>
+          <FormField label="Descripción *">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              required
+              rows={3}
+            />
+          </FormField>
+          {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        </FormPanel>
+      </form>
     </div>
   );
 }

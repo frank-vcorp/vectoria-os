@@ -73,10 +73,6 @@ async function dedupePeriodicities() {
       .update(quoteSubscriptionItems)
       .set({ periodicityId: keepId })
       .where(eq(quoteSubscriptionItems.periodicityId, row.id));
-    await db
-      .update(catalogSubscriptionTemplates)
-      .set({ periodicityId: keepId })
-      .where(eq(catalogSubscriptionTemplates.periodicityId, row.id));
   }
 
   if (removeIds.length > 0) {

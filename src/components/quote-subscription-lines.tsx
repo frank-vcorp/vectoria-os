@@ -9,8 +9,6 @@ export type SubscriptionTemplateOption = {
   name: string;
   description: string | null;
   basePrice: number;
-  periodicityId: string;
-  periodicityName: string;
   status: string;
 };
 
@@ -71,7 +69,6 @@ export function QuoteSubscriptionLinesEditor({
       subscriptionTemplateId: templateId,
       description: template.description?.trim() || template.name,
       price: template.basePrice,
-      periodicityId: template.periodicityId,
     });
   }
 
