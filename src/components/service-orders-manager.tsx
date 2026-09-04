@@ -108,6 +108,65 @@ export function ServiceOrdersManager() {
 
   return (
     <div className="space-y-6">
+      <div className="card space-y-3 overflow-x-auto">
+        <ListSearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={() => {
+            setLoading(true);
+            void loadAll(search);
+          }}
+        />
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[var(--border)] text-left">
+              <th className="py-2 pr-2">Folio</th>
+              <th className="py-2 pr-2">Cliente</th>
+              <th className="py-2 pr-2">Cotización</th>
+              <th className="py-2 pr-2">Precio</th>
+              <th className="py-2 pr-2">Entrega</th>
+              <th className="py-2 pr-2">Estatus</th>
+              <th className="py-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((o) => (
+              <tr key={o.id} className="border-b border-[var(--border)] align-top">
+                <td className="py-2 pr-2 font-mono text-xs">
+                  <Link href={`/ordenes-servicio/${o.id}`} className="underline">
+                    {o.folio}
+                  </Link>
+                </td>
+                <td className="py-2 pr-2">
+                  <Link href={`/clientes/${o.clientId}`} className="underline">
+                    {o.clientName}
+                  </Link>
+                </td>
+                <td className="py-2 pr-2">
+                  {o.quoteFolio && o.quoteId ? (
+                    <Link href={`/cotizaciones/${o.quoteId}`} className="underline">
+                      {o.quoteFolio}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="py-2 pr-2">{formatMoney(o.price)}</td>
+                <td className="py-2 pr-2">{new Date(o.deliveryDate).toLocaleDateString("es-MX")}</td>
+                <td className="py-2 pr-2">
+                  <span className="badge">{SERVICE_ORDER_STATUS_LABELS[o.status]}</span>
+                </td>
+                <td className="py-2">
+                  <Link href={`/ordenes-servicio/${o.id}`} className="btn btn-ghost text-xs">
+                    Ver
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <form onSubmit={(e) => void createOrder(e)}>
         <FormPanel
           title="Nueva OS directa"
@@ -212,65 +271,6 @@ export function ServiceOrdersManager() {
           {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         </FormPanel>
       </form>
-
-      <div className="card space-y-3 overflow-x-auto">
-        <ListSearchInput
-          value={search}
-          onChange={setSearch}
-          onSearch={() => {
-            setLoading(true);
-            void loadAll(search);
-          }}
-        />
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--border)] text-left">
-              <th className="py-2 pr-2">Folio</th>
-              <th className="py-2 pr-2">Cliente</th>
-              <th className="py-2 pr-2">Cotización</th>
-              <th className="py-2 pr-2">Precio</th>
-              <th className="py-2 pr-2">Entrega</th>
-              <th className="py-2 pr-2">Estatus</th>
-              <th className="py-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id} className="border-b border-[var(--border)] align-top">
-                <td className="py-2 pr-2 font-mono text-xs">
-                  <Link href={`/ordenes-servicio/${o.id}`} className="underline">
-                    {o.folio}
-                  </Link>
-                </td>
-                <td className="py-2 pr-2">
-                  <Link href={`/clientes/${o.clientId}`} className="underline">
-                    {o.clientName}
-                  </Link>
-                </td>
-                <td className="py-2 pr-2">
-                  {o.quoteFolio && o.quoteId ? (
-                    <Link href={`/cotizaciones/${o.quoteId}`} className="underline">
-                      {o.quoteFolio}
-                    </Link>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className="py-2 pr-2">{formatMoney(o.price)}</td>
-                <td className="py-2 pr-2">{new Date(o.deliveryDate).toLocaleDateString("es-MX")}</td>
-                <td className="py-2 pr-2">
-                  <span className="badge">{SERVICE_ORDER_STATUS_LABELS[o.status]}</span>
-                </td>
-                <td className="py-2">
-                  <Link href={`/ordenes-servicio/${o.id}`} className="btn btn-ghost text-xs">
-                    Ver
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { getQuotePrefillFromService } from "@/server/services/quotes";
 import {
   addServiceOrderPayment,
   createServiceOrderDirect,
+  deleteServiceOrderPayment,
   getServiceOrderById,
   getServiceOrderPaymentSummary,
   listServiceOrderPayments,
@@ -111,10 +112,14 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("payment"),
     id: z.string().uuid(),
-    concept: z.string().min(1),
     amount: z.number().int().positive(),
     bankAccountId: z.string().uuid().optional(),
     paymentDate: z.string().min(1),
+  }),
+  z.object({
+    action: z.literal("delete_payment"),
+    id: z.string().uuid(),
+    paymentId: z.string().uuid(),
   }),
   z.object({
     action: z.literal("prefill_service"),
@@ -150,7 +155,6 @@ export async function PATCH(request: Request) {
       const bankAccountId = body.bankAccountId ?? (await ensureDefaultBankAccount());
       const payment = await addServiceOrderPayment({
         serviceOrderId: body.id,
-        concept: body.concept,
         amount: body.amount,
         bankAccountId,
         paymentDate: new Date(body.paymentDate),
@@ -158,6 +162,19 @@ export async function PATCH(request: Request) {
       });
       const summary = await getServiceOrderPaymentSummary(body.id);
       return NextResponse.json({ payment, summary });
+    }
+
+    if (body.action === "delete_payment") {
+      await deleteServiceOrderPayment({
+        serviceOrderId: body.id,
+        paymentId: body.paymentId,
+        userId: user.id,
+      });
+      const [payments, summary] = await Promise.all([
+        listServiceOrderPayments(body.id),
+        getServiceOrderPaymentSummary(body.id),
+      ]);
+      return NextResponse.json({ payments, summary });
     }
 
     if (body.action === "send_pdf") {

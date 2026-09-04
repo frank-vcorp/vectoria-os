@@ -11,6 +11,7 @@ import {
   activateAllPendingSubscriptions,
   addSubscriptionPayment,
   createSubscriptionFromServiceOrder,
+  deleteSubscriptionPayment,
   getSubscriptionById,
   getSubscriptionFinancialSummary,
   listSubscriptionCycles,
@@ -89,11 +90,15 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("payment"),
     id: z.string().uuid(),
-    concept: z.string().min(1),
     amount: z.number().int().positive(),
     bankAccountId: z.string().uuid().optional(),
     paymentDate: z.string().min(1),
     isConvenio: z.boolean().optional(),
+  }),
+  z.object({
+    action: z.literal("delete_payment"),
+    id: z.string().uuid(),
+    paymentId: z.string().uuid(),
   }),
 ]);
 
@@ -130,21 +135,37 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ subscription });
     }
 
-    const bankAccountId = body.bankAccountId ?? (await ensureDefaultBankAccount());
-    const payment = await addSubscriptionPayment({
-      subscriptionId: body.id,
-      concept: body.concept,
-      amount: body.amount,
-      bankAccountId,
-      paymentDate: new Date(body.paymentDate),
-      isConvenio: body.isConvenio,
-      userId: user.id,
-    });
-    const [cycles, payments] = await Promise.all([
-      listSubscriptionCycles(body.id),
-      listSubscriptionPayments(body.id),
-    ]);
-    return NextResponse.json({ payment, cycles, payments });
+    if (body.action === "delete_payment") {
+      await deleteSubscriptionPayment({
+        subscriptionId: body.id,
+        paymentId: body.paymentId,
+        userId: user.id,
+      });
+      const [cycles, payments] = await Promise.all([
+        listSubscriptionCycles(body.id),
+        listSubscriptionPayments(body.id),
+      ]);
+      return NextResponse.json({ cycles, payments });
+    }
+
+    if (body.action === "payment") {
+      const bankAccountId = body.bankAccountId ?? (await ensureDefaultBankAccount());
+      const payment = await addSubscriptionPayment({
+        subscriptionId: body.id,
+        amount: body.amount,
+        bankAccountId,
+        paymentDate: new Date(body.paymentDate),
+        isConvenio: body.isConvenio,
+        userId: user.id,
+      });
+      const [cycles, payments] = await Promise.all([
+        listSubscriptionCycles(body.id),
+        listSubscriptionPayments(body.id),
+      ]);
+      return NextResponse.json({ payment, cycles, payments });
+    }
+
+    return NextResponse.json({ error: "INVALID_ACTION" }, { status: 400 });
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     const msg = e instanceof Error ? e.message : "ERROR";

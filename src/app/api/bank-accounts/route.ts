@@ -39,7 +39,6 @@ export async function GET() {
 
 const postSchema = z.object({
   name: z.string().min(1),
-  bank: z.string().optional().nullable(),
   isFiscal: z.boolean(),
   initialBalance: z.number().int(),
 });
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
     const user = await requireUser();
     await requireModule(user, "bancos", "write");
     const body = postSchema.parse(await request.json());
-    const account = await createBankAccount({ ...body, bank: body.bank ?? null, userId: user.id });
+    const account = await createBankAccount({ ...body, userId: user.id });
     return NextResponse.json({ account }, { status: 201 });
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
@@ -61,7 +60,6 @@ export async function POST(request: Request) {
 const patchSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).optional(),
-  bank: z.string().optional().nullable(),
   isFiscal: z.boolean().optional(),
   initialBalance: z.number().int().optional(),
   status: z.enum(["activa", "inactiva"]).optional(),

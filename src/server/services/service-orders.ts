@@ -14,7 +14,7 @@ import {
 } from "@/server/db/schema";
 import type { ServiceOrderStatus } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
-import { createIncomeFromOsPayment } from "@/server/services/financial-incomes";
+import { createIncomeFromOsPayment, deleteIncomeBySource } from "@/server/services/financial-incomes";
 import { folioOrClientNameFilter } from "@/server/services/list-search";
 import { nextFolio } from "@/server/services/folios";
 import { createProjectFromServiceOrder } from "@/server/services/projects";
@@ -262,7 +262,6 @@ export async function listServiceOrderPayments(serviceOrderId: string) {
 
 export async function addServiceOrderPayment(params: {
   serviceOrderId: string;
-  concept: string;
   amount: number;
   bankAccountId: string;
   paymentDate: Date;
@@ -275,12 +274,13 @@ export async function addServiceOrderPayment(params: {
   const summary = await getServiceOrderPaymentSummary(params.serviceOrderId);
   if (params.amount > summary.balance) throw new Error("PAYMENT_EXCEEDS_BALANCE");
 
+  const concept = `Pago OS ${order.folio}`;
   const db = getDb();
   const [payment] = await db
     .insert(serviceOrderPayments)
     .values({
       serviceOrderId: params.serviceOrderId,
-      concept: params.concept.trim(),
+      concept,
       amount: params.amount,
       bankAccountId: params.bankAccountId,
       paymentDate: params.paymentDate,
@@ -289,7 +289,7 @@ export async function addServiceOrderPayment(params: {
     .returning({ id: serviceOrderPayments.id });
 
   await createIncomeFromOsPayment({
-    concept: params.concept.trim(),
+    concept,
     amount: params.amount,
     bankAccountId: params.bankAccountId,
     paymentDate: params.paymentDate,
@@ -306,6 +306,36 @@ export async function addServiceOrderPayment(params: {
   });
 
   return payment;
+}
+
+export async function deleteServiceOrderPayment(params: {
+  serviceOrderId: string;
+  paymentId: string;
+  userId?: string;
+}) {
+  const db = getDb();
+  const [payment] = await db
+    .select()
+    .from(serviceOrderPayments)
+    .where(
+      and(
+        eq(serviceOrderPayments.id, params.paymentId),
+        eq(serviceOrderPayments.serviceOrderId, params.serviceOrderId),
+      ),
+    )
+    .limit(1);
+  if (!payment) throw new Error("NOT_FOUND");
+
+  await deleteIncomeBySource("os_payment", payment.id);
+  await db.delete(serviceOrderPayments).where(eq(serviceOrderPayments.id, payment.id));
+
+  await writeAudit({
+    entity: "service_order_payment",
+    entityId: payment.id,
+    action: "cancel",
+    userId: params.userId,
+    payload: { serviceOrderId: params.serviceOrderId, amount: payment.amount },
+  });
 }
 
 export async function updateServiceOrderStatus(params: {

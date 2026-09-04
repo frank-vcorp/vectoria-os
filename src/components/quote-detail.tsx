@@ -287,7 +287,7 @@ export function QuoteDetailView({ id }: { id: string }) {
                 required
               />
               <label className="text-sm block">
-                <span className="text-[var(--muted)]">Tiempo de entrega</span>
+                <span className="text-[var(--muted)]">Tiempo de entrega (días)</span>
                 <input
                   type="text"
                   value={form.deliveryTime}
@@ -345,7 +345,7 @@ export function QuoteDetailView({ id }: { id: string }) {
               <DetailField label="Servicio" value={quote.serviceName} />
               <DetailField label="Descripción" value={quote.description} />
               <DetailField label="Precio" value={formatMoney(quote.price)} />
-              <DetailField label="Tiempo de entrega" value={quote.deliveryTime} />
+              <DetailField label="Tiempo de entrega (días)" value={quote.deliveryTime} />
               <DetailField label="Condiciones de pago" value={quote.paymentConditionName} />
               <DetailField label="Observaciones" value={quote.observations} />
               <DetailField label="Fecha" value={new Date(quote.createdAt).toLocaleString("es-MX")} />

@@ -137,25 +137,25 @@ export function InvoicesManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
+      <nav className="tab-bar" aria-label="Facturación">
         <button
           type="button"
-          className={tab === "list" ? "btn-primary text-sm" : "btn-secondary text-sm"}
+          className={tab === "list" ? "btn btn-primary text-sm" : "btn btn-secondary text-sm"}
           onClick={() => setTab("list")}
         >
           Listado
         </button>
         <button
           type="button"
-          className={tab === "create" ? "btn-primary text-sm" : "btn-secondary text-sm"}
+          className={tab === "create" ? "btn btn-primary text-sm" : "btn btn-secondary text-sm"}
           onClick={() => setTab("create")}
         >
           Nueva factura manual
         </button>
-        <button type="button" className="btn-secondary text-sm" onClick={() => void processAuto()}>
+        <button type="button" className="btn btn-secondary text-sm" onClick={() => void processAuto()}>
           Procesar automáticas
         </button>
-      </div>
+      </nav>
 
       {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
@@ -188,7 +188,7 @@ export function InvoicesManager() {
               />
             </div>
           )}
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="btn btn-primary">
             Crear borrador
           </button>
         </form>

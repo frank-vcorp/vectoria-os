@@ -8,9 +8,9 @@ export default async function BancosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Bancos / Cuentas</h1>
-        <p className="text-[var(--muted)] mt-1">Administración de cuentas y saldos calculados (Discovery §10)</p>
+        <p className="text-[var(--muted)] mt-1">También disponible en Catálogos. Solo nombre identificador por cuenta.</p>
       </div>
-      <BanksManager />
+      <BanksManager listFirst />
     </div>
   );
 }

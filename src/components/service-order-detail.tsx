@@ -72,7 +72,7 @@ type LinkedSub = {
   billingStatus: string;
 };
 
-type SubTemplate = { id: string; name: string; basePrice: number; periodicityId: string; description: string | null };
+type SubTemplate = { id: string; name: string; basePrice: number; description: string | null };
 type Periodicity = { id: string; name: string };
 
 export function ServiceOrderDetailView({ id }: { id: string }) {
@@ -85,7 +85,6 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payForm, setPayForm] = useState({
-    concept: "",
     amount: 0,
     bankAccountId: "",
     paymentDate: new Date().toISOString().slice(0, 10),
@@ -102,7 +101,6 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
   });
   const [subPayTarget, setSubPayTarget] = useState<string | null>(null);
   const [subPayForm, setSubPayForm] = useState({
-    concept: "Pago suscripción",
     amount: 0,
     bankAccountId: "",
     paymentDate: new Date().toISOString().slice(0, 10),
@@ -204,7 +202,7 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
       subscriptionTemplateId: templateId,
       description: t.description ?? t.name,
       price: t.basePrice,
-      periodicityId: t.periodicityId,
+      periodicityId: "",
     });
   }
 
@@ -261,7 +259,39 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
       setError((await res.json()).error ?? "Error");
       return;
     }
-    setPayForm((f) => ({ ...f, concept: "", amount: 0 }));
+    setPayForm((f) => ({ ...f, amount: 0 }));
+    await load();
+  }
+
+  async function deletePayment(paymentId: string) {
+    if (!confirm("¿Eliminar este pago? Se revertirá el ingreso asociado.")) return;
+    setError("");
+    const res = await fetch("/api/service-orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_payment", id, paymentId }),
+    });
+    if (!res.ok) {
+      setError((await res.json()).error ?? "Error");
+      return;
+    }
+    const data = await res.json();
+    setPayments(data.payments ?? []);
+    setSummary(data.summary);
+  }
+
+  async function deleteSubPayment(subscriptionId: string, paymentId: string) {
+    if (!confirm("¿Eliminar este pago? Se revertirá el ingreso y los ciclos afectados.")) return;
+    setError("");
+    const res = await fetch("/api/subscriptions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_payment", id: subscriptionId, paymentId }),
+    });
+    if (!res.ok) {
+      setError((await res.json()).error ?? "Error");
+      return;
+    }
     await load();
   }
 
@@ -459,22 +489,20 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
         )}
         <ul className="text-sm space-y-2">
           {payments.map((p) => (
-            <li key={p.id} className="border-b border-[var(--border)] pb-2">
-              {p.concept} — {formatMoney(p.amount)} — {p.bankAccountName} —{" "}
-              {new Date(p.paymentDate).toLocaleDateString("es-MX")}
+            <li key={p.id} className="border-b border-[var(--border)] pb-2 flex flex-wrap items-center justify-between gap-2">
+              <span>
+                {formatMoney(p.amount)} — {p.bankAccountName} —{" "}
+                {new Date(p.paymentDate).toLocaleDateString("es-MX")}
+              </span>
+              <button type="button" className="btn btn-ghost text-xs" onClick={() => void deletePayment(p.id)}>
+                Eliminar
+              </button>
             </li>
           ))}
           {payments.length === 0 && <li className="text-[var(--muted)]">Sin pagos registrados</li>}
         </ul>
         {order.status !== "cancelada" && (
           <form className="grid gap-2 md:grid-cols-2" onSubmit={(e) => void addPayment(e)}>
-            <input
-              value={payForm.concept}
-              onChange={(e) => setPayForm({ ...payForm, concept: e.target.value })}
-              placeholder="Concepto"
-              required
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
             <MoneyInput
               label="Importe (MXN)"
               valueCents={payForm.amount}
@@ -503,11 +531,11 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
 
       <DetailSection title="Suscripciones relacionadas">
         <div className="flex gap-2 flex-wrap mb-3">
-          <button type="button" className="btn-secondary text-sm" onClick={() => setShowNewSub((v) => !v)}>
+          <button type="button" className="btn btn-secondary text-sm" onClick={() => setShowNewSub((v) => !v)}>
             + Nueva suscripción
           </button>
           {linkedSubs.some((s) => s.serviceStatus === "pendiente_activacion") && (
-            <button type="button" className="btn-primary text-sm" onClick={() => void activateAllSubs()}>
+            <button type="button" className="btn btn-primary text-sm" onClick={() => void activateAllSubs()}>
               Activar todas
             </button>
           )}
@@ -534,7 +562,15 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
               valueCents={newSubForm.price}
               onChangeCents={(price) => setNewSubForm({ ...newSubForm, price })}
             />
-            <button type="submit" className="btn-primary text-sm">
+            <SearchableSelect
+              className="w-full"
+              value={newSubForm.periodicityId}
+              onChange={(periodicityId) => setNewSubForm({ ...newSubForm, periodicityId })}
+              required
+              placeholder="Periodicidad *"
+              options={periodicities.map((p) => ({ value: p.id, label: p.name }))}
+            />
+            <button type="submit" className="btn btn-primary text-sm">
               Crear suscripción
             </button>
           </form>
@@ -580,12 +616,6 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
               </div>
               {subPayTarget === s.id && (
                 <form className="grid gap-2 md:grid-cols-2 pt-2 border-t border-[var(--border)]" onSubmit={(e) => void addSubPayment(e)}>
-                  <input
-                    value={subPayForm.concept}
-                    onChange={(e) => setSubPayForm({ ...subPayForm, concept: e.target.value })}
-                    required
-                    className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-                  />
                   <MoneyInput
                     valueCents={subPayForm.amount}
                     onChangeCents={(amount) => setSubPayForm({ ...subPayForm, amount })}

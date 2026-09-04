@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
 import { MoneyInput } from "@/components/money-input";
 import { SearchableSelect } from "@/components/searchable-select";
+import { BanksManager } from "@/components/banks-manager";
 
 const TIMEZONE_OPTIONS = [
   "America/Mexico_City",
@@ -29,10 +30,6 @@ type CatalogData = {
     name: string;
     description: string | null;
     basePrice: number;
-    periodicityId: string;
-    periodicityName: string;
-    incomeCategoryId: string | null;
-    incomeCategoryName: string | null;
     status: string;
   }[];
   paymentConditions?: { id: string; name: string; status: string }[];
@@ -197,8 +194,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     name: "",
     description: "",
     basePrice: 0,
-    periodicityId: "",
-    incomeCategoryId: "",
   });
   const [payment, setPayment] = useState({ name: "" });
 
@@ -217,8 +212,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     name: string;
     description: string;
     basePrice: number;
-    periodicityId: string;
-    incomeCategoryId: string;
   } | null>(null);
   const [editPayment, setEditPayment] = useState<{ id: string; name: string } | null>(null);
 
@@ -685,15 +678,11 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
               name: subscription.name,
               description: subscription.description || null,
               basePrice: subscription.basePrice,
-              periodicityId: subscription.periodicityId,
-              incomeCategoryId: subscription.incomeCategoryId,
             }).then(() =>
               setSubscription({
                 name: "",
                 description: "",
                 basePrice: 0,
-                periodicityId: "",
-                incomeCategoryId: "",
               }),
             );
           }}
@@ -717,18 +706,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
             required
             className="min-w-[8rem]"
           />
-          <PeriodicitySelect
-            value={subscription.periodicityId}
-            onChange={(periodicityId) => setSubscription({ ...subscription, periodicityId })}
-            periodicities={periodicities}
-            required
-          />
-          <CategorySelect
-            value={subscription.incomeCategoryId}
-            onChange={(incomeCategoryId) => setSubscription({ ...subscription, incomeCategoryId })}
-            categories={incomeCategories}
-            required
-          />
           <button className="btn btn-primary" type="submit">
             Agregar
           </button>
@@ -744,8 +721,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
                 name: editSubscription.name,
                 description: editSubscription.description || null,
                 basePrice: editSubscription.basePrice,
-                periodicityId: editSubscription.periodicityId,
-                incomeCategoryId: editSubscription.incomeCategoryId,
               }).then(() => setEditSubscription(null));
             }}
           >
@@ -766,20 +741,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
               onChangeCents={(basePrice) => setEditSubscription({ ...editSubscription, basePrice })}
               required
             />
-            <PeriodicitySelect
-              value={editSubscription.periodicityId}
-              onChange={(periodicityId) => setEditSubscription({ ...editSubscription, periodicityId })}
-              periodicities={periodicities}
-              required
-            />
-            <CategorySelect
-              value={editSubscription.incomeCategoryId}
-              onChange={(incomeCategoryId) =>
-                setEditSubscription({ ...editSubscription, incomeCategoryId })
-              }
-              categories={incomeCategories}
-              required
-            />
             <button className="btn btn-primary" type="submit">
               Guardar
             </button>
@@ -792,8 +753,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           {data.subscriptionTemplates?.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center gap-2 justify-between">
               <span>
-                {s.name} — {formatMoney(s.basePrice)} · {s.periodicityName}
-                {s.incomeCategoryName ? ` · ${s.incomeCategoryName}` : ""}
+                {s.name} — {formatMoney(s.basePrice)}
                 {s.description ? ` — ${s.description}` : ""}
               </span>
               <span className="flex items-center gap-2">
@@ -807,8 +767,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
                       name: s.name,
                       description: s.description ?? "",
                       basePrice: s.basePrice,
-                      periodicityId: s.periodicityId,
-                      incomeCategoryId: s.incomeCategoryId ?? "",
                     })
                   }
                 >
@@ -932,6 +890,12 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           </section>
         ))}
       </div>
+
+      <section className="card space-y-3">
+        <h2 className="font-medium">Cuentas bancarias</h2>
+        <p className="text-sm text-[var(--muted)]">Administre cuentas para movimientos y saldos.</p>
+        <BanksManager listFirst />
+      </section>
     </div>
   );
 }

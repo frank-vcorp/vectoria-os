@@ -230,6 +230,7 @@ export async function createQuoteFromOpportunity(params: {
   price?: number;
   observations?: string | null;
   subscriptionItems?: QuoteSubscriptionItemInput[];
+  sellerId: string;
   userId?: string;
 }) {
   const opp = await getOpportunityById(params.opportunityId);
@@ -247,7 +248,7 @@ export async function createQuoteFromOpportunity(params: {
   const quote = await insertQuote({
     clientId: opp.clientId,
     opportunityId: opp.id,
-    sellerId: opp.sellerId,
+    sellerId: params.sellerId,
     serviceId: opp.serviceId,
     description: opp.description,
     price: params.price ?? service.basePrice,
@@ -375,7 +376,7 @@ export async function getQuotePrefillFromService(serviceId: string) {
     .where(eq(catalogServices.id, serviceId))
     .limit(1);
   if (!service) throw new Error("NOT_FOUND");
-  return { basePrice: service.basePrice, name: service.name };
+  return { basePrice: service.basePrice, name: service.name, description: service.name };
 }
 
 export async function getQuoteSubscriptionItemsForPdf(quoteId: string) {

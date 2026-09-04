@@ -438,39 +438,6 @@ export function ProjectDetailView({ id }: { id: string }) {
               value={project.checklistRequired ? "Sí" : "No"}
             />
           </DetailGrid>
-          {canWrite && (
-            <form
-              className="mt-4 space-y-3 border-t border-[var(--border)] pt-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (phases.length > 0) setShowReplaceConfirm(true);
-                else void importPlan(true);
-              }}
-            >
-              <h3 className="font-medium text-sm">Reemplazar Plan de Validación</h3>
-              <p className="text-sm text-amber-600">
-                Puede importar un nuevo archivo en cualquier momento. Se reiniciará todo el avance: fases,
-                comprobaciones marcadas y validaciones.
-              </p>
-              <input
-                type="file"
-                accept=".md,text/markdown"
-                onChange={(e) => onPlanFile(e.target.files?.[0] ?? null)}
-                className="text-sm"
-              />
-              <textarea
-                value={planContent}
-                onChange={(e) => setPlanContent(e.target.value)}
-                rows={6}
-                className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 font-mono text-xs"
-                placeholder="# VECTORIA_PLAN_VALIDACION"
-                required
-              />
-              <button type="submit" className="btn-secondary text-sm">
-                Reemplazar plan
-              </button>
-            </form>
-          )}
         </DetailSection>
       )}
 
@@ -698,6 +665,41 @@ export function ProjectDetailView({ id }: { id: string }) {
             </div>
           )}
         </DetailSection>
+      )}
+
+      {project.planImportedAt && canWrite && (
+        <details className="card">
+          <summary className="cursor-pointer font-medium text-sm">Reemplazar plan de validación</summary>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (phases.length > 0) setShowReplaceConfirm(true);
+              else void importPlan(true);
+            }}
+          >
+            <p className="text-sm text-amber-600">
+              Importar un nuevo archivo reiniciará fases, comprobaciones y validaciones.
+            </p>
+            <input
+              type="file"
+              accept=".md,text/markdown"
+              onChange={(e) => onPlanFile(e.target.files?.[0] ?? null)}
+              className="text-sm"
+            />
+            <textarea
+              value={planContent}
+              onChange={(e) => setPlanContent(e.target.value)}
+              rows={6}
+              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 font-mono text-xs"
+              placeholder="# VECTORIA_PLAN_VALIDACION"
+              required
+            />
+            <button type="submit" className="btn btn-secondary text-sm">
+              Reemplazar plan
+            </button>
+          </form>
+        </details>
       )}
 
       {showReplaceConfirm && canWrite && (
