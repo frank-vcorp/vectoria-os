@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
 import { SearchableSelect } from "@/components/searchable-select";
-import { BanksManager } from "@/components/banks-manager";
-
 const TIMEZONE_OPTIONS = [
   "America/Mexico_City",
   "America/Tijuana",
@@ -835,12 +833,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           </section>
         ))}
       </div>
-
-      <section className="card space-y-3">
-        <h2 className="font-medium">Cuentas bancarias</h2>
-        <p className="text-sm text-[var(--muted)]">Administre cuentas para movimientos y saldos.</p>
-        <BanksManager listFirst />
-      </section>
     </div>
   );
 }

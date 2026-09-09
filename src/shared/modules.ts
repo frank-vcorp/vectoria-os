@@ -25,7 +25,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   proyectos: "Proyectos",
   suscripciones: "Suscripciones",
   bancos: "Bancos / Cuentas",
-  ingresos_egresos: "Ingresos y Egresos",
+  ingresos_egresos: "Movimientos",
   cuentas_pagar: "Cuentas por Pagar",
   flujo_financiero: "Flujo Financiero",
   reporte_financiero: "Reporte Financiero",

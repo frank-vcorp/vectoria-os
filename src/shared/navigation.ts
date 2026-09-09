@@ -43,8 +43,8 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "finanzas",
     title: "Finanzas",
     items: [
-      { href: "/bancos", module: "bancos", label: "Bancos" },
-      { href: "/finanzas", module: "flujo_financiero", label: "Finanzas", mobilePrimary: true },
+      { href: "/movimientos", module: "ingresos_egresos", label: "Movimientos", mobilePrimary: true },
+      { href: "/finanzas", module: "flujo_financiero", label: "Finanzas" },
       { href: "/facturacion", module: "facturacion", label: "Facturación" },
     ],
   },

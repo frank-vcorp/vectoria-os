@@ -12,8 +12,8 @@ const HOME_MODULES: { href: string; module: ModuleKey; title: string; descriptio
   { href: "/ordenes-servicio", module: "ordenes_servicio", title: "Órdenes de servicio", description: "Pagos, saldo e ingreso automático" },
   { href: "/proyectos", module: "proyectos", title: "Proyectos", description: "Plan de validación y fases" },
   { href: "/suscripciones", module: "suscripciones", title: "Suscripciones", description: "Ciclos, pagos y facturación" },
-  { href: "/bancos", module: "bancos", title: "Bancos", description: "Cuentas y saldos" },
-  { href: "/finanzas", module: "flujo_financiero", title: "Finanzas", description: "Flujo, CxC, CxP y reporte" },
+  { href: "/movimientos", module: "ingresos_egresos", title: "Movimientos", description: "Captura y listado de ingresos y egresos" },
+  { href: "/finanzas", module: "flujo_financiero", title: "Finanzas", description: "Resumen, saldos, CxC y cuentas por pagar" },
   { href: "/facturacion", module: "facturacion", title: "Facturación", description: "Timbrado y envío CFDI" },
   {
     href: "/admin",
