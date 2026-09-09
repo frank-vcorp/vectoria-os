@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
 import { SearchableSelect } from "@/components/searchable-select";
+import { BanksManager } from "@/components/banks-manager";
 const TIMEZONE_OPTIONS = [
   "America/Mexico_City",
   "America/Tijuana",
@@ -153,9 +154,10 @@ function PeriodicitySelect({
 
 type CatalogsManagerProps = {
   isAdmin?: boolean;
+  canManageBanks?: boolean;
 };
 
-export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
+export function CatalogsManager({ isAdmin = false, canManageBanks = false }: CatalogsManagerProps) {
   const [data, setData] = useState<CatalogData>({});
   const [timezone, setTimezone] = useState("America/Mexico_City");
   const [savingTimezone, setSavingTimezone] = useState(false);
@@ -833,6 +835,13 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
           </section>
         ))}
       </div>
+
+      {canManageBanks && (
+        <section className="card space-y-3">
+          <h2 className="font-medium">Bancos</h2>
+          <BanksManager listFirst />
+        </section>
+      )}
     </div>
   );
 }
