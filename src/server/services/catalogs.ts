@@ -108,7 +108,7 @@ export async function createSubscriptionTemplate(
   params: {
     name: string;
     description?: string | null;
-    basePrice: number;
+    basePrice?: number;
   },
   userId?: string,
 ) {
@@ -118,7 +118,7 @@ export async function createSubscriptionTemplate(
     .values({
       name: params.name,
       description: params.description?.trim() || null,
-      basePrice: params.basePrice,
+      basePrice: params.basePrice ?? 0,
     })
     .returning();
   await writeAudit({ entity: "catalog_subscription_template", entityId: row.id, action: "create", userId });

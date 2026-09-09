@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { QuickAddField } from "@/components/quick-add-field";
-import { MoneyInput } from "@/components/money-input";
 import { SearchableSelect } from "@/components/searchable-select";
 import { BanksManager } from "@/components/banks-manager";
 
@@ -37,10 +36,6 @@ type CatalogData = {
   expenseCategories?: { id: string; name: string }[];
   providers?: { id: string; name: string }[];
 };
-
-function formatMoney(cents: number) {
-  return (cents / 100).toLocaleString("es-MX", { style: "currency", currency: "MXN" });
-}
 
 function StatusBadge({ status }: { status: string }) {
   const active = status === "activo";
@@ -190,11 +185,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     name: "",
     generatesProject: false,
   });
-  const [subscription, setSubscription] = useState({
-    name: "",
-    description: "",
-    basePrice: 0,
-  });
+  const [subscription, setSubscription] = useState({ name: "" });
   const [payment, setPayment] = useState({ name: "" });
 
   const [editPeriodicity, setEditPeriodicity] = useState<{
@@ -207,12 +198,7 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
     name: string;
     generatesProject: boolean;
   } | null>(null);
-  const [editSubscription, setEditSubscription] = useState<{
-    id: string;
-    name: string;
-    description: string;
-    basePrice: number;
-  } | null>(null);
+  const [editSubscription, setEditSubscription] = useState<{ id: string; name: string } | null>(null);
   const [editPayment, setEditPayment] = useState<{ id: string; name: string } | null>(null);
 
   async function load() {
@@ -676,35 +662,15 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
             void post({
               type: "subscription_template",
               name: subscription.name,
-              description: subscription.description || null,
-              basePrice: subscription.basePrice,
-            }).then(() =>
-              setSubscription({
-                name: "",
-                description: "",
-                basePrice: 0,
-              }),
-            );
+            }).then(() => setSubscription({ name: "" }));
           }}
         >
           <input
             placeholder="Nombre"
             value={subscription.name}
-            onChange={(e) => setSubscription({ ...subscription, name: e.target.value })}
+            onChange={(e) => setSubscription({ name: e.target.value })}
             required
             className="flex-1 min-w-[10rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <input
-            placeholder="Descripción (opcional)"
-            value={subscription.description}
-            onChange={(e) => setSubscription({ ...subscription, description: e.target.value })}
-            className="flex-1 min-w-[10rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-          />
-          <MoneyInput
-            valueCents={subscription.basePrice}
-            onChangeCents={(basePrice) => setSubscription({ ...subscription, basePrice })}
-            required
-            className="min-w-[8rem]"
           />
           <button className="btn btn-primary" type="submit">
             Agregar
@@ -719,8 +685,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
                 type: "subscription_template",
                 id: editSubscription.id,
                 name: editSubscription.name,
-                description: editSubscription.description || null,
-                basePrice: editSubscription.basePrice,
               }).then(() => setEditSubscription(null));
             }}
           >
@@ -729,17 +693,6 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
               onChange={(e) => setEditSubscription({ ...editSubscription, name: e.target.value })}
               required
               className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
-            <input
-              value={editSubscription.description}
-              onChange={(e) => setEditSubscription({ ...editSubscription, description: e.target.value })}
-              placeholder="Descripción"
-              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
-            <MoneyInput
-              valueCents={editSubscription.basePrice}
-              onChangeCents={(basePrice) => setEditSubscription({ ...editSubscription, basePrice })}
-              required
             />
             <button className="btn btn-primary" type="submit">
               Guardar
@@ -752,22 +705,14 @@ export function CatalogsManager({ isAdmin = false }: CatalogsManagerProps) {
         <ul className="text-sm space-y-2">
           {data.subscriptionTemplates?.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center gap-2 justify-between">
-              <span>
-                {s.name} — {formatMoney(s.basePrice)}
-                {s.description ? ` — ${s.description}` : ""}
-              </span>
+              <span>{s.name}</span>
               <span className="flex items-center gap-2">
                 <StatusBadge status={s.status} />
                 <button
                   type="button"
                   className="btn btn-ghost text-sm"
                   onClick={() =>
-                    setEditSubscription({
-                      id: s.id,
-                      name: s.name,
-                      description: s.description ?? "",
-                      basePrice: s.basePrice,
-                    })
+                    setEditSubscription({ id: s.id, name: s.name })
                   }
                 >
                   Editar

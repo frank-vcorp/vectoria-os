@@ -67,7 +67,7 @@ const createSchema = z.discriminatedUnion("type", [
     type: z.literal("subscription_template"),
     name: z.string().min(1),
     description: z.string().optional().nullable(),
-    basePrice: z.number().int().min(0),
+    basePrice: z.number().int().min(0).optional(),
   }),
   z.object({
     type: z.literal("payment_condition"),
