@@ -61,10 +61,12 @@ export function MoneyInput({ label, valueCents, onChangeCents, required, classNa
   return (
     <label className={`block text-sm ${className}`}>
       {label && <span className="text-[var(--muted)]">{label}</span>}
-      <div className={`relative ${label ? "mt-1" : ""}`}>
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none select-none w-4 text-center">
-          $
-        </span>
+      <div
+        className={`money-input-wrap flex items-center gap-1.5 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 min-h-[2.5rem] ${
+          label ? "mt-1" : ""
+        }`}
+      >
+        <span className="text-[var(--muted)] pointer-events-none select-none shrink-0">$</span>
         <input
           type="text"
           inputMode="decimal"
@@ -76,7 +78,7 @@ export function MoneyInput({ label, valueCents, onChangeCents, required, classNa
           onBlur={handleBlur}
           onChange={(e) => handleChange(e.target.value)}
           required={required}
-          className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg pl-9 pr-3 py-2 tabular-nums"
+          className="money-input-field flex-1 min-w-0 border-0 bg-transparent p-0 shadow-none outline-none tabular-nums"
         />
       </div>
     </label>
