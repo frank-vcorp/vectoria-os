@@ -1,5 +1,13 @@
 import { pgTable, text, timestamp, uuid, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import type {
+  ArchivedOperation,
+  QuoteLinkHistory,
+  SectionStateMap,
+  SurveyAnswers,
+  SurveyOperationType,
+  SurveyStatus,
+} from "@/shared/surveys";
+import type {
   ClientFiscalData,
   InvoiceSendStatus,
   InvoiceStatus,
@@ -478,6 +486,58 @@ export const invoices = pgTable("invoices", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// --- Levantamientos ---
+
+export const surveys = pgTable("surveys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folio: text("folio").notNull().unique(),
+  quoteId: uuid("quote_id")
+    .notNull()
+    .references(() => quotes.id),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  operationType: text("operation_type").$type<SurveyOperationType>().notNull(),
+  responsibleUserId: uuid("responsible_user_id")
+    .notNull()
+    .references(() => users.id),
+  status: text("status").$type<SurveyStatus>().notNull().default("borrador"),
+  interviewDate: timestamp("interview_date", { withTimezone: true }),
+  transversalTemplateVersion: text("transversal_template_version").notNull(),
+  operationTemplateVersion: text("operation_template_version").notNull(),
+  answers: jsonb("answers").$type<SurveyAnswers>().notNull(),
+  sectionStates: jsonb("section_states").$type<SectionStateMap>().notNull(),
+  archivedOperations: jsonb("archived_operations").$type<ArchivedOperation[]>().notNull().default([]),
+  quoteLinkHistory: jsonb("quote_link_history").$type<QuoteLinkHistory[]>().notNull().default([]),
+  correspondenceReviewRequired: boolean("correspondence_review_required").notNull().default(false),
+  correspondenceReviewed: boolean("correspondence_reviewed").notNull().default(false),
+  revisionNumber: integer("revision_number").notNull().default(0),
+  lastFinalizedAt: timestamp("last_finalized_at", { withTimezone: true }),
+  exportRevision: integer("export_revision"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+  updatedBy: uuid("updated_by"),
+});
+
+export const surveyAttachments = pgTable("survey_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  surveyId: uuid("survey_id")
+    .notNull()
+    .references(() => surveys.id, { onDelete: "cascade" }),
+  originalName: text("original_name").notNull(),
+  storedName: text("stored_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  sectionId: text("section_id"),
+  description: text("description"),
+  withdrawn: boolean("withdrawn").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid("created_by"),
+  withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }),
+  withdrawnBy: uuid("withdrawn_by"),
+});
+
 // --- Plan de Desarrollo (importable) ---
 
 export const developmentPlans = pgTable("development_plans", {
@@ -529,3 +589,5 @@ export type SubscriptionCycle = typeof subscriptionCycles.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
 export type DevelopmentPlan = typeof developmentPlans.$inferSelect;
 export type DevelopmentPlanPhase = typeof developmentPlanPhases.$inferSelect;
+export type Survey = typeof surveys.$inferSelect;
+export type SurveyAttachment = typeof surveyAttachments.$inferSelect;

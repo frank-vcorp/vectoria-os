@@ -239,6 +239,7 @@ export async function getProjectById(id: string) {
       clientName: clients.name,
       serviceOrderId: projects.serviceOrderId,
       serviceOrderFolio: serviceOrders.folio,
+      quoteId: serviceOrders.quoteId,
       serviceId: projects.serviceId,
       serviceName: catalogServices.name,
       description: projects.description,

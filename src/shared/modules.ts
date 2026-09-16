@@ -2,6 +2,7 @@ export const MODULES = [
   "clientes",
   "oportunidades",
   "cotizaciones",
+  "levantamientos",
   "ordenes_servicio",
   "proyectos",
   "suscripciones",
@@ -21,6 +22,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   clientes: "Clientes",
   oportunidades: "Oportunidades",
   cotizaciones: "Cotizaciones",
+  levantamientos: "Levantamientos",
   ordenes_servicio: "Órdenes de Servicio",
   proyectos: "Proyectos",
   suscripciones: "Suscripciones",
@@ -50,17 +52,19 @@ export const DEFAULT_ROLE_MODULES: Record<RoleKey, ModuleKey[]> = {
     "clientes",
     "oportunidades",
     "cotizaciones",
+    "levantamientos",
     "ordenes_servicio",
     "proyectos",
     "suscripciones",
   ],
-  programador: ["proyectos", "ordenes_servicio"],
+  programador: ["proyectos", "ordenes_servicio", "levantamientos"],
 };
 
 export const FOLIO_PREFIXES = {
   cliente: "CLI",
   oportunidad: "OPO",
   cotizacion: "COT",
+  levantamiento: "LEV",
   orden_servicio: "OS",
   proyecto: "PRY",
   suscripcion: "SUS",
@@ -81,10 +85,14 @@ export type RolePermissions = Record<ModuleKey, ModuleAccess>;
 export function defaultPermissionsForRole(role: RoleKey): RolePermissions {
   const allowed = new Set(DEFAULT_ROLE_MODULES[role]);
   const readOnlyForVendedor = new Set<ModuleKey>(["proyectos", "suscripciones"]);
+  const readOnlyForProgramador = new Set<ModuleKey>(["levantamientos"]);
   return Object.fromEntries(
     MODULES.map((m) => {
       const canRead = allowed.has(m);
-      const canWrite = allowed.has(m) && !(role === "vendedor" && readOnlyForVendedor.has(m));
+      const canWrite =
+        allowed.has(m) &&
+        !(role === "vendedor" && readOnlyForVendedor.has(m)) &&
+        !(role === "programador" && readOnlyForProgramador.has(m));
       return [m, { canRead, canWrite }];
     }),
   ) as RolePermissions;

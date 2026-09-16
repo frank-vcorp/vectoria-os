@@ -14,6 +14,7 @@ import {
   DetailSection,
   EntityDetailLayout,
 } from "@/components/entity-detail-layout";
+import { SURVEY_OPERATION_LABELS, SURVEY_STATUS_LABELS, type SurveyOperationType, type SurveyStatus } from "@/shared/surveys";
 import {
   PROJECT_PHASE_STATUS_LABELS,
   PROJECT_STATUS_LABELS,
@@ -49,6 +50,7 @@ type Project = {
   clientName: string;
   serviceOrderId: string;
   serviceOrderFolio: string;
+  quoteId: string | null;
   serviceName: string;
   description: string;
   programmerName: string | null;
@@ -108,6 +110,9 @@ export function ProjectDetailView({ id }: { id: string }) {
   const [evidenceDraft, setEvidenceDraft] = useState("");
   const [returnNotes, setReturnNotes] = useState("");
   const [offlineHint, setOfflineHint] = useState("");
+  const [surveys, setSurveys] = useState<
+    { id: string; folio: string; operationType: SurveyOperationType; status: SurveyStatus }[]
+  >([]);
 
   async function persistProjectCache(data: { project: Project; phases: Phase[] }) {
     await cacheSet(cacheKey("proyectos", `detail:${id}`), data);
@@ -164,6 +169,8 @@ export function ProjectDetailView({ id }: { id: string }) {
       }
 
       setProject(data.project);
+      const surveyRes = await fetch(`/api/surveys?projectId=${id}`).catch(() => null);
+      if (surveyRes?.ok) setSurveys((await surveyRes.json()).surveys ?? []);
       const loadedPhases: Phase[] = data.phases ?? [];
       setPhases(loadedPhases);
       setSelectedPhaseId((prev) => {
@@ -375,6 +382,21 @@ export function ProjectDetailView({ id }: { id: string }) {
             {project.serviceOrderFolio}
           </Link>
         </div>
+        {surveys.length > 0 && (
+          <div>
+            <p className="text-[var(--muted)]">Levantamientos</p>
+            {surveys.map((item) => (
+              <p key={item.id}>
+                <Link href={`/levantamientos/${item.id}`} className="font-medium text-[var(--accent)]">
+                  {item.folio}
+                </Link>{" "}
+                <span className="text-xs text-[var(--muted)]">
+                  {SURVEY_OPERATION_LABELS[item.operationType]} · {SURVEY_STATUS_LABELS[item.status]}
+                </span>
+              </p>
+            ))}
+          </div>
+        )}
         <div>
           <p className="text-[var(--muted)]">Programador</p>
           <p className="font-medium">{project.programmerName ?? "—"}</p>

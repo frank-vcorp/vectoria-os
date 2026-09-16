@@ -28,6 +28,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/clientes", module: "clientes", label: "Clientes", mobilePrimary: true },
       { href: "/oportunidades", module: "oportunidades", label: "Oportunidades" },
       { href: "/cotizaciones", module: "cotizaciones", label: "Cotizaciones", mobilePrimary: true },
+      { href: "/levantamientos", module: "levantamientos", label: "Levantamientos" },
       { href: "/ordenes-servicio", module: "ordenes_servicio", label: "Órdenes de servicio" },
     ],
   },

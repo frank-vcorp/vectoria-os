@@ -1,0 +1,810 @@
+{
+  "tipo_documento": "discovery_de_ampliacion_funcional",
+  "nombre": "Módulo de Levantamientos de VectorIA",
+  "version": "1.0",
+  "fecha": "2026-09-15",
+  "estado": "consolidado_para_revision",
+  "alcance_documental": "Define el módulo; no es una exportación de respuestas de un cliente.",
+  "compatibilidad_importador": {
+    "validada": false,
+    "nota": "Representación documental propia. Verificar el contrato real del importador de VectorIA antes de cargarla."
+  },
+  "documento_principal": "Discovery_Modulo_Levantamientos_VectorIA_v1.0.md",
+  "archivo_alcance_separado": "Alcance_Modulo_Levantamientos_VectorIA_v1.0.md",
+  "archivo_reglas": "AGENTS.md",
+  "definicion_funcional_markdown": "# Discovery: módulo de Levantamientos de VectorIA\n\n**Versión:** 1.0  \n**Fecha:** 15 de septiembre de 2026  \n**Tipo:** ampliación funcional del sistema administrativo VectorIA  \n**Estado:** consolidado para revisión; incluye decisiones de detalle expresamente identificadas.  \n**Documento de alcance separado:** `Alcance_Modulo_Levantamientos_VectorIA_v1.0.md`.\n\n## 1. Propósito y resultado esperado\n\nIncorporar un módulo que apoye al vendedor o entrevistador durante el levantamiento con un cliente. Debe registrar cómo trabaja actualmente la empresa, sus procesos, responsables, herramientas, reglas, problemas y resultados esperados. La entrevista debe poder realizarse en pantalla o en papel.\n\nEl resultado será un expediente organizado y un archivo Markdown con la información capturada para elaborar posteriormente el discovery del sistema del cliente. El módulo no convierte automáticamente la entrevista en una especificación aprobada.\n\nSe distinguen tres documentos:\n\n| Documento | Función |\n|---|---|\n| Este discovery | Define cómo debe funcionar el módulo de Levantamientos de VectorIA. |\n| Levantamiento exportado del cliente | Contiene respuestas y pendientes de una entrevista; es insumo para un discovery posterior. |\n| Discovery y alcance del cliente | Se elaboran y validan posteriormente como documentos separados. |\n\n## 2. Fuentes y reglas heredadas\n\n### 2.1 Fuentes consultadas\n\n- Acuerdos de esta conversación sobre el módulo, incluida la decisión final de selección simple.\n- `discovery-vectoria-v1.0.md`: documento general que declara sustituir la antigua Definición Funcional.\n- `VectorIA_Manual_del_Programador_V2.pdf`: método de definición funcional, criterios de aceptación y verificación por módulo.\n- `02-arquitectura.md` y `03-plan-desarrollo.md`: antecedentes del 28 de agosto de 2026. No prevalecen sobre decisiones funcionales posteriores que los contradigan.\n- Los siete PDF del usuario, identificados en la sección 9 y entregados sin modificar en `fuentes/` dentro del paquete.\n\nEste documento amplía el discovery general únicamente en Levantamientos y sus puntos de conexión. No sustituye la definición de los otros módulos ni acredita que se haya revisado el código o el estado actual de un repositorio.\n\n### 2.2 Conciliación con los antecedentes\n\n| Regla previa | Aplicación en este módulo |\n|---|---|\n| Todos los campos son obligatorios salvo excepción expresa. | Excepción: las respuestas de entrevista, notas, evidencias y datos complementarios son opcionales durante la captura. Se permiten pendientes. |\n| Los campos capturados son editables, con las excepciones del sistema. | Se pueden corregir respuestas; si el registro está Finalizado se usa Reabrir. Los datos heredados se corrigen en su módulo de origen. |\n| Simplicidad, herencia y mínima duplicidad. | Cliente y cotización se reutilizan. No se crea un cliente nuevo desde el levantamiento. |\n| Relaciones cliqueables. | Los vínculos con cotización, cliente y OS/proyecto, cuando existan y haya permiso, permiten abrir el registro relacionado. |\n| Registros con historial sin eliminación física; auditoría mínima. | Se preservan respuestas e historial; no se incorpora un botón de eliminación definitiva. |\n| Folios automáticos, consecutivos y sin año. | Se propone el prefijo `LEV-000001`, sin reutilizar folios. |\n| Roles: Administrador, Vendedor y Programador. | Se amplía el acceso a Levantamientos según la sección 7; no se recupera la matriz antigua de ocho roles. |\n| OS directa desde Cliente o desde Cotización autorizada. | Ambas rutas siguen disponibles y ninguna exige levantamiento. |\n| Una OS origina como máximo un Proyecto; todo Proyecto nace de OS. | El levantamiento no origina un proyecto por sí mismo. |\n| Discovery funcional y alcance separados. | Se entregan separados; la representación JSON no sustituye ninguno. |\n\nLa arquitectura y el plan anteriores mencionan permisos, comisiones, campos y procesos que después fueron simplificados. Se conserva de ellos lo compatible; no se reincorporan funciones descartadas. La referencia del manual a Product Manager describe una responsabilidad de revisión y no agrega por sí sola un rol al sistema.\n\n### 2.3 Decisiones de detalle propuestas en esta versión\n\nEstos puntos cierran comportamientos no acordados expresamente en la conversación. Se identifican para que puedan revisarse sin confundirlos con decisiones históricas:\n\n| ID | Propuesta aplicada a la definición |\n|---|---|\n| D-01 | Una cotización puede tener cero o varios levantamientos independientes. Al crear otro, mostrar los existentes y permitir continuar uno o crear uno nuevo. Cada levantamiento conserva un único tipo de operación; no se combinan entre sí. |\n| D-02 | Permitir vincular cualquier cotización existente y accesible sin exigir que esté autorizada. Mostrar su estado; si está rechazada o cancelada, advertirlo sin reactivarla. |\n| D-03 | Habilitar captura y exportación a Administrador y Vendedor. Programador consulta y exporta los levantamientos vinculados a sus proyectos mediante la OS/cotización, sin edición por defecto. |\n| D-04 | Para finalizar, exigir que cada sección haya sido revisada y que lo faltante esté identificado como pendiente, sin exigir todas las respuestas ni una validación superior adicional. |\n| D-05 | Permitir corregir la cotización vinculada con confirmación si hay respuestas. Conservar la referencia anterior y las respuestas; señalar que debe revisarse la correspondencia con el cliente correcto. |\n\nLas demás reglas descritas desarrollan los acuerdos de la conversación. Si alguna de estas cinco decisiones cambia, deben actualizarse sus criterios de aceptación antes de implementar el comportamiento afectado.\n\n## 3. Alcance funcional\n\nIncluye crear, consultar, buscar, capturar, retomar, finalizar y reabrir levantamientos; seleccionar un tipo de operación; integrar procesos transversales y la plantilla operativa; adjuntar ejemplos; descargar un PDF para papel y exportar respuestas a `.md`.\n\nLa aplicación se usa para VectorIA. Las preguntas sobre compras, inventario, nómina, clínica, producción o transporte describen la empresa entrevistada: no incorporan esos módulos operativos al sistema administrativo de VectorIA.\n\nNo incluye selección múltiple de ramos, combinación inteligente de formularios, generación del discovery mediante IA, OCR, transcripción automática, importación de respuestas desde papel, portal externo, edición colaborativa en tiempo real ni un constructor de plantillas para usuarios finales. Tampoco incluye cambios a precios, facturación, finanzas o generación automática de proyectos a partir de respuestas.\n\n## 4. Ubicación y relaciones\n\nEl módulo aparece en Comercial, entre Cotizaciones y Órdenes de Servicio.\n\nLa ruta con levantamiento es: **Cotización → Levantamiento opcional → Orden de Servicio**. La autorización de la cotización sigue las reglas existentes. Realizar o finalizar un levantamiento no equivale a autorizar una venta.\n\nLas rutas **Cliente → OS** y **Cotización autorizada → OS** continúan funcionando sin levantamiento, incluso si hay uno en captura. La autorización de la cotización puede iniciar la creación de OS como está previsto en el discovery general; el nuevo módulo no inserta una espera obligatoria.\n\nTodo levantamiento pertenece a exactamente una cotización existente, de la cual toma el cliente. No puede guardarse como registro independiente sin cotización. No requiere oportunidad, OS ni proyecto para existir.\n\nSi ya existe OS, el levantamiento puede consultarse o completarse sin alterar lo autorizado. La posición en el flujo indica su uso habitual previo a la OS, no un bloqueo cronológico.\n\nDesde la cotización se mostrarán los levantamientos relacionados. Desde la OS y el proyecto se podrá consultar la referencia por la cotización de origen, cuando exista. Una OS directa sin cotización no recibe un levantamiento creado artificialmente.\n\n## 5. Creación y datos generales\n\n### 5.1 Desde una cotización\n\n1. El usuario pulsa **Crear levantamiento**.\n2. Selecciona primero el tipo de operación.\n3. La cotización y el cliente ya aparecen heredados.\n4. Confirma la creación; se asigna folio y queda en Borrador.\n5. Se carga el formulario y se habilita **Descargar formato en PDF** sin responder ninguna pregunta.\n\n### 5.2 Desde el módulo Levantamientos\n\n1. El usuario pulsa **Nuevo levantamiento**.\n2. Selecciona el tipo de operación.\n3. Busca una cotización existente por folio o cliente y la selecciona.\n4. El cliente se obtiene de la cotización; confirma y se crea el Borrador.\n\nSi no existe cotización, debe registrarse en Cotizaciones. No se agrega un cotizador paralelo en esta pantalla. El tipo puede elegirse antes, pero el registro y la descarga vinculada requieren seleccionar la cotización, sin exigir respuestas de entrevista.\n\n### 5.3 Información del encabezado\n\n| Dato | Origen y comportamiento |\n|---|---|\n| Folio | Automático, único y sin año; prefijo propuesto LEV. |\n| Cotización | Obligatoria; heredada o seleccionada; enlace al origen. |\n| Cliente | Automático desde cotización; sin captura duplicada. |\n| Servicio/descripción cotizada | Referencia heredada; no se interpreta como alcance del levantamiento ya aprobado. |\n| Tipo de operación | Obligatorio; selección única entre seis opciones. |\n| Responsable del levantamiento | Usuario creador por defecto; reasignable por Administrador a un usuario habilitado. |\n| Fecha de creación y última modificación | Automáticas. |\n| Fecha de entrevista | Opcional; editable; puede corresponder a una visita futura programada. |\n| Persona entrevistada y puesto | Opcionales; texto abierto. Puede diferir del contacto comercial. |\n| Actividad, producto o servicio principal del cliente | Opcional; texto abierto. |\n| Objetivo general del cliente | Opcional; texto abierto. |\n| Notas generales | Opcionales; texto amplio. |\n| Estado | Borrador, En captura o Finalizado, según las transiciones definidas. |\n\nNo se obligan a recapturar nombre, teléfono, correo ni datos fiscales existentes. Tampoco se exige información fiscal para entrevistar.\n\n## 6. Listado y experiencia de captura\n\nEl listado muestra folio, cliente, cotización, tipo de operación, responsable, estado y última actualización. Permite búsqueda por folio, cliente y cotización, y filtros por tipo, estado y responsable dentro del acceso permitido.\n\nLa pantalla de captura contiene un encabezado compacto con cliente, cotización, tipo, estado y confirmación de guardado. Una navegación lateral muestra Datos generales, Procesos comunes, Operación, Adjuntos y Cierre. Permite entrar directamente a cualquier sección.\n\nSe muestra una sección a la vez. Las áreas comunes y los apartados operativos aparecen agrupados y desplegables, sin un formulario largo completamente abierto. En pantalla pequeña la navegación puede ser un selector compacto.\n\n### Reglas de interacción\n\n- Campos de texto que crecen al escribir y conservan saltos de línea.\n- Checklists con áreas de clic amplias y opción Otro acompañada de texto cuando corresponda.\n- Elección única para Sí/No/Depende u opciones mutuamente excluyentes. No y Ninguno excluyen selecciones incompatibles en la misma pregunta.\n- Preguntas guía desplegables y ejemplos identificados como ejemplos; nunca se guardan como respuestas del cliente.\n- Tablas con **Agregar etapa** o **Agregar fila**. No se obliga a completar las seis filas dibujadas en un PDF.\n- Navegación por teclado, etiquetas visibles y errores junto al campo correspondiente. El estado no depende únicamente del color.\n- Posibilidad de saltar una pregunta, marcarla pendiente o volver después sin interrumpir la entrevista.\n- Indicadores por sección: Sin revisar, En captura, Revisada, Con pendientes o No aplica. Son indicadores de avance, no estados comerciales.\n- El progreso indica secciones revisadas respecto de las aplicables. No es una calificación de la calidad de las respuestas ni del alcance vendido.\n\n### Autoguardado\n\nLos cambios se guardan después de una pausa breve o al salir del campo. La interfaz informa **Guardando**, **Guardado** o **Cambios pendientes de guardar** según el resultado real.\n\nCambiar de sección no pierde respuestas. Salir y volver recupera lo confirmado por el sistema. Si falla la conexión, se conserva el texto en la sesión abierta, se muestra el problema y se permite reintentar; no se promete captura completa sin conexión ni recuperación tras cerrar el navegador.\n\nAl exportar, finalizar o cambiar de plantilla, deben haberse confirmado los cambios pendientes. Si el guardado falla, no se genera un archivo que aparente contener el texto no guardado. Dos sesiones no deben sobrescribir respuestas silenciosamente; debe avisarse del conflicto y conservar la edición pendiente para resolverlo.\n\n## 7. Usuarios y permisos\n\nSe reutilizan los roles y controles de acceso existentes. El Administrador conserva la configuración de acceso por módulo. La siguiente extensión sigue D-03:\n\n| Acción | Administrador | Vendedor | Programador |\n|---|---|---|---|\n| Crear | Sí | Sí, con cotización accesible | No por defecto |\n| Consultar | Todos | Dentro de su acceso comercial vigente | Relacionados con proyectos que puede consultar |\n| Capturar/corregir | Sí | Sí, dentro de su acceso vigente | No por defecto |\n| Finalizar/reabrir | Sí | Sí, dentro de su acceso vigente | No por defecto |\n| PDF y Markdown | Sí | Sí, sobre registros accesibles | Sí, sobre registros accesibles |\n| Adjuntar/retirar del expediente vigente | Sí | Sí, dentro de su acceso vigente | Solo consulta/descarga |\n| Reasignar responsable | Sí | No por defecto | No |\n| Eliminar definitivamente | No desde este módulo | No | No |\n\nAcceder a Levantamientos no concede acceso a cualquier cotización. Se respeta el alcance del usuario existente, sin inventar una nueva estructura de equipos. Los controles se aplican a consultas, acciones, URLs de descarga y adjuntos, además de la interfaz.\n\nFinalizar una entrevista no equivale a la validación de una fase de Proyecto. No se agrega un circuito de aprobación superior al levantamiento.\n\n## 8. Estados y revisión\n\n| Estado | Cómo se alcanza | Comportamiento |\n|---|---|---|\n| Borrador | Al crear el registro | Datos iniciales disponibles; se puede descargar PDF o exportar identificando pendientes. |\n| En captura | Al guardar la primera respuesta de contenido o reabrir | Permite capturar, editar, adjuntar, retomar y exportar. Cambiar solo el encabezado no obliga a cambiar de estado. |\n| Finalizado | Acción explícita del usuario después de revisar las secciones | Conserva una revisión identificable; consulta y exportación disponibles. Para corregir se usa Reabrir. |\n\nEl cierre presenta secciones revisadas, no aplicables y pendientes. El usuario puede marcar una sección revisada aunque queden datos por confirmar; esos datos deben quedar identificados. Así, Finalizado significa que la entrevista fue revisada, no que el discovery esté completo ni aprobado.\n\nReabrir devuelve a En captura y conserva el historial de finalización. No se modifica el contenido de archivos ya descargados. Cada exportación identifica la revisión y la fecha que representa.\n\n## 9. Plantillas y cobertura de contenido\n\n### 9.1 Selección única\n\n| Código de referencia | Opción visible | PDF operativo de origen |\n|---|---|---|\n| SER | Servicios | `Discovery_VectorIA_Empresas_de_Servicios.pdf` |\n| DIS | Comercial / distribución | `Discovery_VectorIA_Comercial_Distribucion.pdf` |\n| MAN | Manufactura / transformación | `Discovery_VectorIA_Manufactura_Transformacion.pdf` |\n| PRY | Proyectos | `Discovery_VectorIA_Empresas_por_Proyectos.pdf` |\n| CIT | Atención por citas / expediente | `Discovery_VectorIA_Atencion_Citas_Expediente.pdf` |\n| LOG | Logística / transporte | `Discovery_VectorIA_Logistica_Transporte.pdf` |\n\nTodos incorporan una sola vez `Discovery_VectorIA_Procesos_Transversales.pdf`. El nombre visible será **Tipo de operación**. No habrá una opción multirramo ni se combinarán plantillas. Actividades complementarias se registran en notas y campos abiertos.\n\nLos códigos identifican preguntas y apartados; no representan folios ni módulos operativos nuevos.\n\n### 9.2 Procesos transversales\n\n| Área | Página de origen | Temas que deben conservarse |\n|---|---|---|\n| Comercial | 2 | Prospectos, seguimiento, cotización, cierre, transferencia a operación; alternativas como negociación, descuentos, comisiones, contratos y recurrencia. |\n| Clientes | 3 | Alta, datos, consulta, actualización, historial; contactos, sucursales, condiciones, crédito y documentos según aplique. |\n| Compras | 4 | Necesidad, solicitud, proveedor, autorización, compra y recepción; anticipos, crédito, urgencias y devoluciones. |\n| Inventario | 5 | Entradas, salidas, existencias, ajustes y reposición; reservas, ubicaciones, lotes, series, caducidades y conteos. |\n| Facturación | 6 | Solicitud, datos, relación con operación, envío y estatus; parcialidades, complementos, notas de crédito y cancelaciones. |\n| Finanzas | 7 | Ingresos, egresos, cuentas pendientes, pagos y saldos; bancos, conciliación, flujo, costos y rentabilidad. |\n| Documentos y administración | 8 | Generación, almacenamiento, consulta, evidencias y relación con operaciones; firmas, versiones, autorizaciones y vigencias. |\n| Personal | 9 | Alta, expediente, asistencia, incidencias, ausencias y pagos; capacitación, desempeño, bonos, comisiones y bajas. |\n| Dirección y control | 10 | Indicadores, reportes, seguimiento y pendientes; metas, comparativos, proyecciones, alertas y rentabilidad. |\n\nLa tabla es un índice; no sustituye las opciones y preguntas completas de las fuentes. Todas deben conservar su cobertura. Los nombres como «Comisiones» describen un proceso del cliente y no reintroducen Comisiones como módulo propio de VectorIA.\n\n### 9.3 Estructura de captura por área común\n\nCada área conserva su checklist y sus preguntas específicas. Comparte estos campos, opcionales durante la entrevista:\n\n1. Aplicabilidad: Aplica / No aplica / Por confirmar; por defecto Por confirmar.\n2. Procesos identificados actualmente: checklist y Otro.\n3. Inicio o disparador del proceso, con la pregunta específica del PDF.\n4. Flujo actual y explicación de cómo se realiza.\n5. Personas y áreas participantes.\n6. Herramientas utilizadas; nombre del software y nombre del archivo/formato.\n7. Problemas o necesidades detectadas.\n8. Resultado esperado por el cliente.\n9. Reglas, autorizaciones y excepciones.\n10. Notas y asuntos por confirmar.\n\nLas preguntas sugeridas del PDF ayudan a completar esos campos. Una respuesta adicional puede conservarse como nota identificada con la pregunta, sin obligar a crear un campo por cada pregunta guía. Esto evita duplicar la entrevista y conserva el contexto.\n\nCambiar «Prioritarios / comunes» por «Procesos frecuentes» en la presentación. La frecuencia del catálogo no determina la prioridad del cliente. El checklist de actividad actual se distingue de las necesidades o funciones deseadas; una selección nunca significa automáticamente alcance contratado.\n\n### 9.4 Contenido por tipo de operación\n\nCada operación conserva el orden y los apartados de su PDF. La navegación puede agruparlos visualmente, sin omitir información:\n\n| Tipo | Apartados del PDF que debe cubrir el formulario |\n|---|---|\n| Servicios | 1 Procesos; 2 Flujo; 3 Cómo se realiza actualmente; 4 Preparación; 5 Responsables y asignación; 6 Ejecución; 7 Seguimiento; 8 Cambios; 9 Condiciones económicas; 10 Evidencias; 11 Validación y entrega; 12 Cierre administrativo; 13 Garantía/recurrencia; 14 Preguntas guía; 15 Notas. |\n| Comercial / distribución | 1 Procesos; 2 Flujo; 3 Cómo se realiza actualmente; 4 Preparación; 5 Responsables; 6 Ejecución del pedido; 7 Seguimiento; 8 Cambios; 9 Condiciones económicas; 10 Inventario y disponibilidad; 11 Evidencias; 12 Validación y entrega; 13 Cierre; 14 Devoluciones/garantía/recurrencia; 15 Guía; 16 Notas. |\n| Manufactura / transformación | 1 Procesos; 2 Flujo; 3 Cómo se realiza actualmente; 4 Planeación; 5 Responsables; 6 Transformación; 7 Materiales y consumos; 8 Seguimiento; 9 Cambios; 10 Costos; 11 Evidencias; 12 Calidad; 13 Producto terminado; 14 Cierre; 15 Reproceso/no conformidad/devoluciones; 16 Guía; 17 Notas. |\n| Proyectos | 1 Procesos; 2 Flujo; 3 Cómo se realiza actualmente; 4 Definición y preparación; 5 Planeación y responsables; 6 Ejecución; 7 Seguimiento; 8 Cambios de alcance; 9 Condiciones económicas; 10 Recursos y costos; 11 Evidencias; 12 Entregables y validación; 13 Cierre; 14 Garantía/soporte/fases; 15 Guía; 16 Notas. |\n| Atención por citas / expediente | 1 Procesos; 2 Flujo; 3 Cómo se realiza actualmente; 4 Agenda; 5 Confirmación/cancelación/reprogramación; 6 Recepción; 7 Expediente; 8 Atención; 9 Diagnóstico/plan/tratamiento; 10 Estatus; 11 Excepciones; 12 Condiciones económicas; 13 Evidencias; 14 Cierre de atención; 15 Seguimiento; 16 Salida administrativa; 17 Guía; 18 Notas. |\n| Logística / transporte | 1 Procesos; 2 Flujo; 3 Cómo se realiza actualmente; 4 Programación; 5 Unidades y operadores; 6 Recolección/carga; 7 Traslado; 8 Monitoreo; 9 Incidencias; 10 Entrega; 11 Evidencias; 12 Costos y condiciones económicas; 13 Gastos del viaje; 14 Cierre; 15 Salida administrativa; 16 Devoluciones/reintentos/reclamaciones; 17 Guía; 18 Notas. |\n\nEn todas las operaciones deben estar disponibles Problemas/necesidades y Resultado esperado, además de lo ya presente en el PDF. Se conserva cómo se trabaja hoy, con qué software o archivo, captura repetida de información y transferencia manual entre herramientas.\n\nLas tablas de «Cómo se realiza actualmente» y «Ejecución» pueden presentarse juntas para agilizar captura, pero deben distinguir etapa, actividad real, responsable, herramienta/archivo y resultado/salida. No se llenan con ejemplos del PDF por defecto.\n\n### 9.5 Evitar duplicidades y falsas reglas\n\n- Las preguntas transversales financieras describen el control general. Las operativas describen cuándo un pago permite iniciar, continuar o entregar y quién lo registra. No se suprime este último contexto por aparecer también Finanzas.\n- Lo mismo aplica a inventario general frente a reserva de pedidos, consumo de materiales y mermas; cada pregunta conserva el contexto que la hace diferente.\n- Los datos generales del cliente se heredan del encabezado. El expediente operativo documenta información y permisos propios de la atención.\n- En Atención por citas, diagnóstico, recetas, estudios y tratamiento son condicionales. No todas las empresas con agenda son clínicas.\n- Los diagramas de flujo de los PDF son ejemplos. No se impone Facturación/Finanzas después de terminar la operación: pueden existir anticipos, facturación previa y cobros durante la ejecución.\n- Las frases «documento operativo aparte» del PDF transversal se adaptan a «sección operativa de este levantamiento». La descarga resultante es integrada.\n- La lista completa de preguntas guía se imprime como ayuda, pero no se convierte en un segundo grupo obligatorio de respuestas.\n\n## 10. Respuestas, pendientes y campos condicionales\n\n| Situación | Significado y tratamiento |\n|---|---|\n| Vacío | Sin respuesta; no se transforma en No ni No aplica. |\n| Pendiente de confirmar | Existe una duda conocida; puede agregarse qué falta, con quién confirmarlo y una nota, todos opcionales. |\n| No aplica | El tema no corresponde al caso; se oculta el detalle activo. |\n| No se realiza actualmente | El tema puede ser relevante, pero no hay una práctica actual; permite registrar la necesidad futura. |\n| Casilla marcada | La opción fue seleccionada para la pregunta correspondiente. |\n| Casilla sin marcar | Opción no seleccionada, sin inferir que el cliente la rechazó. |\n| Ninguno explícito | Respuesta válida solo si el usuario la eligió; no se obtiene de una lista vacía. |\n\nLas selecciones Sí/No no llevan respuesta por defecto. Los checklists conservan opciones y selección. La revisión del apartado confirma que fue revisado, sin convertir todas las casillas vacías en respuestas negativas.\n\nLas preguntas de detalle se muestran cuando corresponde. Si el usuario cambia una respuesta y un campo deja de aplicar, su contenido se conserva. Al exportar se identifica en un anexo de información conservada fuera del formulario vigente para que no parezca una respuesta activa.\n\nEn el cierre pueden registrarse prioridades expresadas por el cliente, acuerdos y pendientes. Son opcionales y no sustituyen la aprobación del alcance ni modifican la cotización.\n\n## 11. Cambio de operación, cotización y plantillas\n\n### Cambio de tipo de operación\n\nSin respuestas operativas, se cambia la plantilla conservando encabezado y procesos comunes. Con respuestas, el sistema explica qué sección cambiará y solicita confirmación. Conserva las respuestas de la operación anterior como antecedente y abre la nueva sin adivinar equivalencias. El usuario puede consultarlas para recuperar información.\n\nEl PDF para papel contiene únicamente el tipo vigente. La exportación `.md` incluye la información anterior en un anexo claramente separado, cuando exista. Esto conserva lo capturado sin volver a habilitar la selección multirramo.\n\n### Cambio de cotización\n\nSegún D-05, permite corregir la vinculación mostrando folio y cliente anteriores/nuevos. Si hay respuestas, requiere confirmación y conserva el historial. Actualiza los datos heredados y señala que debe revisarse si las respuestas pertenecen al nuevo cliente. No copia movimientos, autorizaciones ni condiciones al módulo comercial.\n\nSi cambia el cliente en la cotización de origen, el levantamiento debe detectar la diferencia, conservar el antecedente y solicitar revisión de la correspondencia antes de finalizar o exportar como revisado. Las correcciones del nombre del mismo cliente no se consideran automáticamente un cambio de identidad.\n\n### Cambios a las plantillas\n\nCada levantamiento conserva una referencia a las versiones de la plantilla transversal y operativa utilizadas. Publicar una nueva versión no reescribe preguntas ni respuestas de registros existentes. No se requiere un editor de plantillas para el usuario en esta versión.\n\n## 12. Adjuntos y trazabilidad\n\nPermite adjuntar ejemplos de cotizaciones, formatos, hojas de cálculo, fotografías y otros documentos admitidos por las reglas de archivos del sistema. Cada adjunto tiene nombre original, sección relacionada, descripción opcional, usuario y fecha.\n\nLos adjuntos son opcionales. Retirar uno del expediente vigente no elimina silenciosamente su historial. Se reutilizan los límites y controles de archivos existentes; si no están definidos, se deben resolver al integrar el componente, sin prometer carga ilimitada.\n\nEl sistema conserva autor, fecha y acción de creación, modificación, finalización, reapertura, cambio de tipo, cambio de cotización y exportación. La auditoría permite identificar las correcciones sin inundar la entrevista con mensajes ni exigir comentarios por cada pulsación.\n\n## 13. PDF para levantamiento en papel\n\nBotón: **Descargar formato en PDF**. Disponible con el Borrador creado, después de seleccionar tipo y cotización, sin respuestas obligatorias.\n\nSe genera un solo PDF que contiene:\n\n1. Encabezado con folio, cliente, cotización, tipo y responsable; datos faltantes con espacio para escribir.\n2. Las nueve áreas transversales, cada una con aplicabilidad y preguntas completas.\n3. La operación seleccionada, con todos sus apartados, checklists, tablas y preguntas de apoyo.\n4. Problemas/necesidades, resultados esperados, notas y pendientes para cierre.\n\nLa salida es un formato en blanco para las respuestas, aun cuando el registro tenga captura digital. Solo completa el encabezado con datos disponibles. El botón no se presenta como un reporte de respuestas contestadas.\n\nPara que pueda usarse desde el principio, incluye todas las áreas comunes y apartados de la plantilla vigente; no omite preguntas por selecciones aún no realizadas. Las instrucciones impresas indican qué puede saltarse si no aplica. Una decisión digital de No aplica no deja incompleto el formato general para papel.\n\nEl diseño sigue los PDF entregados: fondo blanco, títulos legibles, acentos azules discretos, casillas claras, tablas y líneas para escritura. Se unifican portada, tipografía, acentos ortográficos, márgenes y numeración «Página X de Y». No se concatena sin revisar paginación, portadas y espacios.\n\nSe usan los mismos identificadores de apartado en PDF y pantalla para facilitar la captura posterior. Debe haber espacio suficiente para escribir y no cortarse una pregunta de sus opciones. La paridad de contenido se comprueba para las seis combinaciones: comunes + una operación.\n\nNombre sugerido: `LEV-000001_Formato_Servicios.pdf`. Descargar no modifica el estado ni marca preguntas como contestadas.\n\n## 14. Exportación para crear el discovery\n\nBotón: **Exportar para discovery (.md)**. Disponible también en Borrador y En captura. No se exige finalizar ni contestar todas las preguntas.\n\nEl documento contiene:\n\n1. Identificación de levantamiento, cliente, cotización y operación; responsable, estado, fechas, revisión y versiones de plantilla.\n2. Objetivo general y notas iniciales.\n3. Procesos transversales, aplicabilidad y todas sus respuestas.\n4. Operación seleccionada y todas sus respuestas, listas y tablas.\n5. Necesidades, resultados esperados, reglas, prioridades, acuerdos y notas capturados.\n6. Pendientes y secciones sin revisar.\n7. Índice de adjuntos con nombre, sección y descripción; enlace autorizado cuando sea utilizable.\n8. Antecedentes de respuestas fuera de la plantilla vigente o campos inactivos, si existen, claramente separados.\n\n### Reglas de fidelidad\n\n- Preservar texto completo, acentos, saltos de línea, valores, orden de etapas y detalle de Otro. No resumir ni corregir lo que dijo el entrevistado sin una edición explícita.\n- Incluir la pregunta junto a la respuesta. No exportar valores aislados ni encabezados sin contexto.\n- Identificar Sin respuesta, Pendiente de confirmar, No aplica y No se realiza actualmente con su significado correcto.\n- En listas, mostrar opciones seleccionadas y no seleccionadas indicando que «no seleccionada» no es una respuesta negativa.\n- Conservar notas ligadas a una pregunta y no esconder información solo por estar en un desplegable.\n- No completar vacíos con ejemplos, conocimientos de otros clientes ni supuestos.\n- No convertir el checklist en funcionalidades contratadas ni las prioridades en compromisos comerciales.\n- No incluir contenido de archivos adjuntos como si hubiera sido leído por el sistema. Un índice de archivos no transporta los archivos ni garantiza acceso al agente que reciba el Markdown; podrán compartirse por separado cuando haga falta.\n- No incluir textos técnicos internos, credenciales ni URLs públicas que evadan permisos. Las descargas deben respetar el acceso del usuario.\n- Un archivo corresponde a una revisión consistente del registro, no a una mezcla de momentos distintos.\n\nLa introducción del archivo aclara: «Este documento contiene información de levantamiento. Se usa como insumo para elaborar y validar un discovery posterior. Las respuestas no constituyen alcance aprobado».\n\nNombre sugerido: `LEV-000001_Levantamiento_Servicios_2026-09-15.md`. El formato será Markdown legible en UTF-8. El desarrollo debe resolver la representación de textos con barras, saltos y caracteres especiales sin pérdida de contenido.\n\nEl `.md` generado por este módulo no es el JSON para cargar un discovery terminado en VectorIA. El paso posterior de discovery mantiene sus entregables y validaciones propios.\n\n## 15. Acciones y efectos\n\n| Acción | Resultado visible | Efecto sobre otros módulos |\n|---|---|---|\n| Crear | Borrador con folio, cliente y formulario | Agrega relación consultable a la cotización. |\n| Capturar | Cambios guardados y avance actualizado | Ninguno sobre precios o estados comerciales. |\n| Marcar No aplica | Detalle oculto y contenido anterior conservado | Ninguno. |\n| Agregar etapa | Fila editable ordenada en la sección | No crea tareas de Proyecto automáticamente. |\n| Descargar PDF | Archivo integrado para papel | Ninguno. |\n| Finalizar | Estado Finalizado y revisión identificada | No autoriza cotización ni crea OS. |\n| Reabrir | Estado En captura; historial conservado | No reabre OS ni proyectos. |\n| Exportar Markdown | Archivo con respuestas y pendientes | No ejecuta un agente ni genera discovery automáticamente. |\n| Autorizar cotización | Flujo existente de creación de OS | No exige ni finaliza un levantamiento. |\n\n## 16. Criterios de aceptación\n\n| ID | Condición comprobable |\n|---|---|\n| CA-01 | Desde una cotización, crear un levantamiento hereda su cliente y pide un solo tipo de operación. |\n| CA-02 | Desde Levantamientos se selecciona primero el tipo y después una cotización existente; no permite guardar sin cotización. |\n| CA-03 | El selector tiene exactamente las seis opciones definidas y no permite selección múltiple. |\n| CA-04 | Cada combinación carga las nueve áreas transversales una vez y solo los apartados de la operación vigente. |\n| CA-05 | Se conservan todas las preguntas, opciones, tablas y temas de los siete PDF según su función de captura o apoyo. |\n| CA-06 | Un Borrador sin respuestas puede descargar un único PDF completo con encabezado, comunes y operación correcta. |\n| CA-07 | El PDF incluye espacios para escritura, casillas legibles, preguntas guía y numeración continua, sin contenido cortado. |\n| CA-08 | Cada pregunta de captura tiene correspondencia reconocible entre pantalla, PDF y Markdown. |\n| CA-09 | Un usuario puede dejar respuestas pendientes, cambiar de sección y regresar sin perder datos confirmados. |\n| CA-10 | Al guardar y volver a abrir se recuperan textos, listas, filas, Otro, notas y aplicabilidad. |\n| CA-11 | Un fallo de guardado no muestra Guardado ni permite una exportación aparentemente actual con respuestas faltantes. |\n| CA-12 | La captura concurrente detecta cambios ajenos y no reemplaza contenido silenciosamente. |\n| CA-13 | Sí/No/Ninguno no se preseleccionan; no se admiten combinaciones incompatibles. |\n| CA-14 | Marcar No aplica oculta detalle sin destruir respuestas; estas reaparecen al reactivar el campo. |\n| CA-15 | Los ejemplos y preguntas guía no se registran automáticamente como respuestas. |\n| CA-16 | Se agregan y ordenan etapas con actividad, responsable, herramienta y resultado, sin exigir filas vacías. |\n| CA-17 | Sin guardar respuestas de entrevista, el registro queda en Borrador; con la primera respuesta pasa a En captura. |\n| CA-18 | Finalizar exige revisión de secciones según D-04 y conserva los pendientes explícitos; no exige aprobación comercial. |\n| CA-19 | Reabrir permite corregir y conserva la revisión anterior y sus fechas. |\n| CA-20 | Cambiar de operación con respuestas pide confirmación, conserva comunes y mantiene el contenido anterior como antecedente. |\n| CA-21 | Cambiar de cotización muestra ambas referencias y clientes, conserva respuestas e historial y exige revisar la correspondencia. |\n| CA-22 | Una plantilla nueva no cambia automáticamente un levantamiento existente. |\n| CA-23 | Exportar en Borrador, En captura o Finalizado produce un `.md` con estado, revisión y fecha correctos. |\n| CA-24 | El `.md` preserva cada respuesta completa, incluidos saltos, acentos, símbolos, tablas, Otro y notas, sin resumir. |\n| CA-25 | Vacío, pendiente, No aplica, No se realiza actualmente y casilla no marcada permanecen distinguibles. |\n| CA-26 | El archivo identifica adjuntos sin afirmar que incorpora su contenido ni conceder acceso público. |\n| CA-27 | Una OS puede crearse sin levantamiento o con uno incompleto; la ruta directa desde Cliente sigue funcionando. |\n| CA-28 | Capturar, finalizar o exportar no modifica importe, autorización, OS, proyecto ni movimientos financieros. |\n| CA-29 | Los permisos impiden acceder, editar o descargar registros ajenos al alcance permitido, incluso por URL directa. |\n| CA-30 | El Programador puede consultar/exportar levantamientos relacionados con sus proyectos, pero no editar por defecto. |\n| CA-31 | El listado permite buscar por folio/cliente/cotización y filtrar por tipo, estado y responsable. |\n| CA-32 | Las acciones relevantes quedan en historial y el módulo no ofrece eliminación física de registros con historial. |\n| CA-33 | Al crear un segundo levantamiento de una cotización se muestran los existentes; crear el nuevo no mezcla respuestas. |\n| CA-34 | Vincular una cotización rechazada o cancelada muestra su estado y no la reactiva ni elimina el levantamiento. |\n| CA-35 | Preguntar por inventario, nómina, crédito o tratamientos no crea esos módulos ni impone sus reglas en VectorIA. |\n| CA-36 | En Atención por citas se puede documentar un servicio no clínico sin obligar a contestar diagnóstico o tratamiento. |\n\n## 17. Casos de negocio para verificación\n\n1. **Servicios con entrevista digital:** desde una cotización, seleccionar Servicios; describir diagnóstico, reparación, pruebas, herramientas actuales y anticipo; guardar, retomar y exportar. Comprobar que anticipos se describen sin registrar ingresos reales.\n2. **Distribuidora con visita en papel:** seleccionar Comercial / distribución y una cotización; descargar antes de contestar; completar en papel y capturar después. Comprobar correspondencia de preguntas y entrega parcial.\n3. **Atención con agenda no clínica:** seleccionar Atención por citas, documentar agenda y atención, marcar diagnóstico/tratamiento como No aplica y exportar sin inferencias médicas.\n4. **Manufactura con faltantes:** capturar producción, consumos y merma; dejar costo real pendiente; revisar el apartado, finalizar según D-04 y verificar la advertencia de información pendiente en el `.md`.\n5. **Proyecto con corrección:** finalizar un levantamiento de Proyectos, reabrir para corregir hitos y volver a exportar; ambas salidas deben indicar su revisión correcta.\n6. **Logística con cambio de plantilla:** capturar un viaje y gastos, cambiar de tipo con confirmación y verificar conservación de antecedentes; el PDF solo muestra el tipo vigente.\n7. **Venta sin levantamiento:** crear una OS desde una cotización autorizada y otra directamente desde Cliente. Ninguna operación debe exigir entrevista.\n8. **Acceso del equipo técnico:** el Programador consulta el levantamiento relacionado con su proyecto; no puede editarlo ni acceder a uno no relacionado.\n9. **Corrección de vínculo y datos comerciales:** cambiar cotización, comprobar el cliente y mantener respuestas para revisión; cancelar una cotización no borra su información de entrevista.\n10. **Exportación completa:** usar respuestas largas, saltos, caracteres especiales, checklists, Otro, notas, adjuntos y campos desactivados; comparar cada contenido capturado con su representación exportada.\n\n## 18. Entrega y límites de esta versión documental\n\nEste discovery y su alcance son archivos nuevos de ampliación. No se han sustituido los documentos generales ni modificado un repositorio. La incorporación al sistema debe conservar los acuerdos actuales y revisar el código real antes de diseñar la solución técnica.\n\nEl paquete contiene el Markdown funcional, el alcance separado, un archivo `AGENTS.md` con reglas de integración, una representación JSON documental y los siete PDF fuente. El JSON facilita el traspaso de la definición; no se declara compatible con un importador de VectorIA sin verificar el contrato real.\n\nAl implementar, cada parte deberá ser utilizable y comprobable. Al concluir el módulo se entregará un punto de prueba, una guía breve de verificación y evidencia de los criterios relevantes. La redacción de este discovery no acredita que el módulo ya esté construido ni desplegado.\n",
+  "reglas_confirmadas": {
+    "cotizacion_obligatoria": true,
+    "levantamiento_obligatorio_para_os": false,
+    "seleccion_operacion": "simple",
+    "procesos_transversales_una_sola_vez": true,
+    "captura_agil_y_minimalista": true,
+    "autoguardado": true,
+    "permite_pendientes": true,
+    "pdf_para_papel_antes_de_responder": true,
+    "exportacion_respuestas": "markdown_utf8",
+    "resumen_o_reinterpretacion_automatica": false,
+    "genera_discovery_cliente_automaticamente": false,
+    "crea_os_proyecto_cobro_automaticamente": false,
+    "adjuntos_incorporados_como_texto_automaticamente": false,
+    "eliminacion_fisica_de_historial": false
+  },
+  "tipos_operacion": [
+    {
+      "codigo": "SER",
+      "nombre": "Servicios",
+      "pdf_fuente": "fuentes/Discovery_VectorIA_Empresas_de_Servicios.pdf"
+    },
+    {
+      "codigo": "DIS",
+      "nombre": "Comercial / distribución",
+      "pdf_fuente": "fuentes/Discovery_VectorIA_Comercial_Distribucion.pdf"
+    },
+    {
+      "codigo": "MAN",
+      "nombre": "Manufactura / transformación",
+      "pdf_fuente": "fuentes/Discovery_VectorIA_Manufactura_Transformacion.pdf"
+    },
+    {
+      "codigo": "PRY",
+      "nombre": "Proyectos",
+      "pdf_fuente": "fuentes/Discovery_VectorIA_Empresas_por_Proyectos.pdf"
+    },
+    {
+      "codigo": "CIT",
+      "nombre": "Atención por citas / expediente",
+      "pdf_fuente": "fuentes/Discovery_VectorIA_Atencion_Citas_Expediente.pdf"
+    },
+    {
+      "codigo": "LOG",
+      "nombre": "Logística / transporte",
+      "pdf_fuente": "fuentes/Discovery_VectorIA_Logistica_Transporte.pdf"
+    }
+  ],
+  "estados": [
+    "Borrador",
+    "En captura",
+    "Finalizado"
+  ],
+  "decisiones_de_detalle_propuestas": [
+    {
+      "id": "D-01",
+      "estado": "propuesta_de_esta_version_no_acuerdo_historico",
+      "descripcion": "Una cotización puede tener cero o varios levantamientos independientes. Al crear otro, mostrar los existentes y permitir continuar uno o crear uno nuevo. Cada levantamiento conserva un único tipo de operación; no se combinan entre sí."
+    },
+    {
+      "id": "D-02",
+      "estado": "propuesta_de_esta_version_no_acuerdo_historico",
+      "descripcion": "Permitir vincular cualquier cotización existente y accesible sin exigir que esté autorizada. Mostrar su estado; si está rechazada o cancelada, advertirlo sin reactivarla."
+    },
+    {
+      "id": "D-03",
+      "estado": "propuesta_de_esta_version_no_acuerdo_historico",
+      "descripcion": "Habilitar captura y exportación a Administrador y Vendedor. Programador consulta y exporta los levantamientos vinculados a sus proyectos mediante la OS/cotización, sin edición por defecto."
+    },
+    {
+      "id": "D-04",
+      "estado": "propuesta_de_esta_version_no_acuerdo_historico",
+      "descripcion": "Para finalizar, exigir que cada sección haya sido revisada y que lo faltante esté identificado como pendiente, sin exigir todas las respuestas ni una validación superior adicional."
+    },
+    {
+      "id": "D-05",
+      "estado": "propuesta_de_esta_version_no_acuerdo_historico",
+      "descripcion": "Permitir corregir la cotización vinculada con confirmación si hay respuestas. Conservar la referencia anterior y las respuestas; señalar que debe revisarse la correspondencia con el cliente correcto."
+    }
+  ],
+  "criterios_aceptacion": [
+    {
+      "id": "CA-01",
+      "condicion_observable": "Desde una cotización, crear un levantamiento hereda su cliente y pide un solo tipo de operación."
+    },
+    {
+      "id": "CA-02",
+      "condicion_observable": "Desde Levantamientos se selecciona primero el tipo y después una cotización existente; no permite guardar sin cotización."
+    },
+    {
+      "id": "CA-03",
+      "condicion_observable": "El selector tiene exactamente las seis opciones definidas y no permite selección múltiple."
+    },
+    {
+      "id": "CA-04",
+      "condicion_observable": "Cada combinación carga las nueve áreas transversales una vez y solo los apartados de la operación vigente."
+    },
+    {
+      "id": "CA-05",
+      "condicion_observable": "Se conservan todas las preguntas, opciones, tablas y temas de los siete PDF según su función de captura o apoyo."
+    },
+    {
+      "id": "CA-06",
+      "condicion_observable": "Un Borrador sin respuestas puede descargar un único PDF completo con encabezado, comunes y operación correcta."
+    },
+    {
+      "id": "CA-07",
+      "condicion_observable": "El PDF incluye espacios para escritura, casillas legibles, preguntas guía y numeración continua, sin contenido cortado."
+    },
+    {
+      "id": "CA-08",
+      "condicion_observable": "Cada pregunta de captura tiene correspondencia reconocible entre pantalla, PDF y Markdown."
+    },
+    {
+      "id": "CA-09",
+      "condicion_observable": "Un usuario puede dejar respuestas pendientes, cambiar de sección y regresar sin perder datos confirmados."
+    },
+    {
+      "id": "CA-10",
+      "condicion_observable": "Al guardar y volver a abrir se recuperan textos, listas, filas, Otro, notas y aplicabilidad."
+    },
+    {
+      "id": "CA-11",
+      "condicion_observable": "Un fallo de guardado no muestra Guardado ni permite una exportación aparentemente actual con respuestas faltantes."
+    },
+    {
+      "id": "CA-12",
+      "condicion_observable": "La captura concurrente detecta cambios ajenos y no reemplaza contenido silenciosamente."
+    },
+    {
+      "id": "CA-13",
+      "condicion_observable": "Sí/No/Ninguno no se preseleccionan; no se admiten combinaciones incompatibles."
+    },
+    {
+      "id": "CA-14",
+      "condicion_observable": "Marcar No aplica oculta detalle sin destruir respuestas; estas reaparecen al reactivar el campo."
+    },
+    {
+      "id": "CA-15",
+      "condicion_observable": "Los ejemplos y preguntas guía no se registran automáticamente como respuestas."
+    },
+    {
+      "id": "CA-16",
+      "condicion_observable": "Se agregan y ordenan etapas con actividad, responsable, herramienta y resultado, sin exigir filas vacías."
+    },
+    {
+      "id": "CA-17",
+      "condicion_observable": "Sin guardar respuestas de entrevista, el registro queda en Borrador; con la primera respuesta pasa a En captura."
+    },
+    {
+      "id": "CA-18",
+      "condicion_observable": "Finalizar exige revisión de secciones según D-04 y conserva los pendientes explícitos; no exige aprobación comercial."
+    },
+    {
+      "id": "CA-19",
+      "condicion_observable": "Reabrir permite corregir y conserva la revisión anterior y sus fechas."
+    },
+    {
+      "id": "CA-20",
+      "condicion_observable": "Cambiar de operación con respuestas pide confirmación, conserva comunes y mantiene el contenido anterior como antecedente."
+    },
+    {
+      "id": "CA-21",
+      "condicion_observable": "Cambiar de cotización muestra ambas referencias y clientes, conserva respuestas e historial y exige revisar la correspondencia."
+    },
+    {
+      "id": "CA-22",
+      "condicion_observable": "Una plantilla nueva no cambia automáticamente un levantamiento existente."
+    },
+    {
+      "id": "CA-23",
+      "condicion_observable": "Exportar en Borrador, En captura o Finalizado produce un `.md` con estado, revisión y fecha correctos."
+    },
+    {
+      "id": "CA-24",
+      "condicion_observable": "El `.md` preserva cada respuesta completa, incluidos saltos, acentos, símbolos, tablas, Otro y notas, sin resumir."
+    },
+    {
+      "id": "CA-25",
+      "condicion_observable": "Vacío, pendiente, No aplica, No se realiza actualmente y casilla no marcada permanecen distinguibles."
+    },
+    {
+      "id": "CA-26",
+      "condicion_observable": "El archivo identifica adjuntos sin afirmar que incorpora su contenido ni conceder acceso público."
+    },
+    {
+      "id": "CA-27",
+      "condicion_observable": "Una OS puede crearse sin levantamiento o con uno incompleto; la ruta directa desde Cliente sigue funcionando."
+    },
+    {
+      "id": "CA-28",
+      "condicion_observable": "Capturar, finalizar o exportar no modifica importe, autorización, OS, proyecto ni movimientos financieros."
+    },
+    {
+      "id": "CA-29",
+      "condicion_observable": "Los permisos impiden acceder, editar o descargar registros ajenos al alcance permitido, incluso por URL directa."
+    },
+    {
+      "id": "CA-30",
+      "condicion_observable": "El Programador puede consultar/exportar levantamientos relacionados con sus proyectos, pero no editar por defecto."
+    },
+    {
+      "id": "CA-31",
+      "condicion_observable": "El listado permite buscar por folio/cliente/cotización y filtrar por tipo, estado y responsable."
+    },
+    {
+      "id": "CA-32",
+      "condicion_observable": "Las acciones relevantes quedan en historial y el módulo no ofrece eliminación física de registros con historial."
+    },
+    {
+      "id": "CA-33",
+      "condicion_observable": "Al crear un segundo levantamiento de una cotización se muestran los existentes; crear el nuevo no mezcla respuestas."
+    },
+    {
+      "id": "CA-34",
+      "condicion_observable": "Vincular una cotización rechazada o cancelada muestra su estado y no la reactiva ni elimina el levantamiento."
+    },
+    {
+      "id": "CA-35",
+      "condicion_observable": "Preguntar por inventario, nómina, crédito o tratamientos no crea esos módulos ni impone sus reglas en VectorIA."
+    },
+    {
+      "id": "CA-36",
+      "condicion_observable": "En Atención por citas se puede documentar un servicio no clínico sin obligar a contestar diagnóstico o tratamiento."
+    }
+  ],
+  "bloques_de_trabajo_sugeridos": [
+    {
+      "id": "B1",
+      "nombre": "Creación, relaciones, listado y acceso",
+      "objetivo": "Crear un registro desde cotización o módulo sin alterar la creación de OS.",
+      "criterios": [
+        "CA-01",
+        "CA-02",
+        "CA-27",
+        "CA-29",
+        "CA-30",
+        "CA-31",
+        "CA-33",
+        "CA-34"
+      ]
+    },
+    {
+      "id": "B2",
+      "nombre": "Plantillas y captura",
+      "objetivo": "Capturar comunes y una operación con condicionales y conservación de información.",
+      "criterios": [
+        "CA-03",
+        "CA-04",
+        "CA-05",
+        "CA-08",
+        "CA-13",
+        "CA-14",
+        "CA-15",
+        "CA-16",
+        "CA-35",
+        "CA-36"
+      ]
+    },
+    {
+      "id": "B3",
+      "nombre": "Continuidad, revisiones y trazabilidad",
+      "objetivo": "Guardar, retomar, finalizar y corregir sin pérdida de respuestas.",
+      "criterios": [
+        "CA-09",
+        "CA-10",
+        "CA-11",
+        "CA-12",
+        "CA-17",
+        "CA-18",
+        "CA-19",
+        "CA-20",
+        "CA-21",
+        "CA-22",
+        "CA-32"
+      ]
+    },
+    {
+      "id": "B4",
+      "nombre": "Documentos e integración",
+      "objetivo": "Producir PDF para papel y Markdown fiel; verificar el flujo completo.",
+      "criterios": [
+        "CA-06",
+        "CA-07",
+        "CA-23",
+        "CA-24",
+        "CA-25",
+        "CA-26",
+        "CA-28"
+      ]
+    }
+  ],
+  "nota_bloques": "Organización de la ampliación, no creación automática de fases de Proyecto ni cambio del límite general de 7 fases.",
+  "fuentes_pdf": [
+    {
+      "codigo": "COM",
+      "nombre": "Procesos transversales",
+      "archivo": "fuentes/Discovery_VectorIA_Procesos_Transversales.pdf",
+      "paginas": 10,
+      "sha256": "e38541c568b269a839697cf876c5556844ea9e7e2ee442f393bca24aaca8fd57",
+      "apartados": [
+        {
+          "pagina": 2,
+          "apartado_original": "1. MACROPROCESO: COMERCIAL"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "2. MACROPROCESO: CLIENTES"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "3. MACROPROCESO: COMPRAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "4. MACROPROCESO: INVENTARIO"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "5. MACROPROCESO: FACTURACIÓN"
+        },
+        {
+          "pagina": 7,
+          "apartado_original": "6. MACROPROCESO: FINANZAS"
+        },
+        {
+          "pagina": 8,
+          "apartado_original": "7. MACROPROCESO: DOCUMENTOS Y ADMINISTRACIÓN"
+        },
+        {
+          "pagina": 9,
+          "apartado_original": "8. MACROPROCESO: PERSONAL"
+        },
+        {
+          "pagina": 10,
+          "apartado_original": "9. MACROPROCESO: DIRECCIÓN Y CONTROL"
+        }
+      ]
+    },
+    {
+      "codigo": "SER",
+      "nombre": "Servicios",
+      "archivo": "fuentes/Discovery_VectorIA_Empresas_de_Servicios.pdf",
+      "paginas": 10,
+      "sha256": "f760cdab1fcea89cb036db579758f00216c03c8be0366181edd8ab714a2bb117",
+      "apartados": [
+        {
+          "pagina": 2,
+          "apartado_original": "1. PROCESOS DEL SERVICIO"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "2. FLUJO GENERAL DEL SERVICIO"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "3. CÓMO SE REALIZA ACTUALMENTE"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "4. PREPARACIÓN"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "5. RESPONSABLES Y ASIGNACIÓN"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "6. EJECUCIÓN DEL SERVICIO"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "7. SEGUIMIENTO Y CONTROL"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "8. CAMBIOS Y EXCEPCIONES"
+        },
+        {
+          "pagina": 7,
+          "apartado_original": "9. CONDICIONES ECONÓMICAS"
+        },
+        {
+          "pagina": 7,
+          "apartado_original": "10. REGISTROS Y EVIDENCIAS"
+        },
+        {
+          "pagina": 8,
+          "apartado_original": "11. VALIDACIÓN Y ENTREGA"
+        },
+        {
+          "pagina": 8,
+          "apartado_original": "12. CIERRE Y SALIDA A ADMINISTRACIÓN"
+        },
+        {
+          "pagina": 9,
+          "apartado_original": "13. GARANTÍA / RECURRENCIA"
+        },
+        {
+          "pagina": 9,
+          "apartado_original": "14. PREGUNTAS GUÍA DE APOYO"
+        },
+        {
+          "pagina": 10,
+          "apartado_original": "15. NOTAS"
+        }
+      ]
+    },
+    {
+      "codigo": "DIS",
+      "nombre": "Comercial / distribución",
+      "archivo": "fuentes/Discovery_VectorIA_Comercial_Distribucion.pdf",
+      "paginas": 6,
+      "sha256": "e0a1b3f01b9f3473a968905d77fd6ebcb1f8b5448bd7b97cb6a159fd3d44b332",
+      "apartados": [
+        {
+          "pagina": 1,
+          "apartado_original": "1. PROCESOS DE LA OPERACIÓN"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "2. FLUJO GENERAL DE LA OPERACIÓN"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "3. CÓMO SE REALIZA ACTUALMENTE"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "4. PREPARACIÓN DEL PEDIDO"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "5. RESPONSABLES Y ASIGNACIÓN"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "6. EJECUCIÓN DEL PEDIDO"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "7. SEGUIMIENTO Y CONTROL"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "8. CAMBIOS Y EXCEPCIONES"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "9. CONDICIONES ECONÓMICAS"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "10. INVENTARIO Y DISPONIBILIDAD"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "11. REGISTROS Y EVIDENCIAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "12. VALIDACIÓN Y ENTREGA"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "13. CIERRE Y SALIDA A ADMINISTRACIÓN"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "14. DEVOLUCIONES / GARANTÍA / RECURRENCIA"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "15. PREGUNTAS GUÍA"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "16. NOTAS"
+        }
+      ]
+    },
+    {
+      "codigo": "MAN",
+      "nombre": "Manufactura / transformación",
+      "archivo": "fuentes/Discovery_VectorIA_Manufactura_Transformacion.pdf",
+      "paginas": 6,
+      "sha256": "ad27e0b9ee679979ba2f227888dad33326ac27e960017752e2c248af78e90ed7",
+      "apartados": [
+        {
+          "pagina": 1,
+          "apartado_original": "1. PROCESOS DE LA OPERACION"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "2. FLUJO GENERAL DE PRODUCCION"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "3. COMO SE REALIZA ACTUALMENTE"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "4. PLANEACION Y PREPARACION"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "5. RESPONSABLES Y ASIGNACION"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "6. EJECUCION / TRANSFORMACION"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "7. MATERIALES Y CONSUMOS"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "8. SEGUIMIENTO Y CONTROL"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "9. CAMBIOS Y EXCEPCIONES"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "10. COSTOS DE PRODUCCION"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "11. REGISTROS Y EVIDENCIAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "12. CALIDAD Y VALIDACION"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "13. PRODUCTO TERMINADO Y LIBERACION"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "14. CIERRE Y SALIDA A ADMINISTRACION"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "15. REPROCESO / NO CONFORMIDAD / DEVOLUCIONES"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "16. PREGUNTAS GUIA"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "17. NOTAS"
+        }
+      ]
+    },
+    {
+      "codigo": "PRY",
+      "nombre": "Proyectos",
+      "archivo": "fuentes/Discovery_VectorIA_Empresas_por_Proyectos.pdf",
+      "paginas": 6,
+      "sha256": "02baace9e1ad0237ecda2041077512c549fadc465bbdd8af250eb514a4e2e04e",
+      "apartados": [
+        {
+          "pagina": 1,
+          "apartado_original": "1. PROCESOS DE LA OPERACION"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "2. FLUJO GENERAL DEL PROYECTO"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "3. COMO SE REALIZA ACTUALMENTE"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "4. DEFINICION Y PREPARACION DEL PROYECTO"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "5. PLANEACION Y RESPONSABLES"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "6. EJECUCION DEL PROYECTO"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "7. SEGUIMIENTO Y CONTROL"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "8. CAMBIOS DE ALCANCE Y EXCEPCIONES"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "9. CONDICIONES ECONOMICAS DEL PROYECTO"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "10. RECURSOS Y COSTOS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "11. REGISTROS Y EVIDENCIAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "12. ENTREGABLES Y VALIDACION"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "13. CIERRE Y SALIDA A ADMINISTRACION"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "14. GARANTIA / SOPORTE / FASES POSTERIORES"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "15. PREGUNTAS GUIA"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "16. NOTAS"
+        }
+      ]
+    },
+    {
+      "codigo": "CIT",
+      "nombre": "Atención por citas / expediente",
+      "archivo": "fuentes/Discovery_VectorIA_Atencion_Citas_Expediente.pdf",
+      "paginas": 7,
+      "sha256": "e06f1ca9c0adbc0f809e6762062ea9cddca068e956a9b8b46885a10d0302a5c5",
+      "apartados": [
+        {
+          "pagina": 1,
+          "apartado_original": "1. PROCESOS DE LA OPERACIÓN"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "2. FLUJO GENERAL DE ATENCIÓN"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "3. CÓMO SE REALIZA ACTUALMENTE"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "4. AGENDA Y PROGRAMACIÓN"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "5. CONFIRMACIÓN / CANCELACIÓN / REPROGRAMACIÓN"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "6. RECEPCIÓN E INICIO DE ATENCIÓN"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "7. EXPEDIENTE / INFORMACIÓN DEL CLIENTE"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "8. EJECUCIÓN DE LA ATENCIÓN"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "9. DIAGNÓSTICO / PLAN / TRATAMIENTO"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "10. SEGUIMIENTO Y ESTATUS"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "11. CAMBIOS Y EXCEPCIONES"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "12. CONDICIONES ECONÓMICAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "13. REGISTROS Y EVIDENCIAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "14. VALIDACIÓN Y CIERRE DE LA ATENCIÓN"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "15. SEGUIMIENTO / PRÓXIMA CITA / RECURRENCIA"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "16. CIERRE Y SALIDA A ADMINISTRACIÓN"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "17. PREGUNTAS GUÍA"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "18. NOTAS"
+        }
+      ]
+    },
+    {
+      "codigo": "LOG",
+      "nombre": "Logística / transporte",
+      "archivo": "fuentes/Discovery_VectorIA_Logistica_Transporte.pdf",
+      "paginas": 7,
+      "sha256": "1c0a817a18633c6fec254172e5de1d185b0d0544245a1da72baaf1e136e9dc09",
+      "apartados": [
+        {
+          "pagina": 1,
+          "apartado_original": "1. PROCESOS DE LA OPERACIÓN"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "2. FLUJO GENERAL DE LA OPERACIÓN"
+        },
+        {
+          "pagina": 1,
+          "apartado_original": "3. CÓMO SE REALIZA ACTUALMENTE"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "4. PROGRAMACIÓN Y PREPARACIÓN"
+        },
+        {
+          "pagina": 2,
+          "apartado_original": "5. UNIDADES Y OPERADORES"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "6. RECOLECCIÓN / CARGA"
+        },
+        {
+          "pagina": 3,
+          "apartado_original": "7. EJECUCIÓN DEL SERVICIO / TRASLADO"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "8. SEGUIMIENTO Y MONITOREO"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "9. CAMBIOS E INCIDENCIAS"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "10. ENTREGA"
+        },
+        {
+          "pagina": 4,
+          "apartado_original": "11. EVIDENCIAS Y DOCUMENTOS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "12. COSTOS Y CONDICIONES ECONÓMICAS"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "13. GASTOS DEL VIAJE"
+        },
+        {
+          "pagina": 5,
+          "apartado_original": "14. CIERRE DEL SERVICIO"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "15. SALIDA A ADMINISTRACIÓN / FACTURACIÓN"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "16. DEVOLUCIONES / REINTENTOS / RECLAMACIONES"
+        },
+        {
+          "pagina": 6,
+          "apartado_original": "17. PREGUNTAS GUÍA"
+        },
+        {
+          "pagina": 7,
+          "apartado_original": "18. NOTAS"
+        }
+      ]
+    }
+  ]
+}

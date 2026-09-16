@@ -12,6 +12,7 @@ import {
   DetailSection,
   EntityDetailLayout,
 } from "@/components/entity-detail-layout";
+import { SURVEY_OPERATION_LABELS, SURVEY_STATUS_LABELS, type SurveyOperationType, type SurveyStatus } from "@/shared/surveys";
 import {
   CONTRACT_TYPE_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
@@ -112,6 +113,9 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
   const [programmers, setProgrammers] = useState<{ id: string; name: string }[]>([]);
   const [detailsForm, setDetailsForm] = useState({ programmerId: "", deliveryDate: "" });
   const [savingDetails, setSavingDetails] = useState(false);
+  const [surveys, setSurveys] = useState<
+    { id: string; folio: string; operationType: SurveyOperationType; status: SurveyStatus }[]
+  >([]);
 
   async function load() {
     const [res, subsRes] = await Promise.all([
@@ -140,6 +144,8 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
       const subsData = await subsRes.json();
       setLinkedSubs(subsData.subscriptions ?? []);
     }
+    const surveyRes = await fetch(`/api/surveys?serviceOrderId=${id}`);
+    if (surveyRes.ok) setSurveys((await surveyRes.json()).surveys ?? []);
     setLoading(false);
   }
 
@@ -446,6 +452,25 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
               }
             />
           )}
+          <DetailField
+            label="Levantamientos"
+            value={
+              surveys.length === 0 ? (
+                "—"
+              ) : (
+                <span className="space-y-1 block">
+                  {surveys.map((item) => (
+                    <span key={item.id} className="block">
+                      <Link href={`/levantamientos/${item.id}`} className="underline font-mono text-xs">
+                        {item.folio}
+                      </Link>{" "}
+                      {SURVEY_OPERATION_LABELS[item.operationType]} · {SURVEY_STATUS_LABELS[item.status]}
+                    </span>
+                  ))}
+                </span>
+              )
+            }
+          />
         </DetailGrid>
       </DetailSection>
 

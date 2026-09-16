@@ -85,6 +85,13 @@
       "when": 1788445000000,
       "tag": "0012_mane_requirements",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788450000000,
+      "tag": "0013_levantamientos",
+      "breakpoints": true
     }
   ]
 }

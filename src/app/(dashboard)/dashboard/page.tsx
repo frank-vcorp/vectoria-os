@@ -9,6 +9,7 @@ const HOME_MODULES: { href: string; module: ModuleKey; title: string; descriptio
   { href: "/clientes", module: "clientes", title: "Clientes", description: "Directorio comercial y datos fiscales" },
   { href: "/oportunidades", module: "oportunidades", title: "Oportunidades", description: "Inicio del flujo comercial" },
   { href: "/cotizaciones", module: "cotizaciones", title: "Cotizaciones", description: "Creación, autorización y envío" },
+  { href: "/levantamientos", module: "levantamientos", title: "Levantamientos", description: "Entrevista y expediente para discovery" },
   { href: "/ordenes-servicio", module: "ordenes_servicio", title: "Órdenes de servicio", description: "Pagos, saldo e ingreso automático" },
   { href: "/proyectos", module: "proyectos", title: "Proyectos", description: "Plan de validación y fases" },
   { href: "/suscripciones", module: "suscripciones", title: "Suscripciones", description: "Ciclos, pagos y facturación" },

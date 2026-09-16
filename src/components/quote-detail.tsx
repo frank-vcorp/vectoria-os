@@ -21,6 +21,7 @@ import {
   EntityDetailLayout,
 } from "@/components/entity-detail-layout";
 import { QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
+import { SURVEY_OPERATION_LABELS, SURVEY_STATUS_LABELS, type SurveyOperationType, type SurveyStatus } from "@/shared/surveys";
 
 type SubscriptionItem = {
   id: string;
@@ -97,6 +98,9 @@ export function QuoteDetailView({ id }: { id: string }) {
     observations: "",
   });
   const [subscriptionLines, setSubscriptionLines] = useState<QuoteSubscriptionLineForm[]>([]);
+  const [surveys, setSurveys] = useState<
+    { id: string; folio: string; operationType: SurveyOperationType; status: SurveyStatus }[]
+  >([]);
 
   async function load() {
     const res = await fetch(`/api/quotes/${id}`);
@@ -118,6 +122,8 @@ export function QuoteDetailView({ id }: { id: string }) {
         observations: data.quote.observations ?? "",
       });
       setSubscriptionLines(itemsToLines(data.quote.subscriptionItems ?? []));
+      const surveyRes = await fetch(`/api/surveys?quoteId=${id}`);
+      if (surveyRes.ok) setSurveys((await surveyRes.json()).surveys ?? []);
     }
     setLoading(false);
   }
@@ -210,6 +216,9 @@ export function QuoteDetailView({ id }: { id: string }) {
       statusBadge={<span className="badge">{QUOTE_STATUS_LABELS[quote.status]}</span>}
       actions={
         <>
+          <Link href={`/levantamientos?quoteId=${id}`} className="btn btn-ghost">
+            Crear levantamiento
+          </Link>
           <a href={`/api/quotes/${id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-ghost">
             Imprimir PDF
           </a>
@@ -372,6 +381,22 @@ export function QuoteDetailView({ id }: { id: string }) {
             </DetailGrid>
           </DetailSection>
           <QuoteSubscriptionLinesReadonly items={quote.subscriptionItems} />
+          <DetailSection title="Levantamientos">
+            {surveys.length === 0 ? (
+              <p className="text-sm text-[var(--muted)]">Sin levantamientos. La entrevista es opcional.</p>
+            ) : (
+              <ul className="text-sm space-y-1">
+                {surveys.map((item) => (
+                  <li key={item.id}>
+                    <Link href={`/levantamientos/${item.id}`} className="underline font-mono text-xs">
+                      {item.folio}
+                    </Link>{" "}
+                    · {SURVEY_OPERATION_LABELS[item.operationType]} · {SURVEY_STATUS_LABELS[item.status]}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DetailSection>
         </>
       )}
 
