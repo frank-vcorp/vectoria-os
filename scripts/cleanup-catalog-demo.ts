@@ -8,7 +8,6 @@ import {
   quoteSubscriptionItems,
   quotes,
   serviceOrders,
-  subscriptions,
 } from "@/server/db/schema";
 
 const DEMO_PAYMENT_NAMES = ["50% anticipo / 50% entrega", "100% anticipo"];
@@ -118,9 +117,6 @@ async function removeDemoSubscriptions() {
   }
 
   const ids = rows.map((r) => r.id);
-  await db
-    .delete(quoteSubscriptionItems)
-    .where(inArray(quoteSubscriptionItems.subscriptionTemplateId, ids));
   await db.delete(catalogSubscriptionTemplates).where(inArray(catalogSubscriptionTemplates.id, ids));
   console.log(`Suscripciones demo: ${ids.length} eliminadas`);
 }
@@ -138,22 +134,9 @@ async function removeDemoPeriodicities() {
   }
 
   const ids = rows.map((r) => r.id);
-  const inUse = await db
-    .select({ id: subscriptions.periodicityId })
-    .from(subscriptions)
-    .where(inArray(subscriptions.periodicityId, ids));
-  const inUseIds = new Set(inUse.map((row) => row.id));
-  const deletableIds = ids.filter((id) => !inUseIds.has(id));
-  if (deletableIds.length === 0) {
-    console.log("Periodicidades demo: en uso por suscripciones, no se eliminan");
-    return;
-  }
-  await db.update(serviceOrders).set({ periodicityId: null }).where(inArray(serviceOrders.periodicityId, deletableIds));
-  await db
-    .delete(quoteSubscriptionItems)
-    .where(inArray(quoteSubscriptionItems.periodicityId, deletableIds));
-  await db.delete(catalogPeriodicities).where(inArray(catalogPeriodicities.id, deletableIds));
-  console.log(`Periodicidades demo: ${deletableIds.length} eliminadas`);
+  await db.update(serviceOrders).set({ periodicityId: null }).where(inArray(serviceOrders.periodicityId, ids));
+  await db.delete(catalogPeriodicities).where(inArray(catalogPeriodicities.id, ids));
+  console.log(`Periodicidades demo: ${ids.length} eliminadas`);
 }
 
 async function main() {
