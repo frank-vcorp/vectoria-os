@@ -6,6 +6,7 @@ import {
 
 export type FieldType =
   | "text"
+  | "flow"
   | "choice"
   | "checklist"
   | "tools"
@@ -47,6 +48,10 @@ export type SurveyTemplate = {
 
 function text(id: string, label: string, hint?: string, example?: string): TemplateField {
   return { id, type: "text", label, hint, example };
+}
+
+function flow(id: string, label: string, example?: string, hint?: string): TemplateField {
+  return { id, type: "flow", label, example, hint };
 }
 
 function choice(id: string, label: string, options: string[]): TemplateField {
@@ -459,7 +464,9 @@ function transversalSection(area: TransversalArea): TemplateSection {
       checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowOther: true }),
       checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowOther: true }),
       text(`${p}.trigger`, area.trigger),
-      text(`${p}.flow`, "Flujo de la empresa", area.flowExample),
+      area.id === "comercial"
+        ? flow(`${p}.flow`, "Flujo de la empresa", area.flowExample)
+        : text(`${p}.flow`, "Flujo de la empresa", area.flowExample),
       text(`${p}.people`, "Personas / áreas que intervienen"),
       tools(`${p}.tools`, "Herramientas utilizadas", area.tools),
       text(`${p}.problems`, "Problemas o necesidades detectadas"),
@@ -549,8 +556,13 @@ function buildOperationSections(spec: OperationSpec): TemplateSection[] {
       checklist(`${p}.procesos.frequent`, "Procesos frecuentes", spec.frequent, { allowOther: true }),
       checklist(`${p}.procesos.secondary`, "Según aplique", spec.secondary, { allowOther: true }),
     ]),
-    opSection(t, "flujo", "Flujo general", [
-      text(`${p}.flujo.real`, "Flujo real", spec.flowExample),
+    opSection(t, "flujo", "Flujo de la operación", [
+      text(
+        `${p}.flujo.real`,
+        "Secuencia actual de la operación",
+        "Ordene las etapas principales como las realiza hoy el cliente.",
+        spec.flowExample,
+      ),
       text(`${p}.flujo.start`, spec.startEvent),
       text(`${p}.flujo.receives`, spec.receives),
       text(`${p}.flujo.finished`, spec.finishedWhen),
@@ -561,7 +573,7 @@ function buildOperationSections(spec: OperationSpec): TemplateSection[] {
       choice(`${p}.como.recapture`, "¿La información se captura más de una vez?", ["Sí", "No"]),
       text(`${p}.como.recaptureWhere`, "¿Dónde?"),
       choice(`${p}.como.manual`, "¿La información pasa manualmente de una herramienta a otra?", ["Sí", "No"]),
-      text(`${p}.como.manualHow`, "¿Cómo ocurre actualmente?", spec.recaptureExample),
+      text(`${p}.como.manualHow`, "¿Cómo ocurre actualmente?", undefined, spec.recaptureExample),
       text(`${p}.como.problems`, "Problemas o necesidades detectadas"),
       text(`${p}.como.expected`, "Resultado esperado por el cliente"),
     ]),
@@ -593,7 +605,7 @@ function buildOperationSections(spec: OperationSpec): TemplateSection[] {
       ...(spec.extraFollowFields ?? []),
     ]),
     opSection(t, "cambios", spec.changeTitle, [
-      checklist(`${p}.cambios.what`, "¿Qué puede sacar el flujo de lo normal?", spec.changeWhat, { allowOther: true }),
+      checklist(`${p}.cambios.what`, "¿Qué puede desviar el proceso de lo normal?", spec.changeWhat, { allowOther: true }),
       text(`${p}.cambios.who`, "¿Quién decide qué hacer?"),
       checklist(`${p}.cambios.modify`, "¿Un cambio puede modificar?", spec.changeModify, { allowOther: true }),
       text(`${p}.cambios.inform`, "¿Cómo se informa y autoriza con el cliente?"),

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { DateInput } from "@/components/date-input";
 import { EntityDetailLayout } from "@/components/entity-detail-layout";
 import { SearchableSelect } from "@/components/searchable-select";
+import { SurveyFlowBuilder } from "@/components/survey-flow-builder";
+import { coalesceFlowAnswer } from "@/shared/flow-blocks";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/shared/commercial";
 import {
@@ -205,6 +207,21 @@ function FieldEditor({
     );
   }
 
+  if (field.type === "flow") {
+    const flowAnswer = coalesceFlowAnswer(answer);
+    return (
+      <SurveyFlowBuilder
+        label={field.label}
+        example={field.example}
+        hint={field.hint}
+        blocks={flowAnswer.flowBlocks}
+        notes={flowAnswer.flowNotes}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...flowAnswer, ...next, text: undefined })}
+      />
+    );
+  }
+
   if (field.type === "table") {
     const columns = field.columns ?? [];
     const rows = answer.rows ?? [];
@@ -267,6 +284,11 @@ function FieldEditor({
     <label className="block space-y-1">
       <span className="text-sm font-medium">{field.label}</span>
       {field.hint ? <span className="block text-xs text-[var(--muted)]">{field.hint}</span> : null}
+      {field.example ? (
+        <span className="block text-xs text-[var(--muted)] italic">
+          Ejemplo de referencia (no es respuesta): {field.example}
+        </span>
+      ) : null}
       <AutoText value={answer.text ?? ""} disabled={disabled} onChange={(text) => onChange({ ...answer, text })} />
     </label>
   );

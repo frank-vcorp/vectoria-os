@@ -1,4 +1,5 @@
 import { escapeHtml, wrapPrintableDocument } from "@/shared/document-letterhead";
+import { coalesceFlowAnswer, flowBlocksToArrowText } from "@/shared/flow-blocks";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import {
   APPLICABILITY_LABELS,
@@ -71,6 +72,13 @@ function fieldAnswerLines(field: TemplateField, answer: FieldAnswer, blank: bool
     for (const row of rows) {
       lines.push(`| ${cols.map((col) => mdEscape(row[col.id] ?? "").replace(/\|/g, "\\|")).join(" | ")} |`);
     }
+    return lines;
+  }
+  if (field.type === "flow") {
+    const flowAnswer = coalesceFlowAnswer(answer);
+    const sequence = flowBlocksToArrowText(flowAnswer.flowBlocks);
+    lines.push(sequence || "Sin respuesta");
+    if (flowAnswer.flowNotes?.trim()) lines.push(`Notas: ${mdEscape(flowAnswer.flowNotes)}`);
     return lines;
   }
   lines.push(answer.text?.trim() ? mdEscape(answer.text) : "Sin respuesta");
@@ -216,7 +224,23 @@ function htmlField(field: TemplateField): string {
       .map((col) => `<th>${escapeHtml(col.label)}</th>`)
       .join("")}</tr></thead><tbody>${rows}</tbody></table>`;
   }
-  return htmlBox(field.label, true);
+  if (field.type === "flow") {
+    const blocks = field.example
+      ? field.example.split(/\s*(?:→|->)\s*/).map((part) => part.trim()).filter(Boolean)
+      : ["Etapa 1", "Etapa 2", "Etapa 3"];
+    const chips = blocks
+      .map(
+        (label, index) =>
+          `${index > 0 ? '<span class="sv-flow-arrow">→</span>' : ""}<span class="sv-flow-chip">${escapeHtml(label)}</span>`,
+      )
+      .join("");
+    return `<p class="sv-label">${escapeHtml(field.label)}</p><div class="sv-flow-row">${chips}</div>${htmlBox("Notas sobre cómo se realiza", true)}`;
+  }
+  const example = field.example
+    ? `<p class="sv-example">Ejemplo de referencia (no es respuesta): ${escapeHtml(field.example)}</p>`
+    : "";
+  const hint = field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : "";
+  return `${hint}${example}${htmlBox(field.label, true)}`;
 }
 
 export function renderSurveyPdfHtml(input: {
@@ -240,6 +264,11 @@ export function renderSurveyPdfHtml(input: {
       .sv-sec { break-inside: avoid; margin: 1rem 0; }
       .sv-sec h2 { font-size: 12pt; color: #0a1f44; border-bottom: 2px solid #1f4e8c; padding-bottom: .2rem; }
       .sv-label { font-weight: 600; margin: .55rem 0 .2rem; }
+      .sv-hint, .sv-example { font-size: 9pt; color: #5a6478; margin: 0 0 .25rem; }
+      .sv-example { font-style: italic; }
+      .sv-flow-row { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; margin: .35rem 0 .55rem; }
+      .sv-flow-chip { border: 1px solid #c5cedb; border-radius: 999px; padding: .2rem .55rem; font-size: 9pt; background: #f7f9fc; }
+      .sv-flow-arrow { color: #5a6478; font-size: 9pt; }
       .sv-line { min-height: 1.4rem; border-bottom: 1px solid #c5cedb; }
       .sv-line.tall { min-height: 2.6rem; }
       .sv-checks { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem .8rem; }
