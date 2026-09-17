@@ -1,10 +1,10 @@
-import { CONTRACT_TYPE_LABELS, formatMoney } from "@/shared/commercial";
+import { CONTRACT_TYPE_LABELS, QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
 import type { ClientFiscalData } from "@/shared/commercial";
 import {
   escapeHtml,
-  renderCompactListTable,
-  renderDocumentBlock,
+  quoteDocumentStyles,
   renderKeyValueTable,
+  renderQuoteFieldGrid,
   wrapPrintableDocument,
 } from "@/shared/document-letterhead";
 
@@ -76,51 +76,113 @@ function clientRows(client: QuoteClientDoc): [string, string][] {
   ].filter(Boolean) as [string, string][];
 }
 
+function quoteStatusLabel(status: string) {
+  return QUOTE_STATUS_LABELS[status as QuoteStatus] ?? status;
+}
+
+function renderQuoteSubscriptions(items: QuoteSubscriptionDoc[]) {
+  return `<div class="quote-sub-grid">${items
+    .map(
+      (item) => `<article class="quote-sub-card">
+        <div>
+          <strong>${escapeHtml(item.subscriptionTemplateName)}</strong>
+          <p>${escapeHtml(item.description)}</p>
+        </div>
+        <div class="quote-sub-price">
+          ${escapeHtml(formatMoney(item.price))}
+          <span class="quote-sub-period">${escapeHtml(item.periodicityName)}</span>
+        </div>
+      </article>`,
+    )
+    .join("")}</div>`;
+}
+
 export function renderQuoteHtml(quote: QuoteDoc) {
-  const clientBlock = renderDocumentBlock("Datos del cliente", renderKeyValueTable(clientRows(quote.client)));
+  const client = quote.client;
+  const clientMeta = [client.contact, client.phone, client.email].filter(Boolean).join(" · ");
+  const subscriptionTotal = (quote.subscriptionItems ?? []).reduce((sum, item) => sum + item.price, 0);
 
-  const implementationRows: [string, string][] = [
-    ["Vendedor", quote.sellerName],
-    ["Servicio", quote.serviceName],
-    ["Descripción", quote.description],
-    ["Precio de implementación", formatMoney(quote.price)],
-  ];
-  const implementationBlock = renderDocumentBlock(
-    "Implementación",
-    renderKeyValueTable(implementationRows),
-  );
+  const summary = `
+    <div class="quote-summary">
+      <div class="quote-summary-main">
+        <p class="quote-kicker">Cliente</p>
+        <h2 class="quote-client-name">${escapeHtml(client.name)}</h2>
+        ${clientMeta ? `<p class="quote-client-meta">${escapeHtml(clientMeta)}</p>` : ""}
+      </div>
+      <div class="quote-summary-total">
+        <p class="quote-kicker">Implementación</p>
+        <p class="quote-total-amount">${escapeHtml(formatMoney(quote.price))}</p>
+        ${subscriptionTotal > 0 ? `<p class="quote-total-note">+ ${escapeHtml(formatMoney(subscriptionTotal))} en suscripciones</p>` : ""}
+      </div>
+    </div>`;
 
-  const subscriptions =
+  const clientSection = `
+    <section class="quote-section">
+      <h2 class="quote-section-head"><span class="quote-section-title">Datos del cliente</span></h2>
+      <div class="quote-section-body">${renderQuoteFieldGrid(clientRows(client))}</div>
+    </section>`;
+
+  const implementationSection = `
+    <section class="quote-section">
+      <h2 class="quote-section-head"><span class="quote-section-title">Implementación</span></h2>
+      <div class="quote-section-body">
+        <div class="quote-implementation">
+          <div class="quote-implementation-copy">
+            <p class="quote-service-name">${escapeHtml(quote.serviceName)}</p>
+            <p class="quote-description">${escapeHtml(quote.description)}</p>
+            <p class="quote-meta-line">Vendedor: ${escapeHtml(quote.sellerName)}</p>
+          </div>
+          <div class="quote-price-card">
+            <p class="quote-kicker">Precio</p>
+            <p class="quote-total-amount">${escapeHtml(formatMoney(quote.price))}</p>
+          </div>
+        </div>
+      </div>
+    </section>`;
+
+  const subscriptionsSection =
     quote.subscriptionItems && quote.subscriptionItems.length > 0
-      ? renderDocumentBlock(
-          "Suscripciones",
-          renderCompactListTable(
-            ["Concepto", "Descripción", "Precio"],
-            quote.subscriptionItems.map((item) => ({
-              name: item.subscriptionTemplateName,
-              detail: item.description,
-              price: `${formatMoney(item.price)} · ${item.periodicityName}`,
-            })),
-          ),
-        )
+      ? `<section class="quote-section">
+          <h2 class="quote-section-head"><span class="quote-section-title">Suscripciones</span></h2>
+          <div class="quote-section-body">${renderQuoteSubscriptions(quote.subscriptionItems)}</div>
+        </section>`
       : "";
 
-  const commercialRows = [
+  const commercialFields: [string, string][] = [
     ["Tiempo de entrega", quote.deliveryTime || "—"],
     quote.paymentConditionName ? ["Condiciones de pago", quote.paymentConditionName] : null,
-    quote.termsConditionName ? ["Términos y condiciones", quote.termsConditionName] : null,
-    quote.observations ? ["Observaciones", quote.observations] : null,
+    quote.termsConditionName ? ["Términos", quote.termsConditionName] : null,
     quote.opportunityFolio ? ["Oportunidad", quote.opportunityFolio] : null,
-    ["Estatus", quote.status],
+    quote.observations ? ["Observaciones", quote.observations] : null,
   ].filter(Boolean) as [string, string][];
 
-  const termsBody = quote.termsText
-    ? `${renderKeyValueTable(commercialRows)}<p class="doc-terms">${escapeHtml(quote.termsText)}</p>`
-    : renderKeyValueTable(commercialRows);
+  const commercialSection = `
+    <section class="quote-section">
+      <h2 class="quote-section-head">
+        <span class="quote-section-title">Condiciones comerciales</span>
+        <span class="quote-status">${escapeHtml(quoteStatusLabel(quote.status))}</span>
+      </h2>
+      <div class="quote-section-body">
+        <div class="quote-commercial-grid">${commercialFields
+          .map(
+            ([label, value]) => `<div class="quote-field">
+              <span class="quote-field-label">${escapeHtml(label)}</span>
+              <span class="quote-field-value">${escapeHtml(value)}</span>
+            </div>`,
+          )
+          .join("")}</div>
+        ${
+          quote.termsText
+            ? `<div class="quote-terms-box">
+                <p class="quote-terms-title">${escapeHtml(quote.termsConditionName ?? "Términos y condiciones")}</p>
+                ${escapeHtml(quote.termsText)}
+              </div>`
+            : ""
+        }
+      </div>
+    </section>`;
 
-  const commercialBlock = renderDocumentBlock("Condiciones comerciales", termsBody);
-
-  const body = `${clientBlock}${implementationBlock}${subscriptions}${commercialBlock}`;
+  const body = `<div class="quote-doc">${summary}${clientSection}${implementationSection}${subscriptionsSection}${commercialSection}</div>`;
 
   return wrapPrintableDocument({
     title: "Cotización",
@@ -130,6 +192,8 @@ export function renderQuoteHtml(quote: QuoteDoc) {
     dateLabel: "Fecha de emisión",
     dateText: new Date(quote.createdAt).toLocaleDateString("es-MX"),
     body,
+    extraStyles: quoteDocumentStyles(),
+    bodyClass: "quote-doc-body",
   });
 }
 

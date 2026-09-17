@@ -293,6 +293,8 @@ export type PrintableDocumentOptions = {
   body: string;
   logoUrl?: string;
   showPrintButton?: boolean;
+  extraStyles?: string;
+  bodyClass?: string;
 };
 
 export function wrapPrintableDocument(options: PrintableDocumentOptions) {
@@ -309,7 +311,7 @@ export function wrapPrintableDocument(options: PrintableDocumentOptions) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(pageTitle)}</title>
-  <style>${documentStyles()}</style>
+  <style>${documentStyles()}${options.extraStyles ?? ""}</style>
 </head>
 <body>
   <div class="doc-page">
@@ -327,7 +329,7 @@ export function wrapPrintableDocument(options: PrintableDocumentOptions) {
       </div>
       <div class="doc-accent"></div>
     </header>
-    <div class="doc-body">
+    <div class="doc-body${options.bodyClass ? ` ${options.bodyClass}` : ""}">
       ${options.body}
     </div>
     ${renderDocumentFooter()}
@@ -365,6 +367,284 @@ export function renderDataTable(headers: string[], rows: string[][]) {
       .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
       .join("")}</tbody>
   </table>`;
+}
+
+export function quoteDocumentStyles() {
+  const c = VECTORIA_BRAND.colors;
+  return `
+    .quote-doc { display: flex; flex-direction: column; gap: 0.75rem; }
+    .quote-summary {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 0.65rem;
+      border: 1px solid ${c.border};
+      border-radius: 8px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .quote-summary-main {
+      flex: 1;
+      padding: 0.75rem 0.85rem;
+      background: linear-gradient(135deg, ${c.surface} 0%, #fff 100%);
+    }
+    .quote-summary-main .quote-kicker {
+      margin: 0 0 0.2rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: ${c.muted};
+    }
+    .quote-summary-main .quote-client-name {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 14pt;
+      font-weight: 700;
+      line-height: 1.15;
+      color: ${c.navy};
+    }
+    .quote-summary-main .quote-client-meta {
+      margin: 0.35rem 0 0;
+      font-size: 9pt;
+      color: ${c.slate};
+      line-height: 1.4;
+    }
+    .quote-summary-total {
+      min-width: 2.4in;
+      padding: 0.75rem 0.85rem;
+      background: linear-gradient(160deg, ${c.navy} 0%, #152d5c 100%);
+      color: #fff;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .quote-summary-total .quote-kicker {
+      margin: 0 0 0.25rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(255 255 255 / 0.75);
+    }
+    .quote-summary-total .quote-total-amount {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 16pt;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .quote-summary-total .quote-total-note {
+      margin: 0.25rem 0 0;
+      font-size: 8pt;
+      color: rgb(255 255 255 / 0.72);
+    }
+    .quote-section {
+      border: 1px solid ${c.border};
+      border-radius: 8px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .quote-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0.5rem 0.75rem;
+      background: ${c.surface};
+      border-bottom: 1px solid ${c.border};
+    }
+    .quote-section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: ${c.navy};
+    }
+    .quote-section-title::before {
+      content: "";
+      width: 3px;
+      height: 1rem;
+      border-radius: 999px;
+      background: ${c.orange};
+      flex-shrink: 0;
+    }
+    .quote-section-body { padding: 0.65rem 0.75rem 0.75rem; }
+    .quote-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem 0.85rem;
+    }
+    .quote-field { min-width: 0; }
+    .quote-field-label {
+      display: block;
+      margin-bottom: 0.12rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: ${c.muted};
+    }
+    .quote-field-value {
+      display: block;
+      font-size: 10pt;
+      font-weight: 500;
+      color: ${c.navy};
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .quote-field-wide { grid-column: 1 / -1; }
+    .quote-implementation {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .quote-implementation-copy { min-width: 0; }
+    .quote-service-name {
+      margin: 0 0 0.35rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 11pt;
+      font-weight: 700;
+      color: ${c.navy};
+    }
+    .quote-description {
+      margin: 0;
+      font-size: 9.5pt;
+      line-height: 1.5;
+      color: ${c.slate};
+      white-space: pre-wrap;
+    }
+    .quote-meta-line {
+      margin: 0.45rem 0 0;
+      font-size: 8.5pt;
+      color: ${c.muted};
+    }
+    .quote-price-card {
+      min-width: 1.85in;
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgb(211 84 0 / 0.25);
+      background: linear-gradient(180deg, rgb(211 84 0 / 0.08) 0%, rgb(211 84 0 / 0.03) 100%);
+      text-align: right;
+    }
+    .quote-price-card .quote-kicker {
+      margin: 0 0 0.2rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: ${c.orange};
+    }
+    .quote-price-card .quote-total-amount {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 13pt;
+      font-weight: 700;
+      color: ${c.navy};
+    }
+    .quote-sub-grid {
+      display: grid;
+      gap: 0.5rem;
+    }
+    .quote-sub-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.75rem;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid ${c.border};
+      border-radius: 6px;
+      background: #fff;
+    }
+    .quote-sub-card strong {
+      display: block;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 9.5pt;
+      color: ${c.navy};
+    }
+    .quote-sub-card p {
+      margin: 0.15rem 0 0;
+      grid-column: 1;
+      font-size: 9pt;
+      line-height: 1.4;
+      color: ${c.slate};
+    }
+    .quote-sub-price {
+      grid-row: 1 / span 2;
+      grid-column: 2;
+      align-self: center;
+      text-align: right;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      color: ${c.navy};
+      white-space: nowrap;
+    }
+    .quote-sub-period {
+      display: block;
+      margin-top: 0.1rem;
+      font-size: 8pt;
+      font-weight: 500;
+      color: ${c.muted};
+    }
+    .quote-commercial-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem 0.85rem;
+    }
+    .quote-status {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 8pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      background: rgb(10 31 68 / 0.08);
+      color: ${c.navy};
+    }
+    .quote-terms-box {
+      margin-top: 0.65rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid ${c.border};
+      background: ${c.surface};
+      font-size: 8.5pt;
+      line-height: 1.5;
+      color: ${c.slate};
+      white-space: pre-wrap;
+    }
+    .quote-terms-title {
+      margin: 0 0 0.35rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: ${c.navy};
+    }
+    @media print {
+      .quote-summary, .quote-section, .quote-sub-card { box-shadow: none; }
+    }
+  `;
+}
+
+export function renderQuoteFieldGrid(rows: [string, string][], wideLabels = new Set(["Descripción", "Observaciones"])) {
+  return `<div class="quote-fields">${rows
+    .map(
+      ([label, value]) =>
+        `<div class="quote-field${wideLabels.has(label) ? " quote-field-wide" : ""}">
+          <span class="quote-field-label">${escapeHtml(label)}</span>
+          <span class="quote-field-value">${escapeHtml(value)}</span>
+        </div>`,
+    )
+    .join("")}</div>`;
 }
 
 export function renderCompactListTable(
