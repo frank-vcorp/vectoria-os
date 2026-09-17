@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QuickAddClient } from "@/components/quick-add-client";
-import { FormField, FormPanel } from "@/components/form-panel";
+import { FormField, FormPanel, FormSectionBlock } from "@/components/form-panel";
 import { MoneyInput } from "@/components/money-input";
+import { QuoteClientPreview } from "@/components/quote-client-preview";
+import { QuoteCommercialFields } from "@/components/quote-commercial-fields";
 import {
   QuoteSubscriptionLinesEditor,
   type PeriodicityOption,
@@ -23,7 +25,7 @@ import {
 
 type ClientOption = { id: string; folio: string; name: string };
 type ServiceOption = { id: string; name: string; basePrice?: number };
-type CatalogOption = { id: string; name: string };
+type CatalogOption = { id: string; name: string; body?: string | null; status?: string };
 
 type QuoteRow = {
   id: string;
@@ -48,6 +50,8 @@ export function QuotesManager() {
   const [subscriptionTemplates, setSubscriptionTemplates] = useState<SubscriptionTemplateOption[]>([]);
   const [periodicities, setPeriodicities] = useState<PeriodicityOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<CatalogOption[]>([]);
+  const [deliveryTimes, setDeliveryTimes] = useState<CatalogOption[]>([]);
+  const [termsConditions, setTermsConditions] = useState<CatalogOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -57,8 +61,9 @@ export function QuotesManager() {
     serviceId: "",
     description: "",
     price: 0,
-    deliveryTime: "",
+    deliveryTimeId: "",
     paymentConditionId: "",
+    termsConditionId: "",
     observations: "",
   });
   const [subscriptionLines, setSubscriptionLines] = useState<QuoteSubscriptionLineForm[]>([]);
@@ -73,7 +78,13 @@ export function QuotesManager() {
       setSubscriptionTemplates(data.subscriptionTemplates ?? []);
       setPeriodicities(data.periodicities ?? []);
       setPaymentConditions(
-        (data.paymentConditions ?? []).filter((p: CatalogOption & { status: string }) => p.status === "activo"),
+        (data.paymentConditions ?? []).filter((p: CatalogOption) => p.status === "activo"),
+      );
+      setDeliveryTimes(
+        (data.deliveryTimes ?? []).filter((d: CatalogOption) => d.status === "activo"),
+      );
+      setTermsConditions(
+        (data.termsConditions ?? []).filter((t: CatalogOption) => t.status === "activo"),
       );
     }
   }
@@ -124,6 +135,7 @@ export function QuotesManager() {
         mode: "direct",
         ...form,
         observations: form.observations || null,
+        termsConditionId: form.termsConditionId,
         subscriptionItems: toSubscriptionItemPayload(subscriptionLines),
       }),
     });
@@ -212,85 +224,89 @@ export function QuotesManager() {
           title="Nueva cotización directa"
           description="Crea una cotización sin pasar por oportunidad."
           actions={
-            <button type="submit" className="btn btn-primary">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                !form.clientId ||
+                !form.serviceId ||
+                !form.deliveryTimeId ||
+                !form.paymentConditionId ||
+                !form.termsConditionId
+              }
+            >
               Crear cotización
             </button>
           }
         >
-          <FormField label="Cliente *">
-            <SearchableSelect
-              className="w-full"
-              value={form.clientId}
-              onChange={(clientId) => setForm({ ...form, clientId })}
-              required
-              placeholder="Seleccionar…"
-              options={clients.map((c) => ({
-                value: c.id,
-                label: `${c.folio} — ${c.name}`,
-                keywords: `${c.folio} ${c.name}`,
-              }))}
-            />
-          </FormField>
-          <QuickAddClient onCreated={handleQuickAddClient} />
-          <FormField label="Servicio principal *">
-            <SearchableSelect
-              className="w-full"
-              value={form.serviceId}
-              onChange={(serviceId) => void onServiceChange(serviceId)}
-              required
-              placeholder="Seleccionar…"
-              options={services.map((s) => ({ value: s.id, label: s.name }))}
-            />
-          </FormField>
-          <FormField label="Descripción *">
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              required
-              rows={2}
-            />
-          </FormField>
-          <div className="form-grid cols-2">
+          <FormSectionBlock title="Cliente" description="Seleccione o registre al cliente de la cotización.">
+            <FormField label="Cliente *">
+              <SearchableSelect
+                className="w-full"
+                value={form.clientId}
+                onChange={(clientId) => setForm({ ...form, clientId })}
+                required
+                placeholder="Seleccionar…"
+                options={clients.map((c) => ({
+                  value: c.id,
+                  label: `${c.folio} — ${c.name}`,
+                  keywords: `${c.folio} ${c.name}`,
+                }))}
+              />
+            </FormField>
+            <QuickAddClient onCreated={handleQuickAddClient} />
+          </FormSectionBlock>
+
+          <QuoteClientPreview clientId={form.clientId} />
+
+          <FormSectionBlock
+            title="Implementación"
+            description="Servicio principal de implementación o proyecto."
+          >
+            <FormField label="Servicio *">
+              <SearchableSelect
+                className="w-full"
+                value={form.serviceId}
+                onChange={(serviceId) => void onServiceChange(serviceId)}
+                required
+                placeholder="Seleccionar…"
+                options={services.map((s) => ({ value: s.id, label: s.name }))}
+              />
+            </FormField>
+            <FormField label="Descripción *">
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                required
+                rows={3}
+              />
+            </FormField>
             <MoneyInput
-              label="Precio servicio principal (MXN)"
+              label="Precio de implementación (MXN) *"
               valueCents={form.price}
               onChangeCents={(price) => setForm({ ...form, price })}
               required
             />
-            <FormField label="Tiempo de entrega (días) *">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Ej. 15"
-                value={form.deliveryTime}
-                onChange={(e) => setForm({ ...form, deliveryTime: e.target.value })}
-                required
-              />
-            </FormField>
-            <FormField label="Condiciones de pago *" className="md:col-span-2">
-              <SearchableSelect
-                className="w-full"
-                value={form.paymentConditionId}
-                onChange={(paymentConditionId) => setForm({ ...form, paymentConditionId })}
-                required
-                placeholder="Seleccionar…"
-                options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
-              />
-            </FormField>
-          </div>
-          <FormField label="Observaciones">
-            <textarea
-              value={form.observations}
-              onChange={(e) => setForm({ ...form, observations: e.target.value })}
-              rows={2}
-            />
-          </FormField>
+          </FormSectionBlock>
+
           <QuoteSubscriptionLinesEditor
             lines={subscriptionLines}
             onChange={setSubscriptionLines}
             templates={subscriptionTemplates}
             periodicities={periodicities}
           />
+
+          <QuoteCommercialFields
+            deliveryTimeId={form.deliveryTimeId}
+            paymentConditionId={form.paymentConditionId}
+            termsConditionId={form.termsConditionId}
+            observations={form.observations}
+            onChange={(patch) => setForm({ ...form, ...patch })}
+            deliveryTimes={deliveryTimes}
+            paymentConditions={paymentConditions}
+            termsConditions={termsConditions}
+          />
+
           {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         </FormPanel>
       </form>

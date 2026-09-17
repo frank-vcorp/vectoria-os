@@ -118,6 +118,29 @@ export function documentStyles() {
       color: ${c.slate};
     }
     .doc-section-title:first-child { margin-top: 0; }
+    .doc-block {
+      border: 1px solid ${c.border};
+      border-radius: 6px;
+      margin-bottom: 0.65rem;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .doc-block .doc-section-title {
+      margin: 0;
+      padding: 0.45rem 0.6rem;
+      background: ${c.surface};
+      border-bottom: 1px solid ${c.border};
+    }
+    .doc-block-body {
+      padding: 0.45rem 0.6rem 0.55rem;
+    }
+    .doc-terms {
+      margin: 0;
+      font-size: 9pt;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      color: ${c.navy};
+    }
     .doc-table {
       width: 100%;
       border-collapse: collapse;
@@ -312,6 +335,13 @@ export function wrapPrintableDocument(options: PrintableDocumentOptions) {
   </div>
 </body>
 </html>`;
+}
+
+export function renderDocumentBlock(title: string, body: string) {
+  return `<div class="doc-block">
+    <h2 class="doc-section-title">${escapeHtml(title)}</h2>
+    <div class="doc-block-body">${body}</div>
+  </div>`;
 }
 
 export function renderKeyValueTable(rows: [string, string][]) {

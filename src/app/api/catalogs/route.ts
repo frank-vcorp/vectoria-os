@@ -6,6 +6,8 @@ import {
   listServices,
   listSubscriptionTemplates,
   listPaymentConditions,
+  listDeliveryTimes,
+  listTermsConditions,
   listIncomeCategories,
   listExpenseCategories,
   listProviders,
@@ -13,6 +15,8 @@ import {
   createService,
   createSubscriptionTemplate,
   createPaymentCondition,
+  createDeliveryTime,
+  createTermsCondition,
   createIncomeCategory,
   createExpenseCategory,
   createProvider,
@@ -20,6 +24,8 @@ import {
   updateService,
   updateSubscriptionTemplate,
   updatePaymentCondition,
+  updateDeliveryTime,
+  updateTermsCondition,
   updateIncomeCategory,
   updateExpenseCategory,
   updateProvider,
@@ -39,6 +45,8 @@ export async function GET(request: Request) {
       data.subscriptionTemplates = await listSubscriptionTemplates();
     if (type === "all" || type === "payment_conditions")
       data.paymentConditions = await listPaymentConditions();
+    if (type === "all" || type === "delivery_times") data.deliveryTimes = await listDeliveryTimes();
+    if (type === "all" || type === "terms_conditions") data.termsConditions = await listTermsConditions();
     if (type === "all" || type === "income") data.incomeCategories = await listIncomeCategories();
     if (type === "all" || type === "expense") data.expenseCategories = await listExpenseCategories();
     if (type === "all" || type === "providers") data.providers = await listProviders();
@@ -72,6 +80,16 @@ const createSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("payment_condition"),
     name: z.string().min(1),
+  }),
+  z.object({
+    type: z.literal("delivery_time"),
+    name: z.string().min(1),
+    sortOrder: z.number().int().min(0).optional(),
+  }),
+  z.object({
+    type: z.literal("terms_condition"),
+    name: z.string().min(1),
+    body: z.string().min(1),
   }),
   z.object({ type: z.literal("income"), name: z.string().min(1) }),
   z.object({ type: z.literal("expense"), name: z.string().min(1) }),
@@ -112,6 +130,12 @@ export async function POST(request: Request) {
         break;
       case "payment_condition":
         item = await createPaymentCondition(body.name, user.id);
+        break;
+      case "delivery_time":
+        item = await createDeliveryTime(body.name, body.sortOrder ?? 0, user.id);
+        break;
+      case "terms_condition":
+        item = await createTermsCondition({ name: body.name, body: body.body }, user.id);
         break;
       case "income":
         item = await createIncomeCategory(body.name, user.id);
@@ -166,6 +190,20 @@ const updateSchema = z.discriminatedUnion("type", [
     status: z.enum(["activo", "cancelado"]).optional(),
   }),
   z.object({
+    type: z.literal("delivery_time"),
+    id: z.string().uuid(),
+    name: z.string().min(1).optional(),
+    sortOrder: z.number().int().min(0).optional(),
+    status: z.enum(["activo", "cancelado"]).optional(),
+  }),
+  z.object({
+    type: z.literal("terms_condition"),
+    id: z.string().uuid(),
+    name: z.string().min(1).optional(),
+    body: z.string().min(1).optional(),
+    status: z.enum(["activo", "cancelado"]).optional(),
+  }),
+  z.object({
     type: z.literal("income"),
     id: z.string().uuid(),
     name: z.string().min(1),
@@ -208,6 +246,16 @@ export async function PATCH(request: Request) {
       case "payment_condition": {
         const { type: _, id, ...data } = body;
         item = await updatePaymentCondition(id, data, user.id);
+        break;
+      }
+      case "delivery_time": {
+        const { type: _, id, ...data } = body;
+        item = await updateDeliveryTime(id, data, user.id);
+        break;
+      }
+      case "terms_condition": {
+        const { type: _, id, ...data } = body;
+        item = await updateTermsCondition(id, data, user.id);
         break;
       }
       case "income":

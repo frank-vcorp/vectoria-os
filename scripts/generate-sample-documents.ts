@@ -10,7 +10,6 @@ mkdirSync(outDir, { recursive: true });
 
 const quoteHtml = renderQuoteHtml({
   folio: "COT-2026-0042",
-  clientName: "Acme Industrial S.A. de C.V.",
   sellerName: "María González",
   serviceName: "Desarrollo de plataforma web",
   description:
@@ -18,10 +17,27 @@ const quoteHtml = renderQuoteHtml({
   price: 185_000_00,
   deliveryTime: "45 días hábiles",
   paymentConditionName: "50% anticipo · 50% contra entrega",
+  termsConditionName: "Términos generales VectorIA",
+  termsText:
+    "1. Vigencia: esta cotización tiene validez de 15 días naturales.\n2. Alcance: incluye únicamente lo descrito en Implementación y Suscripciones.",
   observations: "Incluye capacitación inicial de 4 horas para el equipo operativo.",
   status: "autorizada",
   opportunityFolio: "OPO-2026-0118",
   createdAt: new Date("2026-03-03T16:00:00"),
+  client: {
+    folio: "CLI-000042",
+    name: "Acme Industrial S.A. de C.V.",
+    contact: "Ing. Laura Méndez",
+    phone: "+52 442 123 4567",
+    email: "compras@acme-industrial.mx",
+    fiscalData: {
+      rfc: "AIN940315AB1",
+      razonSocial: "Acme Industrial S.A. de C.V.",
+      regimenFiscal: "601",
+      codigoPostal: "76090",
+      usoCfdi: "G03",
+    },
+  },
   subscriptionItems: [
     {
       subscriptionTemplateName: "Soporte y mantenimiento",

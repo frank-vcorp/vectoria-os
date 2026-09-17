@@ -4,6 +4,8 @@ import {
   catalogServices,
   catalogPeriodicities,
   catalogPaymentConditions,
+  catalogDeliveryTimes,
+  catalogTermsConditions,
   catalogIncomeCategories,
   catalogExpenseCategories,
   catalogProviders,
@@ -54,6 +56,31 @@ export async function listSubscriptionTemplates() {
 export async function listPaymentConditions() {
   const db = getDb();
   return db.select().from(catalogPaymentConditions).orderBy(asc(catalogPaymentConditions.name));
+}
+
+export async function listDeliveryTimes() {
+  const db = getDb();
+  return db
+    .select()
+    .from(catalogDeliveryTimes)
+    .orderBy(asc(catalogDeliveryTimes.sortOrder), asc(catalogDeliveryTimes.name));
+}
+
+export async function listTermsConditions() {
+  const db = getDb();
+  return db.select().from(catalogTermsConditions).orderBy(asc(catalogTermsConditions.name));
+}
+
+export async function getDeliveryTimeById(id: string) {
+  const db = getDb();
+  const [row] = await db.select().from(catalogDeliveryTimes).where(eq(catalogDeliveryTimes.id, id)).limit(1);
+  return row ?? null;
+}
+
+export async function getTermsConditionById(id: string) {
+  const db = getDb();
+  const [row] = await db.select().from(catalogTermsConditions).where(eq(catalogTermsConditions.id, id)).limit(1);
+  return row ?? null;
 }
 
 export async function listIncomeCategories() {
@@ -129,6 +156,29 @@ export async function createPaymentCondition(name: string, userId?: string) {
   const db = getDb();
   const [row] = await db.insert(catalogPaymentConditions).values({ name }).returning();
   await writeAudit({ entity: "catalog_payment_condition", entityId: row.id, action: "create", userId });
+  return row;
+}
+
+export async function createDeliveryTime(name: string, sortOrder = 0, userId?: string) {
+  const db = getDb();
+  const [row] = await db
+    .insert(catalogDeliveryTimes)
+    .values({ name: name.trim(), sortOrder })
+    .returning();
+  await writeAudit({ entity: "catalog_delivery_time", entityId: row.id, action: "create", userId });
+  return row;
+}
+
+export async function createTermsCondition(
+  params: { name: string; body: string },
+  userId?: string,
+) {
+  const db = getDb();
+  const [row] = await db
+    .insert(catalogTermsConditions)
+    .values({ name: params.name.trim(), body: params.body.trim() })
+    .returning();
+  await writeAudit({ entity: "catalog_terms_condition", entityId: row.id, action: "create", userId });
   return row;
 }
 
@@ -245,6 +295,52 @@ export async function updatePaymentCondition(
     .returning();
   const action = data.status === "cancelado" ? "cancel" : "update";
   await writeAudit({ entity: "catalog_payment_condition", entityId: id, action, userId, payload: data });
+  return row;
+}
+
+export async function updateDeliveryTime(
+  id: string,
+  data: { name?: string; sortOrder?: number; status?: "activo" | "cancelado" },
+  userId?: string,
+) {
+  const db = getDb();
+  const updates: Partial<typeof catalogDeliveryTimes.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (data.name !== undefined) updates.name = data.name.trim();
+  if (data.sortOrder !== undefined) updates.sortOrder = data.sortOrder;
+  if (data.status) updates.status = data.status;
+
+  const [row] = await db
+    .update(catalogDeliveryTimes)
+    .set(updates)
+    .where(eq(catalogDeliveryTimes.id, id))
+    .returning();
+  const action = data.status === "cancelado" ? "cancel" : "update";
+  await writeAudit({ entity: "catalog_delivery_time", entityId: id, action, userId, payload: data });
+  return row;
+}
+
+export async function updateTermsCondition(
+  id: string,
+  data: { name?: string; body?: string; status?: "activo" | "cancelado" },
+  userId?: string,
+) {
+  const db = getDb();
+  const updates: Partial<typeof catalogTermsConditions.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (data.name !== undefined) updates.name = data.name.trim();
+  if (data.body !== undefined) updates.body = data.body.trim();
+  if (data.status) updates.status = data.status;
+
+  const [row] = await db
+    .update(catalogTermsConditions)
+    .set(updates)
+    .where(eq(catalogTermsConditions.id, id))
+    .returning();
+  const action = data.status === "cancelado" ? "cancel" : "update";
+  await writeAudit({ entity: "catalog_terms_condition", entityId: id, action, userId, payload: data });
   return row;
 }
 

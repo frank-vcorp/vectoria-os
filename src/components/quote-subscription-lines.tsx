@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSectionBlock } from "@/components/form-panel";
 import { MoneyInput } from "@/components/money-input";
 import { SearchableSelect } from "@/components/searchable-select";
 import { formatMoney, type QuoteSubscriptionItemInput } from "@/shared/commercial";
@@ -73,18 +74,20 @@ export function QuoteSubscriptionLinesEditor({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-medium">Suscripciones propuestas</h3>
-        {!disabled && (
+    <FormSectionBlock
+      title="Suscripciones"
+      description="Servicios recurrentes propuestos (opcional)."
+    >
+      {!disabled && (
+        <div className="flex justify-end">
           <button type="button" className="btn btn-ghost text-sm" onClick={addLine}>
             + Agregar suscripción
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {lines.length === 0 && (
-        <p className="text-sm text-[var(--muted)]">Sin partidas de suscripción (opcional).</p>
+        <p className="text-sm text-[var(--muted)]">Sin partidas de suscripción.</p>
       )}
 
       {lines.map((line, index) => (
@@ -140,7 +143,7 @@ export function QuoteSubscriptionLinesEditor({
           </div>
         </div>
       ))}
-    </div>
+    </FormSectionBlock>
   );
 }
 
@@ -157,8 +160,11 @@ export function QuoteSubscriptionLinesReadonly({
   if (items.length === 0) return null;
 
   return (
-    <section className="space-y-2">
-      <h3 className="font-medium">Suscripciones propuestas</h3>
+    <section className="form-section-block">
+      <div className="form-section-block-header">
+        <h3 className="form-section-block-title">Suscripciones</h3>
+      </div>
+      <div className="form-section-block-body space-y-2">
       <ul className="text-sm space-y-3">
         {items.map((item, i) => (
           <li key={i} className="rounded-lg border border-[var(--border)] p-3 bg-[var(--surface-2)]">
@@ -170,6 +176,7 @@ export function QuoteSubscriptionLinesReadonly({
           </li>
         ))}
       </ul>
+      </div>
     </section>
   );
 }

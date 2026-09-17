@@ -5,6 +5,7 @@ import {
   catalogPeriodicities,
   catalogServices,
   catalogSubscriptionTemplates,
+  catalogTermsConditions,
   clients,
   opportunities,
   quoteSubscriptionItems,
@@ -14,9 +15,23 @@ import {
 } from "@/server/db/schema";
 import type { QuoteStatus, QuoteSubscriptionItemInput } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
+import { getDeliveryTimeById, getTermsConditionById } from "@/server/services/catalogs";
 import { nextFolio } from "@/server/services/folios";
 import { getOpportunityById, markOpportunityQuoted } from "@/server/services/opportunities";
 import { folioOrClientNameFilter } from "@/server/services/list-search";
+
+async function resolveDeliveryTime(deliveryTimeId: string) {
+  const row = await getDeliveryTimeById(deliveryTimeId);
+  if (!row || row.status !== "activo") throw new Error("DELIVERY_TIME_NOT_FOUND");
+  return { id: row.id, name: row.name };
+}
+
+async function resolveTermsCondition(termsConditionId: string | null | undefined) {
+  if (!termsConditionId) return { id: null as string | null, name: null as string | null, body: null as string | null };
+  const row = await getTermsConditionById(termsConditionId);
+  if (!row || row.status !== "activo") throw new Error("TERMS_NOT_FOUND");
+  return { id: row.id, name: row.name, body: row.body };
+}
 
 export type QuoteSubscriptionItemRow = {
   id: string;
@@ -80,6 +95,11 @@ export async function listQuotes(search?: string) {
       folio: quotes.folio,
       clientId: quotes.clientId,
       clientName: clients.name,
+      clientFolio: clients.folio,
+      clientContact: clients.contact,
+      clientPhone: clients.phone,
+      clientEmail: clients.email,
+      clientFiscalData: clients.fiscalData,
       opportunityId: quotes.opportunityId,
       opportunityFolio: opportunities.folio,
       serviceOrderId: serviceOrders.id,
@@ -112,7 +132,11 @@ export async function getQuoteById(id: string) {
       folio: quotes.folio,
       clientId: quotes.clientId,
       clientName: clients.name,
+      clientFolio: clients.folio,
+      clientContact: clients.contact,
+      clientPhone: clients.phone,
       clientEmail: clients.email,
+      clientFiscalData: clients.fiscalData,
       opportunityId: quotes.opportunityId,
       opportunityFolio: opportunities.folio,
       serviceOrderId: serviceOrders.id,
@@ -123,9 +147,13 @@ export async function getQuoteById(id: string) {
       serviceName: catalogServices.name,
       description: quotes.description,
       price: quotes.price,
+      deliveryTimeId: quotes.deliveryTimeId,
       deliveryTime: quotes.deliveryTime,
       paymentConditionId: quotes.paymentConditionId,
       paymentConditionName: catalogPaymentConditions.name,
+      termsConditionId: quotes.termsConditionId,
+      termsConditionName: catalogTermsConditions.name,
+      termsText: quotes.termsText,
       observations: quotes.observations,
       status: quotes.status,
       createdAt: quotes.createdAt,
@@ -137,6 +165,7 @@ export async function getQuoteById(id: string) {
     .innerJoin(users, eq(quotes.sellerId, users.id))
     .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
     .leftJoin(catalogPaymentConditions, eq(quotes.paymentConditionId, catalogPaymentConditions.id))
+    .leftJoin(catalogTermsConditions, eq(quotes.termsConditionId, catalogTermsConditions.id))
     .where(eq(quotes.id, id))
     .limit(1);
 
@@ -168,12 +197,17 @@ async function insertQuote(params: {
   serviceId: string;
   description: string;
   price: number;
-  deliveryTime: string;
+  deliveryTimeId: string;
   paymentConditionId: string;
+  termsConditionId: string;
   observations?: string | null;
   subscriptionItems?: QuoteSubscriptionItemInput[];
   userId?: string;
 }) {
+  const delivery = await resolveDeliveryTime(params.deliveryTimeId);
+  const terms = await resolveTermsCondition(params.termsConditionId);
+  if (!terms.body) throw new Error("TERMS_NOT_FOUND");
+
   const folio = await nextFolio("cotizacion");
   const db = getDb();
   const [quote] = await db
@@ -186,8 +220,11 @@ async function insertQuote(params: {
       serviceId: params.serviceId,
       description: params.description.trim(),
       price: params.price,
-      deliveryTime: params.deliveryTime.trim(),
+      deliveryTimeId: delivery.id,
+      deliveryTime: delivery.name,
       paymentConditionId: params.paymentConditionId,
+      termsConditionId: terms.id,
+      termsText: terms.body,
       observations: params.observations?.trim() || null,
       status: "cotizada",
       createdBy: params.userId ?? null,
@@ -213,8 +250,9 @@ export async function createQuoteDirect(params: {
   serviceId: string;
   description: string;
   price: number;
-  deliveryTime: string;
+  deliveryTimeId: string;
   paymentConditionId: string;
+  termsConditionId: string;
   observations?: string | null;
   subscriptionItems?: QuoteSubscriptionItemInput[];
   sellerId: string;
@@ -225,8 +263,9 @@ export async function createQuoteDirect(params: {
 
 export async function createQuoteFromOpportunity(params: {
   opportunityId: string;
-  deliveryTime: string;
+  deliveryTimeId: string;
   paymentConditionId: string;
+  termsConditionId: string;
   price?: number;
   observations?: string | null;
   subscriptionItems?: QuoteSubscriptionItemInput[];
@@ -252,8 +291,9 @@ export async function createQuoteFromOpportunity(params: {
     serviceId: opp.serviceId,
     description: opp.description,
     price: params.price ?? service.basePrice,
-    deliveryTime: params.deliveryTime,
+    deliveryTimeId: params.deliveryTimeId,
     paymentConditionId: params.paymentConditionId,
+    termsConditionId: params.termsConditionId,
     observations: params.observations,
     subscriptionItems: params.subscriptionItems,
     userId: params.userId,
@@ -269,8 +309,9 @@ export async function updateQuote(params: {
   serviceId?: string;
   description?: string;
   price?: number;
-  deliveryTime?: string;
+  deliveryTimeId?: string;
   paymentConditionId?: string;
+  termsConditionId?: string | null;
   observations?: string | null;
   subscriptionItems?: QuoteSubscriptionItemInput[];
   userId?: string;
@@ -289,8 +330,17 @@ export async function updateQuote(params: {
   if (params.serviceId) updates.serviceId = params.serviceId;
   if (params.description !== undefined) updates.description = params.description.trim();
   if (params.price !== undefined) updates.price = params.price;
-  if (params.deliveryTime !== undefined) updates.deliveryTime = params.deliveryTime.trim();
+  if (params.deliveryTimeId !== undefined) {
+    const delivery = await resolveDeliveryTime(params.deliveryTimeId);
+    updates.deliveryTimeId = delivery.id;
+    updates.deliveryTime = delivery.name;
+  }
   if (params.paymentConditionId) updates.paymentConditionId = params.paymentConditionId;
+  if (params.termsConditionId !== undefined) {
+    const terms = await resolveTermsCondition(params.termsConditionId);
+    updates.termsConditionId = terms.id;
+    updates.termsText = terms.body;
+  }
   if (params.observations !== undefined) updates.observations = params.observations?.trim() || null;
 
   const [quote] = await db

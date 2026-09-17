@@ -12,7 +12,7 @@ export default async function CatalogosPage() {
       <div>
         <h1 className="text-2xl font-semibold">Catálogos</h1>
         <p className="text-[var(--muted)]">
-          Servicios, suscripciones, periodicidades, condiciones de pago, ingresos, egresos, proveedores y bancos.
+          Servicios, suscripciones, periodicidades, condiciones de pago, tiempos de entrega, términos, ingresos, egresos, proveedores y bancos.
         </p>
       </div>
       <CatalogsManager isAdmin={user.role === "administrador"} canManageBanks={modules.includes("bancos")} />

@@ -25,6 +25,28 @@ export function FormPanel({
   );
 }
 
+export function FormSectionBlock({
+  title,
+  description,
+  children,
+  className = "",
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`form-section-block ${className}`.trim()}>
+      <div className="form-section-block-header">
+        <h3 className="form-section-block-title">{title}</h3>
+        {description ? <p className="form-section-block-desc">{description}</p> : null}
+      </div>
+      <div className="form-section-block-body">{children}</div>
+    </section>
+  );
+}
+
 export function FormField({
   label,
   hint,

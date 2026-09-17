@@ -5,8 +5,14 @@ import {
   createExpenseCategory,
   createProvider,
   createService,
+  createDeliveryTime,
+  createTermsCondition,
+  createPaymentCondition,
   listServices,
   listIncomeCategories,
+  listDeliveryTimes,
+  listTermsConditions,
+  listPaymentConditions,
 } from "@/server/services/catalogs";
 import { setRolePermissions } from "@/server/services/permissions";
 import { defaultPermissionsForRole } from "@/shared/modules";
@@ -72,6 +78,39 @@ async function seed() {
   }
 
   await ensureDefaultBankAccount().catch(() => null);
+
+  const deliveryTimes = await listDeliveryTimes();
+  if (deliveryTimes.length === 0) {
+    const defaults = ["15 días hábiles", "30 días hábiles", "45 días hábiles", "60 días hábiles", "90 días hábiles", "A convenir"];
+    for (const [index, name] of defaults.entries()) {
+      await createDeliveryTime(name, index).catch(() => null);
+    }
+    console.log("Tiempos de entrega seed creados");
+  }
+
+  const paymentConditions = await listPaymentConditions();
+  if (paymentConditions.length === 0) {
+    await createPaymentCondition("50% anticipo, 50% contra entrega").catch(() => null);
+    await createPaymentCondition("100% contra entrega").catch(() => null);
+    await createPaymentCondition("100% anticipo").catch(() => null);
+    console.log("Condiciones de pago seed creadas");
+  }
+
+  const termsConditions = await listTermsConditions();
+  if (termsConditions.length === 0) {
+    await createTermsCondition({
+      name: "Términos generales VectorIA",
+      body: [
+        "1. Vigencia: esta cotización tiene validez de 15 días naturales a partir de su emisión.",
+        "2. Alcance: el servicio incluye únicamente lo descrito en Implementación y Suscripciones.",
+        "3. Cambios: solicitudes fuera de alcance se cotizarán por separado.",
+        "4. Propiedad intelectual: salvo pacto distinto, el software entregado queda licenciado al cliente.",
+        "5. Confidencialidad: ambas partes protegerán la información intercambiada.",
+        "6. Pagos: se aplican las condiciones de pago indicadas; retrasos pueden pausar la entrega.",
+      ].join("\n"),
+    }).catch(() => null);
+    console.log("Términos y condiciones seed creados");
+  }
 
   console.log("Seed completado");
 }

@@ -119,6 +119,24 @@ export const catalogPaymentConditions = pgTable("catalog_payment_conditions", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const catalogDeliveryTimes = pgTable("catalog_delivery_times", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const catalogTermsConditions = pgTable("catalog_terms_conditions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  body: text("body").notNull(),
+  status: text("status").$type<"activo" | "cancelado">().notNull().default("activo"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Catálogo de suscripciones / servicios recurrentes (Discovery §16.2). */
 export const catalogSubscriptionTemplates = pgTable("catalog_subscription_templates", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -201,8 +219,11 @@ export const quotes = pgTable("quotes", {
     .references(() => catalogServices.id),
   description: text("description").notNull(),
   price: integer("price").notNull().default(0),
+  deliveryTimeId: uuid("delivery_time_id").references(() => catalogDeliveryTimes.id),
   deliveryTime: text("delivery_time").notNull(),
   paymentConditionId: uuid("payment_condition_id").references(() => catalogPaymentConditions.id),
+  termsConditionId: uuid("terms_condition_id").references(() => catalogTermsConditions.id),
+  termsText: text("terms_text"),
   observations: text("observations"),
   status: text("status").$type<QuoteStatus>().notNull().default("cotizada"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

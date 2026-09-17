@@ -31,6 +31,8 @@ type CatalogData = {
     status: string;
   }[];
   paymentConditions?: { id: string; name: string; status: string }[];
+  deliveryTimes?: { id: string; name: string; sortOrder: number; status: string }[];
+  termsConditions?: { id: string; name: string; body: string; status: string }[];
   incomeCategories?: { id: string; name: string }[];
   expenseCategories?: { id: string; name: string }[];
   providers?: { id: string; name: string }[];
@@ -187,6 +189,8 @@ export function CatalogsManager({ isAdmin = false, canManageBanks = false }: Cat
   });
   const [subscription, setSubscription] = useState({ name: "" });
   const [payment, setPayment] = useState({ name: "" });
+  const [deliveryTime, setDeliveryTime] = useState({ name: "" });
+  const [terms, setTerms] = useState({ name: "", body: "" });
 
   const [editPeriodicity, setEditPeriodicity] = useState<{
     id: string;
@@ -200,6 +204,8 @@ export function CatalogsManager({ isAdmin = false, canManageBanks = false }: Cat
   } | null>(null);
   const [editSubscription, setEditSubscription] = useState<{ id: string; name: string } | null>(null);
   const [editPayment, setEditPayment] = useState<{ id: string; name: string } | null>(null);
+  const [editDeliveryTime, setEditDeliveryTime] = useState<{ id: string; name: string } | null>(null);
+  const [editTerms, setEditTerms] = useState<{ id: string; name: string; body: string } | null>(null);
 
   async function load() {
     const res = await fetch("/api/catalogs");
@@ -809,6 +815,185 @@ export function CatalogsManager({ isAdmin = false, canManageBanks = false }: Cat
                   {p.status === "activo" ? "Cancelar" : "Activar"}
                 </button>
               </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card space-y-3">
+        <h2 className="font-medium">Tiempos de entrega</h2>
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void post({ type: "delivery_time", name: deliveryTime.name }).then(() => setDeliveryTime({ name: "" }));
+          }}
+        >
+          <input
+            placeholder="Ej. 30 días hábiles"
+            value={deliveryTime.name}
+            onChange={(e) => setDeliveryTime({ name: e.target.value })}
+            required
+            className="flex-1 min-w-[12rem] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+          <button className="btn btn-primary" type="submit">
+            Agregar
+          </button>
+        </form>
+        {editDeliveryTime && (
+          <form
+            className="flex flex-wrap gap-2 p-3 rounded-lg bg-[var(--surface-2)]"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void patch({
+                type: "delivery_time",
+                id: editDeliveryTime.id,
+                name: editDeliveryTime.name,
+              }).then(() => setEditDeliveryTime(null));
+            }}
+          >
+            <input
+              value={editDeliveryTime.name}
+              onChange={(e) => setEditDeliveryTime({ ...editDeliveryTime, name: e.target.value })}
+              required
+              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+            <button className="btn btn-primary" type="submit">
+              Guardar
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setEditDeliveryTime(null)}>
+              Cancelar
+            </button>
+          </form>
+        )}
+        <ul className="text-sm space-y-2">
+          {data.deliveryTimes?.map((d) => (
+            <li key={d.id} className="flex flex-wrap items-center gap-2 justify-between">
+              <span>{d.name}</span>
+              <span className="flex items-center gap-2">
+                <StatusBadge status={d.status} />
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={() => setEditDeliveryTime({ id: d.id, name: d.name })}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={() =>
+                    void patch({
+                      type: "delivery_time",
+                      id: d.id,
+                      status: d.status === "activo" ? "cancelado" : "activo",
+                    })
+                  }
+                >
+                  {d.status === "activo" ? "Cancelar" : "Activar"}
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card space-y-3">
+        <h2 className="font-medium">Términos y condiciones</h2>
+        <form
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void post({ type: "terms_condition", name: terms.name, body: terms.body }).then(() =>
+              setTerms({ name: "", body: "" }),
+            );
+          }}
+        >
+          <input
+            placeholder="Nombre del conjunto"
+            value={terms.name}
+            onChange={(e) => setTerms({ ...terms, name: e.target.value })}
+            required
+            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
+          />
+          <textarea
+            placeholder="Texto de términos y condiciones"
+            value={terms.body}
+            onChange={(e) => setTerms({ ...terms, body: e.target.value })}
+            required
+            rows={5}
+            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+          />
+          <button className="btn btn-primary" type="submit">
+            Agregar
+          </button>
+        </form>
+        {editTerms && (
+          <form
+            className="space-y-2 p-3 rounded-lg bg-[var(--surface-2)]"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void patch({
+                type: "terms_condition",
+                id: editTerms.id,
+                name: editTerms.name,
+                body: editTerms.body,
+              }).then(() => setEditTerms(null));
+            }}
+          >
+            <input
+              value={editTerms.name}
+              onChange={(e) => setEditTerms({ ...editTerms, name: e.target.value })}
+              required
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2"
+            />
+            <textarea
+              value={editTerms.body}
+              onChange={(e) => setEditTerms({ ...editTerms, body: e.target.value })}
+              required
+              rows={5}
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+            />
+            <div className="flex gap-2">
+              <button className="btn btn-primary" type="submit">
+                Guardar
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditTerms(null)}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
+        <ul className="text-sm space-y-3">
+          {data.termsConditions?.map((t) => (
+            <li key={t.id} className="rounded-lg border border-[var(--border)] p-3 bg-[var(--surface-2)]">
+              <div className="flex flex-wrap items-center gap-2 justify-between">
+                <span className="font-medium">{t.name}</span>
+                <span className="flex items-center gap-2">
+                  <StatusBadge status={t.status} />
+                  <button
+                    type="button"
+                    className="btn btn-ghost text-sm"
+                    onClick={() => setEditTerms({ id: t.id, name: t.name, body: t.body })}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost text-sm"
+                    onClick={() =>
+                      void patch({
+                        type: "terms_condition",
+                        id: t.id,
+                        status: t.status === "activo" ? "cancelado" : "activo",
+                      })
+                    }
+                  >
+                    {t.status === "activo" ? "Cancelar" : "Activar"}
+                  </button>
+                </span>
+              </div>
+              <p className="text-xs text-[var(--muted)] mt-2 whitespace-pre-wrap line-clamp-3">{t.body}</p>
             </li>
           ))}
         </ul>

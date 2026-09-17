@@ -13,17 +13,26 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
     const html = renderQuoteHtml({
       folio: quote.folio,
-      clientName: quote.clientName,
       sellerName: quote.sellerName,
       serviceName: quote.serviceName,
       description: quote.description,
       price: quote.price,
       deliveryTime: quote.deliveryTime,
       paymentConditionName: quote.paymentConditionName,
+      termsConditionName: quote.termsConditionName,
+      termsText: quote.termsText,
       observations: quote.observations,
       status: quote.status,
       opportunityFolio: quote.opportunityFolio,
       createdAt: quote.createdAt,
+      client: {
+        folio: quote.clientFolio,
+        name: quote.clientName,
+        contact: quote.clientContact,
+        phone: quote.clientPhone,
+        email: quote.clientEmail,
+        fiscalData: quote.clientFiscalData,
+      },
       subscriptionItems: quote.subscriptionItems.map((item) => ({
         subscriptionTemplateName: item.subscriptionTemplateName,
         description: item.description,

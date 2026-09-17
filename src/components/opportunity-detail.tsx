@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FormSectionBlock } from "@/components/form-panel";
 import { MoneyInput } from "@/components/money-input";
+import { QuoteClientPreview } from "@/components/quote-client-preview";
+import { QuoteCommercialFields } from "@/components/quote-commercial-fields";
 import { SearchableSelect } from "@/components/searchable-select";
 import {
   QuoteSubscriptionLinesEditor,
@@ -55,6 +58,8 @@ export function OpportunityDetailView({ id }: { id: string }) {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [paymentConditions, setPaymentConditions] = useState<PaymentOption[]>([]);
+  const [deliveryTimes, setDeliveryTimes] = useState<PaymentOption[]>([]);
+  const [termsConditions, setTermsConditions] = useState<{ id: string; name: string; body?: string | null }[]>([]);
   const [subscriptionTemplates, setSubscriptionTemplates] = useState<SubscriptionTemplateOption[]>([]);
   const [periodicities, setPeriodicities] = useState<PeriodicityOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,8 +69,9 @@ export function OpportunityDetailView({ id }: { id: string }) {
   const [showQuote, setShowQuote] = useState(false);
   const [editForm, setEditForm] = useState({ clientId: "", serviceId: "", description: "" });
   const [quoteForm, setQuoteForm] = useState({
-    deliveryTime: "",
+    deliveryTimeId: "",
     paymentConditionId: "",
+    termsConditionId: "",
     price: 0,
     observations: "",
   });
@@ -102,11 +108,20 @@ export function OpportunityDetailView({ id }: { id: string }) {
       setPaymentConditions(
         (data.paymentConditions ?? []).filter((p: PaymentOption & { status: string }) => p.status === "activo"),
       );
+      setDeliveryTimes(
+        (data.deliveryTimes ?? []).filter((d: PaymentOption & { status: string }) => d.status === "activo"),
+      );
+      setTermsConditions(
+        (data.termsConditions ?? []).filter((t: { status: string }) => t.status === "activo"),
+      );
       setSubscriptionTemplates(data.subscriptionTemplates ?? []);
       setPeriodicities(data.periodicities ?? []);
-      if (data.paymentConditions?.[0]) {
-        setQuoteForm((f) => ({ ...f, paymentConditionId: data.paymentConditions[0].id }));
-      }
+      setQuoteForm((f) => ({
+        ...f,
+        paymentConditionId: f.paymentConditionId || data.paymentConditions?.[0]?.id || "",
+        deliveryTimeId: f.deliveryTimeId || data.deliveryTimes?.[0]?.id || "",
+        termsConditionId: f.termsConditionId || data.termsConditions?.[0]?.id || "",
+      }));
     }
     if (clientsRes.ok) setClients((await clientsRes.json()).clients);
   }
@@ -177,8 +192,9 @@ export function OpportunityDetailView({ id }: { id: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         opportunityId: id,
-        deliveryTime: quoteForm.deliveryTime,
+        deliveryTimeId: quoteForm.deliveryTimeId,
         paymentConditionId: quoteForm.paymentConditionId,
+        termsConditionId: quoteForm.termsConditionId,
         price: quoteForm.price,
         observations: quoteForm.observations || null,
         subscriptionItems: toSubscriptionItemPayload(quoteSubscriptionLines),
@@ -341,45 +357,36 @@ export function OpportunityDetailView({ id }: { id: string }) {
 
       {showQuote && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <form className="card max-w-lg w-full space-y-3 max-h-[90vh] overflow-y-auto" onSubmit={(e) => void createQuote(e)}>
+          <form className="card max-w-2xl w-full space-y-3 max-h-[90vh] overflow-y-auto" onSubmit={(e) => void createQuote(e)}>
             <h3 className="font-medium">Crear cotización</h3>
-            <MoneyInput
-              label="Precio servicio principal (MXN)"
-              valueCents={quoteForm.price}
-              onChangeCents={(price) => setQuoteForm({ ...quoteForm, price })}
-              required
-            />
-            <label className="text-sm block">
-              <span className="text-[var(--muted)]">Tiempo de entrega (días)</span>
-              <input
-                type="text"
-                placeholder="Ej. 15 días hábiles"
-                value={quoteForm.deliveryTime}
-                onChange={(e) => setQuoteForm({ ...quoteForm, deliveryTime: e.target.value })}
+            <QuoteClientPreview clientId={opportunity.clientId} />
+            <FormSectionBlock title="Implementación" description="Servicio principal heredado de la oportunidad.">
+              <p className="text-sm">
+                <span className="text-[var(--muted)]">Servicio: </span>
+                {opportunity.serviceName}
+              </p>
+              <MoneyInput
+                label="Precio de implementación (MXN) *"
+                valueCents={quoteForm.price}
+                onChangeCents={(price) => setQuoteForm({ ...quoteForm, price })}
                 required
-                className="mt-1 w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
               />
-            </label>
-            <SearchableSelect
-              className="w-full"
-              value={quoteForm.paymentConditionId}
-              onChange={(paymentConditionId) => setQuoteForm({ ...quoteForm, paymentConditionId })}
-              required
-              placeholder="Condiciones de pago…"
-              options={paymentConditions.map((p) => ({ value: p.id, label: p.name }))}
-            />
-            <textarea
-              value={quoteForm.observations}
-              onChange={(e) => setQuoteForm({ ...quoteForm, observations: e.target.value })}
-              placeholder="Observaciones (opcional)"
-              rows={2}
-              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2"
-            />
+            </FormSectionBlock>
             <QuoteSubscriptionLinesEditor
               lines={quoteSubscriptionLines}
               onChange={setQuoteSubscriptionLines}
               templates={subscriptionTemplates}
               periodicities={periodicities}
+            />
+            <QuoteCommercialFields
+              deliveryTimeId={quoteForm.deliveryTimeId}
+              paymentConditionId={quoteForm.paymentConditionId}
+              termsConditionId={quoteForm.termsConditionId}
+              observations={quoteForm.observations}
+              onChange={(patch) => setQuoteForm({ ...quoteForm, ...patch })}
+              deliveryTimes={deliveryTimes}
+              paymentConditions={paymentConditions}
+              termsConditions={termsConditions}
             />
             {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
             <div className="flex gap-2 justify-end">

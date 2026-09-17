@@ -1,6 +1,9 @@
 import { CONTRACT_TYPE_LABELS, formatMoney } from "@/shared/commercial";
+import type { ClientFiscalData } from "@/shared/commercial";
 import {
+  escapeHtml,
   renderCompactListTable,
+  renderDocumentBlock,
   renderKeyValueTable,
   wrapPrintableDocument,
 } from "@/shared/document-letterhead";
@@ -12,19 +15,30 @@ type QuoteSubscriptionDoc = {
   periodicityName: string;
 };
 
+type QuoteClientDoc = {
+  folio?: string | null;
+  name: string;
+  contact?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  fiscalData?: ClientFiscalData | null;
+};
+
 type QuoteDoc = {
   folio: string;
-  clientName: string;
   sellerName: string;
   serviceName: string;
   description: string;
   price: number;
   deliveryTime: string;
   paymentConditionName?: string | null;
+  termsConditionName?: string | null;
+  termsText?: string | null;
   observations?: string | null;
   status: string;
   opportunityFolio?: string | null;
   createdAt: Date;
+  client: QuoteClientDoc;
   subscriptionItems?: QuoteSubscriptionDoc[];
 };
 
@@ -46,37 +60,67 @@ type ServiceOrderDoc = {
   balance?: number;
 };
 
+function clientRows(client: QuoteClientDoc): [string, string][] {
+  const fiscal = client.fiscalData;
+  return [
+    client.folio ? ["Folio cliente", client.folio] : null,
+    ["Nombre", client.name],
+    client.contact ? ["Contacto", client.contact] : null,
+    client.phone ? ["Celular", client.phone] : null,
+    client.email ? ["Correo", client.email] : null,
+    fiscal?.rfc ? ["RFC", fiscal.rfc] : null,
+    fiscal?.razonSocial ? ["Razón social", fiscal.razonSocial] : null,
+    fiscal?.regimenFiscal ? ["Régimen fiscal", fiscal.regimenFiscal] : null,
+    fiscal?.codigoPostal ? ["Código postal", fiscal.codigoPostal] : null,
+    fiscal?.usoCfdi ? ["Uso CFDI", fiscal.usoCfdi] : null,
+  ].filter(Boolean) as [string, string][];
+}
+
 export function renderQuoteHtml(quote: QuoteDoc) {
-  const mainRows = [
-    ["Cliente", quote.clientName],
+  const clientBlock = renderDocumentBlock("Datos del cliente", renderKeyValueTable(clientRows(quote.client)));
+
+  const implementationRows: [string, string][] = [
     ["Vendedor", quote.sellerName],
-    ["Servicio principal", quote.serviceName],
+    ["Servicio", quote.serviceName],
     ["Descripción", quote.description],
-    ["Precio del servicio principal", formatMoney(quote.price)],
+    ["Precio de implementación", formatMoney(quote.price)],
+  ];
+  const implementationBlock = renderDocumentBlock(
+    "Implementación",
+    renderKeyValueTable(implementationRows),
+  );
+
+  const subscriptions =
+    quote.subscriptionItems && quote.subscriptionItems.length > 0
+      ? renderDocumentBlock(
+          "Suscripciones",
+          renderCompactListTable(
+            ["Concepto", "Descripción", "Precio"],
+            quote.subscriptionItems.map((item) => ({
+              name: item.subscriptionTemplateName,
+              detail: item.description,
+              price: `${formatMoney(item.price)} · ${item.periodicityName}`,
+            })),
+          ),
+        )
+      : "";
+
+  const commercialRows = [
     ["Tiempo de entrega", quote.deliveryTime || "—"],
     quote.paymentConditionName ? ["Condiciones de pago", quote.paymentConditionName] : null,
+    quote.termsConditionName ? ["Términos y condiciones", quote.termsConditionName] : null,
     quote.observations ? ["Observaciones", quote.observations] : null,
     quote.opportunityFolio ? ["Oportunidad", quote.opportunityFolio] : null,
     ["Estatus", quote.status],
   ].filter(Boolean) as [string, string][];
 
-  const subscriptions =
-    quote.subscriptionItems && quote.subscriptionItems.length > 0
-      ? `<h2 class="doc-section-title">Suscripciones propuestas</h2>${renderCompactListTable(
-          ["Concepto", "Descripción", "Precio"],
-          quote.subscriptionItems.map((item) => ({
-            name: item.subscriptionTemplateName,
-            detail: item.description,
-            price: `${formatMoney(item.price)} · ${item.periodicityName}`,
-          })),
-        )}`
-      : "";
+  const termsBody = quote.termsText
+    ? `${renderKeyValueTable(commercialRows)}<p class="doc-terms">${escapeHtml(quote.termsText)}</p>`
+    : renderKeyValueTable(commercialRows);
 
-  const body = `
-    <h2 class="doc-section-title">Servicio principal</h2>
-    ${renderKeyValueTable(mainRows)}
-    ${subscriptions}
-  `;
+  const commercialBlock = renderDocumentBlock("Condiciones comerciales", termsBody);
+
+  const body = `${clientBlock}${implementationBlock}${subscriptions}${commercialBlock}`;
 
   return wrapPrintableDocument({
     title: "Cotización",
