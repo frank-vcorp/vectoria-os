@@ -132,6 +132,15 @@ export function formatMoney(cents: number): string {
   return `$${(cents / 100).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+export const IVA_RATE = 0.16;
+
+/** Desglosa un monto con IVA incluido (16%) en base e IVA, en centavos. */
+export function breakDownIvaIncluded(totalCents: number) {
+  const netCents = Math.round(totalCents / (1 + IVA_RATE));
+  const ivaCents = totalCents - netCents;
+  return { netCents, ivaCents, totalCents };
+}
+
 export function formatDeliveryDate(value: string): string {
   if (!value) return "—";
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {

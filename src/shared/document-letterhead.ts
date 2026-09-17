@@ -441,6 +441,24 @@ export function quoteDocumentStyles() {
       font-size: 8pt;
       color: rgb(255 255 255 / 0.72);
     }
+    .quote-summary-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0.15rem 0 0;
+      font-size: 8.5pt;
+      line-height: 1.35;
+      color: rgb(255 255 255 / 0.82);
+    }
+    .quote-summary-line span { flex: 1; text-align: left; }
+    .quote-summary-line strong {
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+    }
     .quote-section {
       border: 1px solid ${c.border};
       border-radius: 8px;
@@ -477,6 +495,7 @@ export function quoteDocumentStyles() {
       flex-shrink: 0;
     }
     .quote-section-body { padding: 0.65rem 0.75rem 0.75rem; }
+    .quote-section-body-table { padding: 0; }
     .quote-fields {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -592,6 +611,87 @@ export function quoteDocumentStyles() {
       margin-top: 0.1rem;
       font-size: 8pt;
       font-weight: 500;
+      color: ${c.muted};
+    }
+    .quote-lines-wrap { overflow: hidden; }
+    .quote-lines-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+    }
+    .quote-lines-table th,
+    .quote-lines-table td {
+      padding: 0.45rem 0.55rem;
+      border-bottom: 1px solid ${c.border};
+      vertical-align: top;
+    }
+    .quote-lines-table th {
+      background: ${c.surface};
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: ${c.muted};
+      text-align: left;
+    }
+    .quote-lines-table th:nth-child(n+4),
+    .quote-lines-table td.quote-line-money { text-align: right; white-space: nowrap; }
+    .quote-lines-table th:first-child,
+    .quote-lines-table td.quote-line-num {
+      width: 1.6rem;
+      text-align: center;
+      color: ${c.muted};
+      font-weight: 600;
+    }
+    .quote-lines-table th:nth-child(3),
+    .quote-lines-table td.quote-line-type-cell { width: 1.15in; }
+    .quote-line-desc strong {
+      display: block;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: ${c.navy};
+      line-height: 1.25;
+    }
+    .quote-line-desc span {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 8.5pt;
+      line-height: 1.45;
+      color: ${c.slate};
+      white-space: pre-wrap;
+    }
+    .quote-line-type {
+      display: inline-block;
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      background: rgb(10 31 68 / 0.08);
+      color: ${c.navy};
+    }
+    .quote-line-type-recurring {
+      background: rgb(211 84 0 / 0.12);
+      color: ${c.orange};
+    }
+    .quote-line-total {
+      font-family: Montserrat, Inter, sans-serif;
+      font-weight: 700;
+      color: ${c.navy};
+    }
+    .quote-lines-table tfoot td {
+      background: ${c.surface};
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: ${c.navy};
+    }
+    .quote-lines-foot-row td:first-child { text-align: right; }
+    .quote-lines-note {
+      margin: 0;
+      padding: 0.45rem 0.75rem 0.65rem;
+      font-size: 7.5pt;
+      line-height: 1.4;
       color: ${c.muted};
     }
     .quote-commercial-grid {

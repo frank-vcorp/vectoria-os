@@ -112,6 +112,29 @@
       color: #2C3E50;
     }
     .doc-section-title:first-child { margin-top: 0; }
+    .doc-block {
+      border: 1px solid #D8DEE9;
+      border-radius: 6px;
+      margin-bottom: 0.65rem;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .doc-block .doc-section-title {
+      margin: 0;
+      padding: 0.45rem 0.6rem;
+      background: #F6F8FB;
+      border-bottom: 1px solid #D8DEE9;
+    }
+    .doc-block-body {
+      padding: 0.45rem 0.6rem 0.55rem;
+    }
+    .doc-terms {
+      margin: 0;
+      font-size: 9pt;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      color: #0A1F44;
+    }
     .doc-table {
       width: 100%;
       border-collapse: collapse;
@@ -231,6 +254,367 @@
       .doc-header { border-radius: 0; }
       .no-print { display: none !important; }
     }
+  
+    .quote-doc { display: flex; flex-direction: column; gap: 0.75rem; }
+    .quote-summary {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 0.65rem;
+      border: 1px solid #D8DEE9;
+      border-radius: 8px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .quote-summary-main {
+      flex: 1;
+      padding: 0.75rem 0.85rem;
+      background: linear-gradient(135deg, #F6F8FB 0%, #fff 100%);
+    }
+    .quote-summary-main .quote-kicker {
+      margin: 0 0 0.2rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748B;
+    }
+    .quote-summary-main .quote-client-name {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 14pt;
+      font-weight: 700;
+      line-height: 1.15;
+      color: #0A1F44;
+    }
+    .quote-summary-main .quote-client-meta {
+      margin: 0.35rem 0 0;
+      font-size: 9pt;
+      color: #2C3E50;
+      line-height: 1.4;
+    }
+    .quote-summary-total {
+      min-width: 2.4in;
+      padding: 0.75rem 0.85rem;
+      background: linear-gradient(160deg, #0A1F44 0%, #152d5c 100%);
+      color: #fff;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .quote-summary-total .quote-kicker {
+      margin: 0 0 0.25rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(255 255 255 / 0.75);
+    }
+    .quote-summary-total .quote-total-amount {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 16pt;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .quote-summary-total .quote-total-note {
+      margin: 0.25rem 0 0;
+      font-size: 8pt;
+      color: rgb(255 255 255 / 0.72);
+    }
+    .quote-summary-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0.15rem 0 0;
+      font-size: 8.5pt;
+      line-height: 1.35;
+      color: rgb(255 255 255 / 0.82);
+    }
+    .quote-summary-line span { flex: 1; text-align: left; }
+    .quote-summary-line strong {
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .quote-section {
+      border: 1px solid #D8DEE9;
+      border-radius: 8px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .quote-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0.5rem 0.75rem;
+      background: #F6F8FB;
+      border-bottom: 1px solid #D8DEE9;
+    }
+    .quote-section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #0A1F44;
+    }
+    .quote-section-title::before {
+      content: "";
+      width: 3px;
+      height: 1rem;
+      border-radius: 999px;
+      background: #D35400;
+      flex-shrink: 0;
+    }
+    .quote-section-body { padding: 0.65rem 0.75rem 0.75rem; }
+    .quote-section-body-table { padding: 0; }
+    .quote-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem 0.85rem;
+    }
+    .quote-field { min-width: 0; }
+    .quote-field-label {
+      display: block;
+      margin-bottom: 0.12rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748B;
+    }
+    .quote-field-value {
+      display: block;
+      font-size: 10pt;
+      font-weight: 500;
+      color: #0A1F44;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .quote-field-wide { grid-column: 1 / -1; }
+    .quote-implementation {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .quote-implementation-copy { min-width: 0; }
+    .quote-service-name {
+      margin: 0 0 0.35rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 11pt;
+      font-weight: 700;
+      color: #0A1F44;
+    }
+    .quote-description {
+      margin: 0;
+      font-size: 9.5pt;
+      line-height: 1.5;
+      color: #2C3E50;
+      white-space: pre-wrap;
+    }
+    .quote-meta-line {
+      margin: 0.45rem 0 0;
+      font-size: 8.5pt;
+      color: #64748B;
+    }
+    .quote-price-card {
+      min-width: 1.85in;
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgb(211 84 0 / 0.25);
+      background: linear-gradient(180deg, rgb(211 84 0 / 0.08) 0%, rgb(211 84 0 / 0.03) 100%);
+      text-align: right;
+    }
+    .quote-price-card .quote-kicker {
+      margin: 0 0 0.2rem;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #D35400;
+    }
+    .quote-price-card .quote-total-amount {
+      margin: 0;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 13pt;
+      font-weight: 700;
+      color: #0A1F44;
+    }
+    .quote-sub-grid {
+      display: grid;
+      gap: 0.5rem;
+    }
+    .quote-sub-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.75rem;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid #D8DEE9;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .quote-sub-card strong {
+      display: block;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 9.5pt;
+      color: #0A1F44;
+    }
+    .quote-sub-card p {
+      margin: 0.15rem 0 0;
+      grid-column: 1;
+      font-size: 9pt;
+      line-height: 1.4;
+      color: #2C3E50;
+    }
+    .quote-sub-price {
+      grid-row: 1 / span 2;
+      grid-column: 2;
+      align-self: center;
+      text-align: right;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      color: #0A1F44;
+      white-space: nowrap;
+    }
+    .quote-sub-period {
+      display: block;
+      margin-top: 0.1rem;
+      font-size: 8pt;
+      font-weight: 500;
+      color: #64748B;
+    }
+    .quote-lines-wrap { overflow: hidden; }
+    .quote-lines-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+    }
+    .quote-lines-table th,
+    .quote-lines-table td {
+      padding: 0.45rem 0.55rem;
+      border-bottom: 1px solid #D8DEE9;
+      vertical-align: top;
+    }
+    .quote-lines-table th {
+      background: #F6F8FB;
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748B;
+      text-align: left;
+    }
+    .quote-lines-table th:nth-child(n+4),
+    .quote-lines-table td.quote-line-money { text-align: right; white-space: nowrap; }
+    .quote-lines-table th:first-child,
+    .quote-lines-table td.quote-line-num {
+      width: 1.6rem;
+      text-align: center;
+      color: #64748B;
+      font-weight: 600;
+    }
+    .quote-lines-table th:nth-child(3),
+    .quote-lines-table td.quote-line-type-cell { width: 1.15in; }
+    .quote-line-desc strong {
+      display: block;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #0A1F44;
+      line-height: 1.25;
+    }
+    .quote-line-desc span {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 8.5pt;
+      line-height: 1.45;
+      color: #2C3E50;
+      white-space: pre-wrap;
+    }
+    .quote-line-type {
+      display: inline-block;
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+      font-size: 7.5pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      background: rgb(10 31 68 / 0.08);
+      color: #0A1F44;
+    }
+    .quote-line-type-recurring {
+      background: rgb(211 84 0 / 0.12);
+      color: #D35400;
+    }
+    .quote-line-total {
+      font-family: Montserrat, Inter, sans-serif;
+      font-weight: 700;
+      color: #0A1F44;
+    }
+    .quote-lines-table tfoot td {
+      background: #F6F8FB;
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #0A1F44;
+    }
+    .quote-lines-foot-row td:first-child { text-align: right; }
+    .quote-lines-note {
+      margin: 0;
+      padding: 0.45rem 0.75rem 0.65rem;
+      font-size: 7.5pt;
+      line-height: 1.4;
+      color: #64748B;
+    }
+    .quote-commercial-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem 0.85rem;
+    }
+    .quote-status {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 8pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      background: rgb(10 31 68 / 0.08);
+      color: #0A1F44;
+    }
+    .quote-terms-box {
+      margin-top: 0.65rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid #D8DEE9;
+      background: #F6F8FB;
+      font-size: 8.5pt;
+      line-height: 1.5;
+      color: #2C3E50;
+      white-space: pre-wrap;
+    }
+    .quote-terms-title {
+      margin: 0 0 0.35rem;
+      font-family: Montserrat, Inter, sans-serif;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #0A1F44;
+    }
+    @media print {
+      .quote-summary, .quote-section, .quote-sub-card { box-shadow: none; }
+    }
   </style>
 </head>
 <body>
@@ -253,19 +637,127 @@
       </div>
       <div class="doc-accent"></div>
     </header>
-    <div class="doc-body">
-      
-    <h2 class="doc-section-title">Servicio principal</h2>
-    <div class="doc-kv-grid doc-inline-table"><table class="doc-table"><tr><th>Cliente</th><td>Acme Industrial S.A. de C.V.</td></tr><tr><th>Vendedor</th><td>María González</td></tr><tr><th>Servicio principal</th><td>Desarrollo de plataforma web</td></tr><tr><th>Descripción</th><td>Diseño, desarrollo e implementación de plataforma corporativa con panel administrativo, autenticación y módulos comerciales.</td></tr><tr><th>Precio del servicio principal</th><td>$185,000.00</td></tr></table><table class="doc-table"><tr><th>Tiempo de entrega</th><td>45 días hábiles</td></tr><tr><th>Condiciones de pago</th><td>50% anticipo · 50% contra entrega</td></tr><tr><th>Observaciones</th><td>Incluye capacitación inicial de 4 horas para el equipo operativo.</td></tr><tr><th>Oportunidad</th><td>OPO-2026-0118</td></tr><tr><th>Estatus</th><td>autorizada</td></tr></table></div>
-    <h2 class="doc-section-title">Suscripciones propuestas</h2><table class="doc-table doc-data-table">
-    <thead><tr>
-      <th scope="col">Concepto</th>
-      <th scope="col">Descripción</th>
-      <th scope="col">Precio</th>
-    </tr></thead>
-    <tbody><tr><td><strong>Soporte y mantenimiento</strong></td><td>Monitoreo, actualizaciones menores y soporte técnico prioritario.</td><td>$12,500.00 · Mensual</td></tr></tbody>
-  </table>
-  
+    <div class="doc-body quote-doc-body">
+      <div class="quote-doc"><div class="quote-summary">
+    <div class="quote-summary-main">
+      <p class="quote-kicker">Cliente</p>
+      <h2 class="quote-client-name">Acme Industrial S.A. de C.V.</h2>
+      <p class="quote-client-meta">Ing. Laura Méndez · +52 442 123 4567 · compras@acme-industrial.mx</p>
+    </div>
+    <div class="quote-summary-total">
+      <p class="quote-kicker">Resumen</p>
+      <p class="quote-summary-line">
+      <span>Implementación</span>
+      <strong>$185,000.00</strong>
+    </p><p class="quote-summary-line">
+      <span>Suscripciones · Mensual</span>
+      <strong>$12,500.00 / mes</strong>
+    </p>
+    </div>
+  </div>
+    <section class="quote-section">
+      <h2 class="quote-section-head"><span class="quote-section-title">Datos del cliente</span></h2>
+      <div class="quote-section-body"><div class="quote-fields"><div class="quote-field">
+          <span class="quote-field-label">Nombre</span>
+          <span class="quote-field-value">Acme Industrial S.A. de C.V.</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Contacto</span>
+          <span class="quote-field-value">Ing. Laura Méndez</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Celular</span>
+          <span class="quote-field-value">+52 442 123 4567</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Correo</span>
+          <span class="quote-field-value">compras@acme-industrial.mx</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">RFC</span>
+          <span class="quote-field-value">AIN940315AB1</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Razón social</span>
+          <span class="quote-field-value">Acme Industrial S.A. de C.V.</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Régimen fiscal</span>
+          <span class="quote-field-value">601</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Código postal</span>
+          <span class="quote-field-value">76090</span>
+        </div><div class="quote-field">
+          <span class="quote-field-label">Uso CFDI</span>
+          <span class="quote-field-value">G03</span>
+        </div></div></div>
+    </section>
+    <section class="quote-section">
+      <h2 class="quote-section-head"><span class="quote-section-title">Partidas</span></h2>
+      <div class="quote-section-body quote-section-body-table"><div class="quote-lines-wrap">
+    <table class="quote-lines-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descripción</th>
+          <th>Tipo</th>
+          <th>Precio</th>
+          <th>IVA</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody><tr>
+        <td class="quote-line-num">1</td>
+        <td class="quote-line-desc">
+          <strong>Desarrollo de plataforma web</strong>
+          <span>Diseño, desarrollo e implementación de plataforma corporativa con panel administrativo, autenticación y módulos comerciales.</span>
+        </td>
+        <td class="quote-line-type-cell"><span class="quote-line-type">Pago único</span></td>
+        <td class="quote-line-money">$159,482.76</td>
+        <td class="quote-line-money">$25,517.24</td>
+        <td class="quote-line-money quote-line-total">$185,000.00</td>
+      </tr><tr>
+        <td class="quote-line-num">2</td>
+        <td class="quote-line-desc">
+          <strong>Soporte y mantenimiento</strong>
+          <span>Monitoreo, actualizaciones menores y soporte técnico prioritario.</span>
+        </td>
+        <td class="quote-line-type-cell"><span class="quote-line-type quote-line-type-recurring">Mensual</span></td>
+        <td class="quote-line-money">$10,775.86</td>
+        <td class="quote-line-money">$1,724.14</td>
+        <td class="quote-line-money quote-line-total">$12,500.00 / mes</td>
+      </tr></tbody>
+      <tfoot><tr class="quote-lines-foot-row">
+      <td colspan="5">Implementación (pago único, IVA incluido)</td>
+      <td class="quote-line-money">$185,000.00</td>
+    </tr><tr class="quote-lines-foot-row">
+      <td colspan="5">Suscripciones recurrentes · Mensual (IVA incluido)</td>
+      <td class="quote-line-money">$12,500.00 / mes</td>
+    </tr></tfoot>
+    </table>
+    <p class="quote-lines-note">Precios capturados con IVA incluido (16%). El desglose por partida se muestra en la tabla.</p>
+  </div></div>
+    </section>
+    <section class="quote-section">
+      <h2 class="quote-section-head"><span class="quote-section-title">Condiciones comerciales</span></h2>
+      <div class="quote-section-body">
+        <div class="quote-commercial-grid"><div class="quote-field">
+              <span class="quote-field-label">Vendedor</span>
+              <span class="quote-field-value">María González</span>
+            </div><div class="quote-field">
+              <span class="quote-field-label">Tiempo de entrega</span>
+              <span class="quote-field-value">45 días hábiles</span>
+            </div><div class="quote-field">
+              <span class="quote-field-label">Condiciones de pago</span>
+              <span class="quote-field-value">50% anticipo · 50% contra entrega</span>
+            </div><div class="quote-field">
+              <span class="quote-field-label">Términos</span>
+              <span class="quote-field-value">Términos generales VectorIA</span>
+            </div><div class="quote-field">
+              <span class="quote-field-label">Observaciones</span>
+              <span class="quote-field-value">Incluye capacitación inicial de 4 horas para el equipo operativo.</span>
+            </div></div>
+        <div class="quote-terms-box">
+                <p class="quote-terms-title">Términos generales VectorIA</p>
+                1. Vigencia: esta cotización tiene validez de 15 días naturales.
+2. Alcance: incluye únicamente lo descrito en Implementación y Suscripciones.
+              </div>
+      </div>
+    </section></div>
     </div>
     
     <footer class="doc-footer">
