@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 
 export type SearchableSelectOption = {
   value: string;
@@ -38,9 +39,12 @@ export function SearchableSelect({
 }) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
   const selected = options.find((o) => o.value === value);
 
@@ -55,8 +59,35 @@ export function SearchableSelect({
 
   useEffect(() => {
     if (!open) return;
+
+    function updatePosition() {
+      const button = buttonRef.current;
+      if (!button) return;
+      const rect = button.getBoundingClientRect();
+      setMenuStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        minWidth: "12rem",
+        zIndex: 9999,
+      });
+    }
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setOpen(false);
         setQuery("");
       }
@@ -79,6 +110,7 @@ export function SearchableSelect({
   return (
     <div ref={rootRef} className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         type="button"
         disabled={disabled}
         aria-expanded={open}
@@ -110,50 +142,57 @@ export function SearchableSelect({
         />
       )}
 
-      {open && (
-        <div className="absolute z-50 mt-1 w-full min-w-[12rem] rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg overflow-hidden">
-          <div className="p-2 border-b border-[var(--border)] bg-[var(--surface-2)]">
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setOpen(false);
-                  setQuery("");
-                }
-                if (e.key === "Enter" && filtered[0]) {
-                  e.preventDefault();
-                  pick(filtered[0].value);
-                }
-              }}
-              placeholder={searchPlaceholder}
-              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-          <ul id={listId} role="listbox" className="max-h-56 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-[var(--muted)]">{emptyMessage}</li>
-            ) : (
-              filtered.map((o) => (
-                <li key={o.value}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={o.value === value}
-                    onClick={() => pick(o.value)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] ${
-                      o.value === value ? "bg-[var(--surface-2)] font-medium" : ""
-                    }`}
-                  >
-                    {o.label}
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={menuStyle}
+            className="rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg overflow-hidden"
+          >
+            <div className="p-2 border-b border-[var(--border)] bg-[var(--surface-2)]">
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setOpen(false);
+                    setQuery("");
+                  }
+                  if (e.key === "Enter" && filtered[0]) {
+                    e.preventDefault();
+                    pick(filtered[0].value);
+                  }
+                }}
+                placeholder={searchPlaceholder}
+                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <ul id={listId} role="listbox" className="max-h-56 overflow-y-auto py-1">
+              {filtered.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-[var(--muted)]">{emptyMessage}</li>
+              ) : (
+                filtered.map((o) => (
+                  <li key={o.value}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={o.value === value}
+                      onClick={() => pick(o.value)}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] ${
+                        o.value === value ? "bg-[var(--surface-2)] font-medium" : ""
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
