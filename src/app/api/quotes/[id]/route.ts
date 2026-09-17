@@ -14,6 +14,9 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ quote });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: msg === "UNAUTHORIZED" ? 401 : 403 });
+    if (msg === "UNAUTHORIZED") return NextResponse.json({ error: msg }, { status: 401 });
+    if (msg === "FORBIDDEN") return NextResponse.json({ error: msg }, { status: 403 });
+    console.error("GET /api/quotes/[id]", e);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

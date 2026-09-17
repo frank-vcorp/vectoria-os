@@ -1,4 +1,4 @@
-import { asc, desc, eq, and } from "drizzle-orm";
+import { asc, desc, eq, and, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
   catalogPaymentConditions,
@@ -50,19 +50,19 @@ export async function listQuoteSubscriptionItems(quoteId: string): Promise<Quote
     .select({
       id: quoteSubscriptionItems.id,
       subscriptionTemplateId: quoteSubscriptionItems.subscriptionTemplateId,
-      subscriptionTemplateName: catalogSubscriptionTemplates.name,
+      subscriptionTemplateName: sql<string>`coalesce(${catalogSubscriptionTemplates.name}, '(plantilla no disponible)')`,
       description: quoteSubscriptionItems.description,
       price: quoteSubscriptionItems.price,
       periodicityId: quoteSubscriptionItems.periodicityId,
-      periodicityName: catalogPeriodicities.name,
+      periodicityName: sql<string>`coalesce(${catalogPeriodicities.name}, '(periodicidad no disponible)')`,
       sortOrder: quoteSubscriptionItems.sortOrder,
     })
     .from(quoteSubscriptionItems)
-    .innerJoin(
+    .leftJoin(
       catalogSubscriptionTemplates,
       eq(quoteSubscriptionItems.subscriptionTemplateId, catalogSubscriptionTemplates.id),
     )
-    .innerJoin(catalogPeriodicities, eq(quoteSubscriptionItems.periodicityId, catalogPeriodicities.id))
+    .leftJoin(catalogPeriodicities, eq(quoteSubscriptionItems.periodicityId, catalogPeriodicities.id))
     .where(eq(quoteSubscriptionItems.quoteId, quoteId))
     .orderBy(asc(quoteSubscriptionItems.sortOrder), asc(quoteSubscriptionItems.createdAt));
 }
@@ -113,11 +113,11 @@ export async function listQuotes(search?: string) {
       createdAt: quotes.createdAt,
     })
     .from(quotes)
-    .innerJoin(clients, eq(quotes.clientId, clients.id))
+    .leftJoin(clients, eq(quotes.clientId, clients.id))
     .leftJoin(opportunities, eq(quotes.opportunityId, opportunities.id))
     .leftJoin(serviceOrders, eq(serviceOrders.quoteId, quotes.id))
-    .innerJoin(users, eq(quotes.sellerId, users.id))
-    .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id));
+    .leftJoin(users, eq(quotes.sellerId, users.id))
+    .leftJoin(catalogServices, eq(quotes.serviceId, catalogServices.id));
 
   const filter = folioOrClientNameFilter(search, quotes.folio, clients.name);
   if (filter) return base.where(filter).orderBy(desc(quotes.createdAt));
@@ -159,11 +159,11 @@ export async function getQuoteById(id: string) {
       createdAt: quotes.createdAt,
     })
     .from(quotes)
-    .innerJoin(clients, eq(quotes.clientId, clients.id))
+    .leftJoin(clients, eq(quotes.clientId, clients.id))
     .leftJoin(opportunities, eq(quotes.opportunityId, opportunities.id))
     .leftJoin(serviceOrders, eq(serviceOrders.quoteId, quotes.id))
-    .innerJoin(users, eq(quotes.sellerId, users.id))
-    .innerJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
+    .leftJoin(users, eq(quotes.sellerId, users.id))
+    .leftJoin(catalogServices, eq(quotes.serviceId, catalogServices.id))
     .leftJoin(catalogPaymentConditions, eq(quotes.paymentConditionId, catalogPaymentConditions.id))
     .leftJoin(catalogTermsConditions, eq(quotes.termsConditionId, catalogTermsConditions.id))
     .where(eq(quotes.id, id))
@@ -171,8 +171,20 @@ export async function getQuoteById(id: string) {
 
   if (!row) return null;
 
-  const subscriptionItems = await listQuoteSubscriptionItems(id);
-  return { ...row, subscriptionItems };
+  let subscriptionItems: QuoteSubscriptionItemRow[] = [];
+  try {
+    subscriptionItems = await listQuoteSubscriptionItems(id);
+  } catch {
+    subscriptionItems = [];
+  }
+
+  return {
+    ...row,
+    clientName: row.clientName ?? "(cliente no disponible)",
+    sellerName: row.sellerName ?? "(vendedor no disponible)",
+    serviceName: row.serviceName ?? "(servicio no disponible)",
+    subscriptionItems,
+  };
 }
 
 export async function listQuotesByOpportunity(opportunityId: string) {

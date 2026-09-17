@@ -117,6 +117,9 @@ async function removeDemoSubscriptions() {
   }
 
   const ids = rows.map((r) => r.id);
+  await db
+    .delete(quoteSubscriptionItems)
+    .where(inArray(quoteSubscriptionItems.subscriptionTemplateId, ids));
   await db.delete(catalogSubscriptionTemplates).where(inArray(catalogSubscriptionTemplates.id, ids));
   console.log(`Suscripciones demo: ${ids.length} eliminadas`);
 }
@@ -135,6 +138,9 @@ async function removeDemoPeriodicities() {
 
   const ids = rows.map((r) => r.id);
   await db.update(serviceOrders).set({ periodicityId: null }).where(inArray(serviceOrders.periodicityId, ids));
+  await db
+    .delete(quoteSubscriptionItems)
+    .where(inArray(quoteSubscriptionItems.periodicityId, ids));
   await db.delete(catalogPeriodicities).where(inArray(catalogPeriodicities.id, ids));
   console.log(`Periodicidades demo: ${ids.length} eliminadas`);
 }

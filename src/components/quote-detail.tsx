@@ -118,9 +118,16 @@ export function QuoteDetailView({ id }: { id: string }) {
   >([]);
 
   async function load() {
+    setError("");
     const res = await fetch(`/api/quotes/${id}`);
     if (res.status === 404) {
       router.replace("/cotizaciones");
+      return;
+    }
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? `No se pudo cargar la cotización (${res.status})`);
+      setLoading(false);
       return;
     }
     if (res.ok) {
@@ -227,7 +234,18 @@ export function QuoteDetailView({ id }: { id: string }) {
   }
 
   if (loading) return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
-  if (!quote) return <p className="text-sm text-[var(--danger)]">Cotización no encontrada</p>;
+  if (!quote) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-[var(--danger)]">
+          {error || "Cotización no encontrada"}
+        </p>
+        <Link href="/cotizaciones" className="text-sm text-[var(--accent)] hover:underline">
+          Volver a cotizaciones
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <EntityDetailLayout
