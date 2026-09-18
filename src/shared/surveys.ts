@@ -291,7 +291,7 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.roleMap?.roles.some((role) => role.personName.trim() || role.source === "custom")) return true;
   if (answer.roleMap?.activities.some((activity) => activity.roleId)) return true;
   if (answer.roleMap?.legacyNotes?.trim()) return true;
-  if (answer.assigneeCatalog?.assignees.some((item) => item.personName.trim() || item.source === "custom")) return true;
+  if (answer.assigneeCatalog?.assignees.some((item) => item.label.trim() || item.personName.trim() || item.source === "custom")) return true;
   if (answer.assigneeCatalog?.legacyNotes?.trim()) return true;
   if (answer.assigneeId) return true;
   if (answer.osActions?.actions.some((item) => item.enabled && (item.assigneeId || item.note?.trim() || item.kind === "custom"))) return true;

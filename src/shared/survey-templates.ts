@@ -19,6 +19,7 @@ export type FieldType =
   | "applicability"
   | "notice"
   | "assignee-catalog"
+  | "system-roles"
   | "assignee-select"
   | "os-actions-v2"
   | "work-statuses-v2"
@@ -99,6 +100,10 @@ function roleMap(
 
 function assigneeCatalog(id: string, label: string, roleOptions: SuggestedRole[], hint?: string): TemplateField {
   return { id, type: "assignee-catalog", label, hint, roleOptions };
+}
+
+function systemRoles(id: string, label: string, hint?: string): TemplateField {
+  return { id, type: "system-roles", label, hint };
 }
 
 function generalRoleSelect(id: string, label: string, hint?: string): TemplateField {
@@ -530,20 +535,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
   },
 ];
 
-function collectSystemRoleSuggestions(): SuggestedRole[] {
-  const seen = new Set<string>();
-  const roles: SuggestedRole[] = [];
-  for (const area of TRANSVERSAL_AREAS) {
-    for (const role of area.suggestedRoles) {
-      const key = role.label.trim().toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      roles.push(role);
-    }
-  }
-  return roles;
-}
-
 function transversalSection(area: TransversalArea): TemplateSection {
   const p = `tx.${area.id}`;
   return {
@@ -761,11 +752,10 @@ function headerSection(): TemplateSection {
     fields: [
       text("header.intervieweeName", "Persona entrevistada"),
       text("header.intervieweeRole", "Puesto"),
-      assigneeCatalog(
+      systemRoles(
         SYSTEM_ROLES_CATALOG_FIELD,
         "Roles generales de todo el sistema",
-        collectSystemRoleSuggestions(),
-        "Defina los roles que intervienen en la operación del cliente. En cada área transversal se seleccionará uno de estos roles.",
+        "Agregue los roles que intervienen en la operación. En cada área transversal se seleccionará uno.",
       ),
       text("header.activity", "Actividad, producto o servicio principal del cliente"),
       text("header.objective", "Objetivo general del cliente"),

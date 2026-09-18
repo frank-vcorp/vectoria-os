@@ -7,6 +7,7 @@ type SurveyAssigneeSelectProps = {
   label: string;
   hint?: string;
   catalog: AssigneeCatalogData | undefined;
+  options?: { id: string; label: string }[];
   value: string | null | undefined;
   disabled?: boolean;
   onChange: (assigneeId: string | null) => void;
@@ -16,11 +17,12 @@ export function SurveyAssigneeSelect({
   label,
   hint,
   catalog,
+  options: optionsOverride,
   value,
   disabled = false,
   onChange,
 }: SurveyAssigneeSelectProps) {
-  const options = assigneeCatalogOptions(catalog);
+  const options = optionsOverride ?? assigneeCatalogOptions(catalog);
 
   return (
     <label className="block space-y-1">
@@ -28,7 +30,7 @@ export function SurveyAssigneeSelect({
       {hint ? <span className="block text-xs text-[var(--muted)]">{hint}</span> : null}
       {options.length === 0 ? (
         <p className="text-xs text-[var(--muted)]">
-          Complete primero el catálogo de encargados de procesos para habilitar este selector.
+          {optionsOverride ? "Agregue roles en Datos generales para habilitar este selector." : "Complete primero el catálogo de encargados de procesos para habilitar este selector."}
         </p>
       ) : (
         <select

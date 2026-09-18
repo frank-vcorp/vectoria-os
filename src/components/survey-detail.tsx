@@ -7,6 +7,7 @@ import { EntityDetailLayout } from "@/components/entity-detail-layout";
 import { SearchableSelect } from "@/components/searchable-select";
 import { SurveyAssigneeCatalogBuilder } from "@/components/survey-assignee-catalog-builder";
 import { SurveyAssigneeSelect } from "@/components/survey-assignee-select";
+import { SurveySystemRolesBuilder } from "@/components/survey-system-roles-builder";
 import { SurveyFlowBuilder } from "@/components/survey-flow-builder";
 import { SurveyRoleMapBuilder } from "@/components/survey-role-map-builder";
 import {
@@ -28,6 +29,7 @@ import { coalesceModuleLinks } from "@/shared/module-links";
 import { coalesceOsActions } from "@/shared/os-actions";
 import { coalesceRoleMapAnswer } from "@/shared/role-map";
 import { SER_V2_ASSIGNEE_CATALOG_FIELD, SER_V2_ACTIONS_FIELD } from "@/shared/ser-v2-constants";
+import { SYSTEM_ROLES_CATALOG_FIELD, coalesceSystemRolesCatalog, systemRoleOptions } from "@/shared/system-roles";
 import { coalesceWorkStatuses } from "@/shared/work-statuses";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/shared/commercial";
@@ -148,7 +150,12 @@ function FieldEditor({
   onChange: (next: FieldAnswer) => void;
 }) {
   const catalogFieldId = field.catalogFieldId ?? SER_V2_ASSIGNEE_CATALOG_FIELD;
-  const assigneeCatalogData = coalesceAssigneeCatalog(answers.fields[catalogFieldId], field.roleOptions ?? []);
+  const assigneeCatalogData =
+    catalogFieldId === SYSTEM_ROLES_CATALOG_FIELD
+      ? coalesceSystemRolesCatalog(answers.fields[catalogFieldId])
+      : coalesceAssigneeCatalog(answers.fields[catalogFieldId], field.roleOptions ?? []);
+  const systemRoleSelectOptions =
+    catalogFieldId === SYSTEM_ROLES_CATALOG_FIELD ? systemRoleOptions(assigneeCatalogData) : undefined;
 
   if (field.type === "notice") {
     return (
@@ -156,6 +163,19 @@ function FieldEditor({
         <p className="font-medium">{field.label}</p>
         {field.hint ? <p className="text-[var(--muted)]">{field.hint}</p> : null}
       </div>
+    );
+  }
+
+  if (field.type === "system-roles") {
+    const rolesAnswer = coalesceSystemRolesCatalog(answer);
+    return (
+      <SurveySystemRolesBuilder
+        label={field.label}
+        hint={field.hint}
+        data={rolesAnswer}
+        disabled={disabled}
+        onChange={(assigneeCatalogNext) => onChange({ ...answer, assigneeCatalog: assigneeCatalogNext, text: undefined })}
+      />
     );
   }
 
@@ -179,6 +199,7 @@ function FieldEditor({
         label={field.label}
         hint={field.hint}
         catalog={assigneeCatalogData}
+        options={systemRoleSelectOptions}
         value={answer.assigneeId}
         disabled={disabled}
         onChange={(assigneeId) => onChange({ ...answer, assigneeId })}

@@ -293,6 +293,9 @@ function htmlField(field: TemplateField): string {
   if (field.type === "notice") {
     return `<div class="sv-role-card"><p class="sv-label">${escapeHtml(field.label)}</p>${field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : ""}</div>`;
   }
+  if (field.type === "system-roles") {
+    return `<p class="sv-label">${escapeHtml(field.label)}</p>${htmlBox("Agregar rol")}`;
+  }
   if (field.type === "assignee-catalog") {
     const roleBlocks = (field.roleOptions ?? [])
       .map(

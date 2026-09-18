@@ -1,4 +1,5 @@
 import { assigneeLabel, coalesceAssigneeCatalog } from "@/shared/assignee-catalog";
+import { coalesceSystemRolesCatalog, systemRoleLabel } from "@/shared/system-roles";
 import { coalesceModuleLinks, selectedModuleLinks } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions } from "@/shared/os-actions";
 import { buildSerV2References } from "@/shared/ser-v2-refs";
@@ -20,6 +21,17 @@ export function serV2FieldAnswerLines(
     return [`**${field.label}**`, field.hint ? mdEscape(field.hint) : ""].filter(Boolean);
   }
 
+  if (field.type === "system-roles") {
+    if (blank) return [`**${field.label}**`, "Agregar roles:"];
+    const data = coalesceSystemRolesCatalog(answer);
+    const lines = [`**${field.label}**`];
+    for (const item of data.assignees.filter((role) => role.label.trim())) {
+      lines.push(`- ${item.label.trim()}`);
+    }
+    if (lines.length === 1) lines.push("Sin roles definidos");
+    return lines;
+  }
+
   if (field.type === "assignee-catalog") {
     if (blank) return [`**${field.label}**`, "Complete encargados y personas de referencia."];
     const data = coalesceAssigneeCatalog(answer, field.roleOptions ?? []);
@@ -34,8 +46,14 @@ export function serV2FieldAnswerLines(
   }
 
   if (field.type === "assignee-select") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
-    if (blank) return [`**${field.label}**`, "Selector de encargado: ____________________"];
+    const catalogFieldId = field.catalogFieldId ?? "";
+    if (blank) return [`**${field.label}**`, "Seleccionar rol: ____________________"];
+    if (catalogFieldId === "header.systemRoles") {
+      const catalog = coalesceSystemRolesCatalog(answers.fields[catalogFieldId]);
+      const label = systemRoleLabel(catalog, answer.assigneeId);
+      return [`**${field.label}**`, label || "Sin respuesta"];
+    }
+    const catalog = coalesceAssigneeCatalog(answers.fields[catalogFieldId], field.roleOptions ?? []);
     const label = assigneeLabel(catalog, answer.assigneeId);
     return [`**${field.label}**`, label || "Sin respuesta"];
   }
