@@ -570,13 +570,13 @@ function catalogId(label: string) {
 
 export function SurveyClientCatalogsBuilder({
   label,
-  catalog,
+  hint,
   data,
   disabled,
   onChange,
 }: {
   label: string;
-  catalog: AssigneeCatalogData | undefined;
+  hint?: string;
   data: ClientCatalogsData;
   disabled?: boolean;
   onChange: (next: ClientCatalogsData) => void;
@@ -585,25 +585,15 @@ export function SurveyClientCatalogsBuilder({
 
   function toggleCatalog(name: string) {
     const nextSelected = selected.has(name) ? data.selected.filter((item) => item !== name) : [...data.selected, name];
-    const nextDetails = data.details.filter((item) => nextSelected.includes(item.catalogId));
-    for (const nameItem of nextSelected) {
-      if (!nextDetails.some((item) => item.catalogId === nameItem)) {
-        nextDetails.push({ catalogId: nameItem });
-      }
-    }
-    onChange({ ...data, selected: nextSelected, details: nextDetails });
-  }
-
-  function updateDetail(catalogKey: string, patch: Partial<(typeof data.details)[number]>) {
-    onChange({
-      ...data,
-      details: data.details.map((item) => (item.catalogId === catalogKey ? { ...item, ...patch } : item)),
-    });
+    onChange({ ...data, selected: nextSelected });
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">{label}</p>
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        {hint ? <p className="text-xs text-[var(--muted)]">{hint}</p> : null}
+      </div>
       <div className="grid gap-2 md:grid-cols-2">
         {SER_V2_CLIENT_CATALOGS.map((option) => (
           <label key={option} className="text-sm flex items-center gap-2">
@@ -624,35 +614,6 @@ export function SurveyClientCatalogsBuilder({
         value={data.other ?? ""}
         onChange={(e) => onChange({ ...data, other: e.target.value })}
       />
-      {data.selected.map((name) => (
-        <article key={name} className="survey-role-card space-y-2">
-          <p className="text-sm font-medium">{name}</p>
-          <textarea
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-            rows={2}
-            disabled={disabled}
-            placeholder="¿Qué información necesita?"
-            value={data.details.find((item) => item.catalogId === name)?.infoNeeded ?? ""}
-            onChange={(e) => updateDetail(name, { infoNeeded: e.target.value })}
-          />
-          <textarea
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-            rows={2}
-            disabled={disabled}
-            placeholder="¿Dónde se utilizará?"
-            value={data.details.find((item) => item.catalogId === name)?.usedWhere ?? ""}
-            onChange={(e) => updateDetail(name, { usedWhere: e.target.value })}
-          />
-          <RoleCheckboxField
-            catalog={catalog}
-            ids={data.details.find((item) => item.catalogId === name)?.assigneeIds}
-            legacyId={data.details.find((item) => item.catalogId === name)?.assigneeId}
-            disabled={disabled}
-            label="¿Quién podrá agregar o modificar registros?"
-            onChange={(assigneeIds) => updateDetail(name, { assigneeIds, assigneeId: null })}
-          />
-        </article>
-      ))}
     </div>
   );
 }

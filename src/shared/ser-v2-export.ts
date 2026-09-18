@@ -153,19 +153,14 @@ export function serV2FieldAnswerLines(
   }
 
   if (field.type === "client-catalogs-v2") {
-    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = answer.clientCatalogs ?? { selected: [], details: [] };
-    if (blank) return [`**${field.label}**`, "Marque catálogos y complete detalles."];
+    if (blank) return [`**${field.label}**`, "Marque los catálogos maestros que aplican."];
     const lines = [`**${field.label}**`];
     for (const name of data.selected) {
-      const detail = data.details.find((item) => item.catalogId === name);
       lines.push(`- ${name}`);
-      if (detail?.infoNeeded?.trim()) lines.push(`  - Información: ${mdEscape(detail.infoNeeded)}`);
-      if (detail?.usedWhere?.trim()) lines.push(`  - Uso: ${mdEscape(detail.usedWhere)}`);
-      const roles = formatSystemRoleList(catalog, detail?.assigneeIds, detail?.assigneeId);
-      if (roles) lines.push(`  - Roles: ${roles}`);
     }
     if (data.other?.trim()) lines.push(`- Otros: ${mdEscape(data.other)}`);
+    if (lines.length === 1) lines.push("Sin catálogos seleccionados");
     return lines;
   }
 

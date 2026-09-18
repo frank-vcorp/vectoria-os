@@ -65,6 +65,14 @@ function opSection(id: string, navLabel: string, title: string, fields: Template
 
 export function buildSerV2Sections(): TemplateSection[] {
   return [
+    opSection("b0", "0. Catálogos", "0. Catálogos de operación", [
+      {
+        id: "op.SER.v2.cat.clientCatalogs",
+        type: "client-catalogs-v2",
+        label: "¿Qué catálogos necesitará la operación del cliente?",
+        hint: "Seleccione los catálogos maestros del negocio. Suele ser lo que más diferencia una operación de otra.",
+      },
+    ]),
     opSection("b1", "1. Creación OS", "1. Creación de la orden de servicio", [
       notice(
         "op.SER.v2.create.rules",
@@ -155,18 +163,7 @@ export function buildSerV2Sections(): TemplateSection[] {
         catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
     ]),
-    opSection("b6", "6. Catálogos", "6. Catálogos, consultas y resultados", [
-      notice(
-        "op.SER.v2.cat.support",
-        "Catálogos de apoyo",
-        "Los roles se definen en Datos generales. Las acciones de la OS se configuran en el bloque 2. La siguiente pregunta corresponde a los catálogos del sistema del cliente.",
-      ),
-      {
-        id: "op.SER.v2.cat.clientCatalogs",
-        type: "client-catalogs-v2",
-        label: "¿Qué catálogos necesitará la operación del cliente?",
-        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
-      },
+    opSection("b6", "6. Consultas", "6. Consultas y resultados", [
       text("op.SER.v2.cat.listInfo", "¿Qué información debe mostrar la lista de órdenes?"),
       text(
         "op.SER.v2.cat.searchInfo",

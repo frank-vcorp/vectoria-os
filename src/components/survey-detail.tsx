@@ -284,7 +284,7 @@ function FieldEditor({
     return (
       <SurveyClientCatalogsBuilder
         label={field.label}
-        catalog={assigneeCatalogData}
+        hint={field.hint}
         data={clientCatalogs}
         disabled={disabled}
         onChange={(next) => onChange({ ...answer, clientCatalogs: next })}
