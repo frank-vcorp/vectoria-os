@@ -1,11 +1,10 @@
 import {
   SER_V2_ADMIN_INFO,
-  SER_V2_ASSIGNEE_CATALOG_FIELD,
   SER_V2_FIELD_LOCATIONS,
   SER_V2_FIELD_TYPES,
   SER_V2_OS_ORIGINS,
-  SER_V2_SUGGESTED_ASSIGNEES,
 } from "@/shared/ser-v2-constants";
+import { SYSTEM_ROLES_CATALOG_FIELD } from "@/shared/system-roles";
 import type { TemplateField, TemplateSection } from "@/shared/survey-templates";
 
 export { SER_V2_OPERATION_VERSION } from "@/shared/ser-v2-constants";
@@ -14,17 +13,13 @@ function notice(id: string, label: string, hint: string): TemplateField {
   return { id, type: "notice", label, hint };
 }
 
-function assigneeCatalog(id: string, label: string, hint?: string): TemplateField {
-  return { id, type: "assignee-catalog", label, hint, roleOptions: [...SER_V2_SUGGESTED_ASSIGNEES] };
-}
-
-function assigneeSelect(id: string, label: string, hint?: string): TemplateField {
+function generalRoleSelect(id: string, label: string, hint?: string): TemplateField {
   return {
     id,
-    type: "assignee-select",
+    type: "system-roles-multi",
     label,
     hint,
-    catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+    catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
   };
 }
 
@@ -70,13 +65,6 @@ function opSection(id: string, navLabel: string, title: string, fields: Template
 
 export function buildSerV2Sections(): TemplateSection[] {
   return [
-    opSection("encargados", "Encargados", "Catálogo de encargados de procesos", [
-      assigneeCatalog(
-        SER_V2_ASSIGNEE_CATALOG_FIELD,
-        "Encargados de procesos",
-        "Defina los puestos o roles que podrán realizar funciones en el sistema del cliente. Todos los selectores de encargado de este levantamiento usan este catálogo.",
-      ),
-    ]),
     opSection("b1", "1. Creación OS", "1. Creación de la orden de servicio", [
       notice(
         "op.SER.v2.create.rules",
@@ -86,7 +74,11 @@ export function buildSerV2Sections(): TemplateSection[] {
       checklist("op.SER.v2.create.origins", "¿Desde dónde podrá generarse una OS?", SER_V2_OS_ORIGINS, {
         allowOther: true,
       }),
-      assigneeSelect("op.SER.v2.create.creator", "¿Quién podrá crearla?"),
+      generalRoleSelect(
+        "op.SER.v2.create.creator",
+        "¿Quién podrá crearla?",
+        "Seleccione uno o más roles definidos en Datos generales.",
+      ),
       text("op.SER.v2.create.auth", "¿Qué debe cumplirse para considerar autorizado el servicio?"),
       choice("op.SER.v2.create.multi", "¿Una OS podrá contener varios servicios?", ["Sí", "No", "Por definir"]),
       choice(
@@ -110,8 +102,8 @@ export function buildSerV2Sections(): TemplateSection[] {
         id: "op.SER.v2.acciones",
         type: "os-actions-v2",
         label: "¿Qué acciones necesita la orden?",
-        hint: "Seleccione las acciones, asigne encargado y agregue notas opcionales. Entrega permanece incluida.",
-        catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+        hint: "Seleccione las acciones, asigne roles y agregue notas opcionales. Entrega permanece incluida.",
+        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
     ]),
     opSection("b3", "3. Estatus", "3. Estado de la orden, estatus del trabajo y entrega", [
@@ -135,7 +127,7 @@ export function buildSerV2Sections(): TemplateSection[] {
         type: "work-statuses-v2",
         label: "¿Qué estatus necesita manejar el trabajo?",
         hint: "Seleccione, modifique o amplíe los estatus sugeridos. Solo se incorporan al alcance los seleccionados.",
-        catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
       notice(
         "op.SER.v2.status.delivery",
@@ -148,7 +140,7 @@ export function buildSerV2Sections(): TemplateSection[] {
         id: "op.SER.v2.modules.links",
         type: "module-links-v2",
         label: "¿Qué funciones estarán disponibles desde la OS?",
-        catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
       text("op.SER.v2.modules.other", "¿Se necesita alguna otra conexión?"),
       checklist("op.SER.v2.modules.admin", "¿Qué información administrativa debe mostrarse en la OS?", SER_V2_ADMIN_INFO, {
@@ -160,20 +152,20 @@ export function buildSerV2Sections(): TemplateSection[] {
         id: "op.SER.v2.rules",
         type: "special-rules-v2",
         label: "¿Existe alguna condición especial que el sistema deba exigir, permitir o impedir?",
-        catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
     ]),
     opSection("b6", "6. Catálogos", "6. Catálogos, consultas y resultados", [
       notice(
         "op.SER.v2.cat.support",
         "Catálogos de apoyo",
-        "Los catálogos de encargados y acciones de la OS son apoyos de esta captura. La siguiente pregunta corresponde a los catálogos del sistema del cliente.",
+        "Los roles se definen en Datos generales. Las acciones de la OS se configuran en el bloque 2. La siguiente pregunta corresponde a los catálogos del sistema del cliente.",
       ),
       {
         id: "op.SER.v2.cat.clientCatalogs",
         type: "client-catalogs-v2",
         label: "¿Qué catálogos necesitará la operación del cliente?",
-        catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
       text("op.SER.v2.cat.listInfo", "¿Qué información debe mostrar la lista de órdenes?"),
       text(
@@ -185,7 +177,7 @@ export function buildSerV2Sections(): TemplateSection[] {
         id: "op.SER.v2.cat.reports",
         type: "report-outputs-v2",
         label: "¿Qué salidas necesita generar el sistema?",
-        catalogFieldId: SER_V2_ASSIGNEE_CATALOG_FIELD,
+        catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
       },
     ]),
     opSection("b7", "7. Campos extra", "7. Campos adicionales — opcional", [

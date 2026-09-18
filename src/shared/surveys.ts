@@ -127,6 +127,7 @@ export type OsActionEntry = {
   enabled: boolean;
   fixed?: boolean;
   assigneeId: string | null;
+  assigneeIds?: string[];
   note?: string;
   checklistItems?: string[];
 };
@@ -145,6 +146,7 @@ export type WorkStatusEntry = {
   updateMode?: WorkStatusUpdateMode | null;
   relatedActionId?: string | null;
   manualAssigneeId?: string | null;
+  manualAssigneeIds?: string[];
 };
 
 export type WorkStatusesData = {
@@ -158,6 +160,7 @@ export type ModuleLinkEntry = {
   label: string;
   selected: boolean;
   assigneeId: string | null;
+  assigneeIds?: string[];
   note?: string;
 };
 
@@ -170,6 +173,7 @@ export type SpecialRuleEntry = {
   appliesTo: string;
   rule: string;
   authorizerId?: string | null;
+  authorizerIds?: string[];
 };
 
 export type SpecialRulesData = {
@@ -182,6 +186,7 @@ export type CatalogDetailEntry = {
   infoNeeded?: string;
   usedWhere?: string;
   assigneeId?: string | null;
+  assigneeIds?: string[];
 };
 
 export type ClientCatalogsData = {
@@ -196,6 +201,7 @@ export type ReportOutputEntry = {
   selected: boolean;
   content?: string;
   assigneeId?: string | null;
+  assigneeIds?: string[];
 };
 
 export type AccessRestrictionEntry = {
@@ -298,7 +304,13 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.assigneeCatalog?.legacyNotes?.trim()) return true;
   if (answer.assigneeId) return true;
   if (answer.assigneeIds?.length) return true;
-  if (answer.osActions?.actions.some((item) => item.enabled && (item.assigneeId || item.note?.trim() || item.kind === "custom"))) return true;
+  if (
+    answer.osActions?.actions.some(
+      (item) => item.enabled && (item.assigneeId || item.assigneeIds?.length || item.note?.trim() || item.kind === "custom"),
+    )
+  ) {
+    return true;
+  }
   if (answer.workStatuses?.statuses.some((item) => item.selected)) return true;
   if (answer.workStatuses?.other?.trim()) return true;
   if (answer.moduleLinks?.links.some((item) => item.selected)) return true;

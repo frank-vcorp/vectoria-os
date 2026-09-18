@@ -33,3 +33,18 @@ export function coalesceSystemRoleIds(answer: { assigneeIds?: string[]; assignee
   if (answer.assigneeId) return [answer.assigneeId];
   return [];
 }
+
+export function coalesceRoleIdList(ids?: string[], legacyId?: string | null) {
+  if (ids?.length) return ids;
+  if (legacyId) return [legacyId];
+  return [];
+}
+
+export function formatSystemRoleList(
+  catalog: AssigneeCatalogData | undefined,
+  ids?: string[],
+  legacyId?: string | null,
+) {
+  const labels = systemRoleLabels(catalog, coalesceRoleIdList(ids, legacyId));
+  return labels.length ? labels.join(", ") : "";
+}

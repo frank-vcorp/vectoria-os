@@ -30,7 +30,7 @@ import { coalesceFlowAnswer } from "@/shared/flow-blocks";
 import { coalesceModuleLinks } from "@/shared/module-links";
 import { coalesceOsActions } from "@/shared/os-actions";
 import { coalesceRoleMapAnswer } from "@/shared/role-map";
-import { SER_V2_ASSIGNEE_CATALOG_FIELD, SER_V2_ACTIONS_FIELD } from "@/shared/ser-v2-constants";
+import { SER_V2_ACTIONS_FIELD } from "@/shared/ser-v2-constants";
 import { SYSTEM_ROLES_CATALOG_FIELD, coalesceSystemRolesCatalog, systemRoleOptions } from "@/shared/system-roles";
 import { coalesceWorkStatuses } from "@/shared/work-statuses";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
@@ -151,7 +151,7 @@ function FieldEditor({
   disabled: boolean;
   onChange: (next: FieldAnswer) => void;
 }) {
-  const catalogFieldId = field.catalogFieldId ?? SER_V2_ASSIGNEE_CATALOG_FIELD;
+  const catalogFieldId = field.catalogFieldId ?? SYSTEM_ROLES_CATALOG_FIELD;
   const assigneeCatalogData =
     catalogFieldId === SYSTEM_ROLES_CATALOG_FIELD
       ? coalesceSystemRolesCatalog(answers.fields[catalogFieldId])

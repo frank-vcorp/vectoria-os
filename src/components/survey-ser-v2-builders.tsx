@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SurveyAssigneeSelect } from "@/components/survey-assignee-select";
-import { assigneeCatalogOptions } from "@/shared/assignee-catalog";
+import { SystemRolesCheckboxGroup } from "@/components/survey-system-roles-multi-select";
+import { coalesceRoleIdList, systemRoleOptions } from "@/shared/system-roles";
 import { coalesceModuleLinks, newModuleLinkId } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions, newOsActionId } from "@/shared/os-actions";
 import { SER_V2_CLIENT_CATALOGS, SER_V2_REPORT_OUTPUTS } from "@/shared/ser-v2-constants";
@@ -20,6 +20,35 @@ import type {
   SurveyAnswers,
   WorkStatusesData,
 } from "@/shared/surveys";
+
+function RoleCheckboxField({
+  catalog,
+  ids,
+  legacyId,
+  disabled,
+  onChange,
+  label,
+}: {
+  catalog: AssigneeCatalogData | undefined;
+  ids?: string[];
+  legacyId?: string | null;
+  disabled?: boolean;
+  onChange: (ids: string[]) => void;
+  label?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      {label ? <span className="text-xs">{label}</span> : null}
+      <SystemRolesCheckboxGroup
+        catalog={catalog}
+        selectedIds={coalesceRoleIdList(ids, legacyId)}
+        disabled={disabled}
+        compact
+        onChange={onChange}
+      />
+    </div>
+  );
+}
 
 function NoteToggle({
   value,
@@ -105,7 +134,7 @@ export function SurveyOsActionsBuilder({
           <thead>
             <tr>
               <th className="text-left pr-2 pb-1">Acción</th>
-              <th className="text-left pr-2 pb-1">Encargado</th>
+              <th className="text-left pr-2 pb-1">Roles</th>
               <th className="text-left pb-1">Nota</th>
             </tr>
           </thead>
@@ -164,19 +193,15 @@ export function SurveyOsActionsBuilder({
                   </td>
                   <td className="pr-2 pb-3 min-w-[12rem]">
                     {active ? (
-                      <select
-                        className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-2 py-1 text-sm"
+                      <RoleCheckboxField
+                        catalog={catalog}
+                        ids={action.assigneeIds}
+                        legacyId={action.assigneeId}
                         disabled={disabled}
-                        value={action.assigneeId ?? ""}
-                        onChange={(e) => updateAction(action.id, { assigneeId: e.target.value || null })}
-                      >
-                        <option value="">Encargado…</option>
-                        {assigneeCatalogOptions(catalog).map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(assigneeIds) =>
+                          updateAction(action.id, { assigneeIds, assigneeId: null })
+                        }
+                      />
                     ) : (
                       <span className="text-xs text-[var(--muted)]">—</span>
                     )}
@@ -324,22 +349,18 @@ export function SurveyWorkStatusesBuilder({
                   </label>
                 )}
                 {(status.updateMode === "manual" || status.updateMode === "both") && (
-                  <label className="text-xs space-y-1">
-                    <span>Quién podrá cambiarlo manualmente</span>
-                    <select
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-2 py-1"
+                  <div className="text-xs space-y-1 md:col-span-2">
+                    <RoleCheckboxField
+                      catalog={catalog}
+                      ids={status.manualAssigneeIds}
+                      legacyId={status.manualAssigneeId}
                       disabled={disabled}
-                      value={status.manualAssigneeId ?? ""}
-                      onChange={(e) => updateStatus(status.id, { manualAssigneeId: e.target.value || null })}
-                    >
-                      <option value="">Encargado…</option>
-                      {assigneeCatalogOptions(catalog).map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      label="Quién podrá cambiarlo manualmente"
+                      onChange={(manualAssigneeIds) =>
+                        updateStatus(status.id, { manualAssigneeIds, manualAssigneeId: null })
+                      }
+                    />
+                  </div>
                 )}
               </div>
             ) : null}
@@ -425,19 +446,14 @@ export function SurveyModuleLinksBuilder({
                 </label>
                 {link.selected ? (
                   <>
-                    <select
-                      className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-2 py-1 text-sm"
+                    <RoleCheckboxField
+                      catalog={catalog}
+                      ids={link.assigneeIds}
+                      legacyId={link.assigneeId}
                       disabled={disabled}
-                      value={link.assigneeId ?? ""}
-                      onChange={(e) => updateLink(link.id, { assigneeId: e.target.value || null })}
-                    >
-                      <option value="">Quién podrá utilizarla…</option>
-                      {assigneeCatalogOptions(catalog).map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      label="Roles que podrán utilizarla"
+                      onChange={(assigneeIds) => updateLink(link.id, { assigneeIds, assigneeId: null })}
+                    />
                     <NoteToggle
                       value={link.note}
                       disabled={disabled}
@@ -518,19 +534,14 @@ export function SurveySpecialRulesBuilder({
                 value={rule.rule}
                 onChange={(e) => updateRule(rule.id, { rule: e.target.value })}
               />
-              <select
-                className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-2 py-1 text-sm"
+              <RoleCheckboxField
+                catalog={catalog}
+                ids={rule.authorizerIds}
+                legacyId={rule.authorizerId}
                 disabled={disabled}
-                value={rule.authorizerId ?? ""}
-                onChange={(e) => updateRule(rule.id, { authorizerId: e.target.value || null })}
-              >
-                <option value="">Encargado que puede autorizar (opcional)</option>
-                {assigneeCatalogOptions(catalog).map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                label="Roles que pueden autorizar (opcional)"
+                onChange={(authorizerIds) => updateRule(rule.id, { authorizerIds, authorizerId: null })}
+              />
             </article>
           ))}
           {!disabled ? (
@@ -632,19 +643,14 @@ export function SurveyClientCatalogsBuilder({
             value={data.details.find((item) => item.catalogId === name)?.usedWhere ?? ""}
             onChange={(e) => updateDetail(name, { usedWhere: e.target.value })}
           />
-          <select
-            className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-2 py-1 text-sm"
+          <RoleCheckboxField
+            catalog={catalog}
+            ids={data.details.find((item) => item.catalogId === name)?.assigneeIds}
+            legacyId={data.details.find((item) => item.catalogId === name)?.assigneeId}
             disabled={disabled}
-            value={data.details.find((item) => item.catalogId === name)?.assigneeId ?? ""}
-            onChange={(e) => updateDetail(name, { assigneeId: e.target.value || null })}
-          >
-            <option value="">¿Quién podrá agregar o modificar registros?</option>
-            {assigneeCatalogOptions(catalog).map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            label="¿Quién podrá agregar o modificar registros?"
+            onChange={(assigneeIds) => updateDetail(name, { assigneeIds, assigneeId: null })}
+          />
         </article>
       ))}
     </div>
@@ -710,19 +716,14 @@ export function SurveyReportOutputsBuilder({
                   value={output.content ?? ""}
                   onChange={(e) => updateOutput(output.id, { content: e.target.value })}
                 />
-                <select
-                  className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-2 py-1 text-sm"
+                <RoleCheckboxField
+                  catalog={catalog}
+                  ids={output.assigneeIds}
+                  legacyId={output.assigneeId}
                   disabled={disabled}
-                  value={output.assigneeId ?? ""}
-                  onChange={(e) => updateOutput(output.id, { assigneeId: e.target.value || null })}
-                >
-                  <option value="">¿Quién podrá generarla o consultarla?</option>
-                  {assigneeCatalogOptions(catalog).map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  label="¿Quién podrá generarla o consultarla?"
+                  onChange={(assigneeIds) => updateOutput(output.id, { assigneeIds, assigneeId: null })}
+                />
               </>
             ) : null}
           </article>
@@ -746,7 +747,7 @@ export function SurveyReportOutputsBuilder({
         />
       ) : null}
       <div className="space-y-2">
-        <p className="text-sm font-medium">Restricciones de consulta por encargado</p>
+        <p className="text-sm font-medium">Restricciones de consulta por rol</p>
         {(data.accessRestrictions ?? []).map((entry, index) => (
           <div key={`${entry.assigneeId}-${index}`} className="grid gap-2 md:grid-cols-2">
             <select
@@ -759,8 +760,8 @@ export function SurveyReportOutputsBuilder({
                 commit({ ...data, accessRestrictions });
               }}
             >
-              <option value="">Encargado…</option>
-              {assigneeCatalogOptions(catalog).map((option) => (
+              <option value="">Rol…</option>
+              {systemRoleOptions(catalog).map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
                 </option>

@@ -1,7 +1,9 @@
 import { assigneeLabel, coalesceAssigneeCatalog } from "@/shared/assignee-catalog";
 import {
+  SYSTEM_ROLES_CATALOG_FIELD,
   coalesceSystemRoleIds,
   coalesceSystemRolesCatalog,
+  formatSystemRoleList,
   systemRoleLabel,
   systemRoleLabels,
   systemRoleOptions,
@@ -15,6 +17,10 @@ import type { FieldAnswer, SurveyAnswers } from "@/shared/surveys";
 
 function mdEscape(value: string) {
   return value.replace(/\r\n/g, "\n");
+}
+
+function systemRolesCatalog(answers: SurveyAnswers, catalogFieldId?: string) {
+  return coalesceSystemRolesCatalog(answers.fields[catalogFieldId ?? SYSTEM_ROLES_CATALOG_FIELD]);
 }
 
 export function serV2FieldAnswerLines(
@@ -52,7 +58,7 @@ export function serV2FieldAnswerLines(
   }
 
   if (field.type === "system-roles-multi") {
-    const catalog = coalesceSystemRolesCatalog(answers.fields[field.catalogFieldId ?? "header.systemRoles"]);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     if (blank) {
       return [
         `**${field.label}**`,
@@ -67,7 +73,7 @@ export function serV2FieldAnswerLines(
   if (field.type === "assignee-select") {
     const catalogFieldId = field.catalogFieldId ?? "";
     if (blank) return [`**${field.label}**`, "Seleccionar rol: ____________________"];
-    if (catalogFieldId === "header.systemRoles") {
+    if (catalogFieldId === SYSTEM_ROLES_CATALOG_FIELD) {
       const catalog = coalesceSystemRolesCatalog(answers.fields[catalogFieldId]);
       const label = systemRoleLabel(catalog, answer.assigneeId);
       return [`**${field.label}**`, label || "Sin respuesta"];
@@ -78,14 +84,13 @@ export function serV2FieldAnswerLines(
   }
 
   if (field.type === "os-actions-v2") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = coalesceOsActions(answer);
-    if (blank) return [`**${field.label}**`, "| Acción | Encargado | Nota |", "| --- | --- | --- |"];
+    if (blank) return [`**${field.label}**`, "| Acción | Roles | Nota |", "| --- | --- | --- |"];
     const lines = [`**${field.label}**`];
     for (const action of enabledOsActions(data)) {
-      lines.push(
-        `- ${action.label}${action.fixed ? " (incluida)" : ""} — ${assigneeLabel(catalog, action.assigneeId) || "sin encargado"}`,
-      );
+      const roles = formatSystemRoleList(catalog, action.assigneeIds, action.assigneeId);
+      lines.push(`- ${action.label}${action.fixed ? " (incluida)" : ""} — ${roles || "sin roles"}`);
       if (action.note?.trim()) lines.push(`  - Nota: ${mdEscape(action.note)}`);
       if (action.checklistItems?.some((item) => item.trim())) {
         lines.push(`  - Checklist: ${action.checklistItems.filter((item) => item.trim()).map(mdEscape).join("; ")}`);
@@ -95,7 +100,7 @@ export function serV2FieldAnswerLines(
   }
 
   if (field.type === "work-statuses-v2") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = coalesceWorkStatuses(answer);
     const actions = coalesceOsActions(answers.fields["op.SER.v2.acciones"]);
     if (blank) return [`**${field.label}**`, "Seleccione estatus y complete detalles."];
@@ -108,30 +113,28 @@ export function serV2FieldAnswerLines(
         const action = actions.actions.find((item) => item.id === status.relatedActionId);
         if (action) lines.push(`  - Acción relacionada: ${action.label}`);
       }
-      if (status.manualAssigneeId) {
-        lines.push(`  - Cambio manual: ${assigneeLabel(catalog, status.manualAssigneeId) || "sin encargado"}`);
-      }
+      const manualRoles = formatSystemRoleList(catalog, status.manualAssigneeIds, status.manualAssigneeId);
+      if (manualRoles) lines.push(`  - Cambio manual: ${manualRoles}`);
     }
     if (data.other?.trim()) lines.push(`- Otro: ${mdEscape(data.other)}`);
     return lines;
   }
 
   if (field.type === "module-links-v2") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = coalesceModuleLinks(answer);
-    if (blank) return [`**${field.label}**`, "Marque funciones y encargados."];
+    if (blank) return [`**${field.label}**`, "Marque funciones y roles."];
     const lines = [`**${field.label}**`];
     for (const link of selectedModuleLinks(data)) {
-      lines.push(
-        `- ${link.group} / ${link.label} — ${assigneeLabel(catalog, link.assigneeId) || "sin encargado"}`,
-      );
+      const roles = formatSystemRoleList(catalog, link.assigneeIds, link.assigneeId);
+      lines.push(`- ${link.group} / ${link.label} — ${roles || "sin roles"}`);
       if (link.note?.trim()) lines.push(`  - Nota: ${mdEscape(link.note)}`);
     }
     return lines;
   }
 
   if (field.type === "special-rules-v2") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = answer.specialRules ?? { hasRules: null, rules: [] };
     const refs = buildSerV2References(answers);
     if (blank) return [`**${field.label}**`, "□ Sí □ No □ Por definir"];
@@ -142,16 +145,15 @@ export function serV2FieldAnswerLines(
         lines.push(
           `- ${ref?.label ?? (rule.appliesTo || "Sin referencia")}: ${rule.rule.trim() ? mdEscape(rule.rule) : "(sin regla)"}`,
         );
-        if (rule.authorizerId) {
-          lines.push(`  - Autorizador: ${assigneeLabel(catalog, rule.authorizerId) || "sin encargado"}`);
-        }
+        const authorizers = formatSystemRoleList(catalog, rule.authorizerIds, rule.authorizerId);
+        if (authorizers) lines.push(`  - Autorizadores: ${authorizers}`);
       }
     }
     return lines;
   }
 
   if (field.type === "client-catalogs-v2") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = answer.clientCatalogs ?? { selected: [], details: [] };
     if (blank) return [`**${field.label}**`, "Marque catálogos y complete detalles."];
     const lines = [`**${field.label}**`];
@@ -160,28 +162,30 @@ export function serV2FieldAnswerLines(
       lines.push(`- ${name}`);
       if (detail?.infoNeeded?.trim()) lines.push(`  - Información: ${mdEscape(detail.infoNeeded)}`);
       if (detail?.usedWhere?.trim()) lines.push(`  - Uso: ${mdEscape(detail.usedWhere)}`);
-      if (detail?.assigneeId) lines.push(`  - Encargado: ${assigneeLabel(catalog, detail.assigneeId)}`);
+      const roles = formatSystemRoleList(catalog, detail?.assigneeIds, detail?.assigneeId);
+      if (roles) lines.push(`  - Roles: ${roles}`);
     }
     if (data.other?.trim()) lines.push(`- Otros: ${mdEscape(data.other)}`);
     return lines;
   }
 
   if (field.type === "report-outputs-v2") {
-    const catalog = coalesceAssigneeCatalog(answers.fields[field.catalogFieldId ?? ""], field.roleOptions ?? []);
+    const catalog = systemRolesCatalog(answers, field.catalogFieldId);
     const data = answer.reportOutputs ?? { outputs: [] };
     if (blank) return [`**${field.label}**`, "Marque salidas y complete detalles."];
     const lines = [`**${field.label}**`];
     for (const output of data.outputs.filter((item) => item.selected)) {
       lines.push(`- ${output.label}`);
       if (output.content?.trim()) lines.push(`  - Contenido: ${mdEscape(output.content)}`);
-      if (output.assigneeId) lines.push(`  - Encargado: ${assigneeLabel(catalog, output.assigneeId)}`);
+      const roles = formatSystemRoleList(catalog, output.assigneeIds, output.assigneeId);
+      if (roles) lines.push(`  - Roles: ${roles}`);
     }
     if (data.other?.trim()) lines.push(`- Otros: ${mdEscape(data.other)}`);
     if (data.productivityCalc?.trim()) lines.push(`- Cálculo productividad/rentabilidad: ${mdEscape(data.productivityCalc)}`);
     for (const entry of data.accessRestrictions ?? []) {
       if (!entry.assigneeId && !entry.restriction.trim()) continue;
       lines.push(
-        `- Restricción: ${assigneeLabel(catalog, entry.assigneeId) || "sin encargado"} — ${mdEscape(entry.restriction)}`,
+        `- Restricción: ${systemRoleLabel(catalog, entry.assigneeId) || "sin rol"} — ${mdEscape(entry.restriction)}`,
       );
     }
     return lines;
