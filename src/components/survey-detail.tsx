@@ -78,6 +78,13 @@ type SurveyDetail = {
 
 type SaveState = "saved" | "saving" | "pending" | "error" | "conflict";
 
+function surveyNavItemClass(active: boolean, groupId: string, progress: SectionProgress) {
+  const classes = ["survey-nav-item", "w-full", "text-left", "px-2", "py-1", "rounded"];
+  if (active) classes.push("is-active");
+  if (groupId === "transversal" && progress === "revisada") classes.push("is-revisada");
+  return classes.join(" ");
+}
+
 function AutoText({
   value,
   disabled,
@@ -619,15 +626,18 @@ export function SurveyDetailView({ id }: { id: string }) {
                 <div className="space-y-1">
                   {group.items.map((item) => {
                     const progress = survey.sectionStates[item.id]?.status ?? "sin_revisar";
+                    const reviewed = group.id === "transversal" && progress === "revisada";
                     return (
                       <button
                         key={item.id}
                         type="button"
-                        className={`w-full text-left px-2 py-1 rounded ${item.id === section.id ? "bg-[var(--surface-2)]" : ""}`}
+                        className={surveyNavItemClass(item.id === section.id, group.id, progress)}
                         onClick={() => setSectionId(item.id)}
                       >
                         <span className="block">{item.navLabel}</span>
-                        <span className="block text-xs text-[var(--muted)]">{SECTION_PROGRESS_LABELS[progress]}</span>
+                        <span className={`block text-xs ${reviewed ? "text-[var(--success)]" : "text-[var(--muted)]"}`}>
+                          {SECTION_PROGRESS_LABELS[progress]}
+                        </span>
                       </button>
                     );
                   })}

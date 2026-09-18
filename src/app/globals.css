@@ -968,6 +968,25 @@ button {
   cursor: grabbing;
 }
 
+.survey-nav-item {
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.survey-nav-item.is-active {
+  background: var(--surface-2);
+}
+
+.survey-nav-item.is-revisada {
+  background: var(--success-soft);
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+  color: var(--success);
+}
+
+.survey-nav-item.is-revisada.is-active {
+  background: color-mix(in srgb, var(--success-soft) 75%, var(--surface-2));
+}
+
 .client-preview-grid {
   display: grid;
   gap: 0.65rem;
