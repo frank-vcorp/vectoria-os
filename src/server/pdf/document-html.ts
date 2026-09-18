@@ -1,16 +1,5 @@
-import {
-  breakDownIvaIncluded,
-  CONTRACT_TYPE_LABELS,
-  formatMoney,
-  type ClientFiscalData,
-} from "@/shared/commercial";
-import {
-  escapeHtml,
-  quoteDocumentStyles,
-  renderKeyValueTable,
-  renderQuoteFieldGrid,
-  wrapPrintableDocument,
-} from "@/shared/document-letterhead";
+import { breakDownIvaIncluded, CONTRACT_TYPE_LABELS, formatMoney, type ClientFiscalData } from "@/shared/commercial";
+import { escapeHtml, quoteDocumentStyles, renderKeyValueTable, wrapPrintableDocument } from "@/shared/document-letterhead";
 
 type QuoteSubscriptionDoc = {
   subscriptionTemplateName: string;
@@ -72,21 +61,6 @@ type ServiceOrderDoc = {
   totalPaid?: number;
   balance?: number;
 };
-
-function clientRows(client: QuoteClientDoc): [string, string][] {
-  const fiscal = client.fiscalData;
-  return [
-    ["Nombre", client.name],
-    client.contact ? ["Contacto", client.contact] : null,
-    client.phone ? ["Celular", client.phone] : null,
-    client.email ? ["Correo", client.email] : null,
-    fiscal?.rfc ? ["RFC", fiscal.rfc] : null,
-    fiscal?.razonSocial ? ["Razón social", fiscal.razonSocial] : null,
-    fiscal?.regimenFiscal ? ["Régimen fiscal", fiscal.regimenFiscal] : null,
-    fiscal?.codigoPostal ? ["Código postal", fiscal.codigoPostal] : null,
-    fiscal?.usoCfdi ? ["Uso CFDI", fiscal.usoCfdi] : null,
-  ].filter(Boolean) as [string, string][];
-}
 
 function recurringPeriodSuffix(periodicityName: string) {
   const normalized = periodicityName.toLowerCase();
@@ -246,12 +220,6 @@ export function renderQuoteHtml(quote: QuoteDoc) {
 
   const summary = renderQuoteSummary(quote, lineItems);
 
-  const clientSection = `
-    <section class="quote-section">
-      <h2 class="quote-section-head"><span class="quote-section-title">Datos del cliente</span></h2>
-      <div class="quote-section-body">${renderQuoteFieldGrid(clientRows(quote.client))}</div>
-    </section>`;
-
   const partidasSection = `
     <section class="quote-section">
       <h2 class="quote-section-head"><span class="quote-section-title">Partidas</span></h2>
@@ -289,7 +257,7 @@ export function renderQuoteHtml(quote: QuoteDoc) {
       </div>
     </section>`;
 
-  const body = `<div class="quote-doc">${summary}${clientSection}${partidasSection}${commercialSection}</div>`;
+  const body = `<div class="quote-doc">${summary}${partidasSection}${commercialSection}</div>`;
 
   return wrapPrintableDocument({
     title: "Cotización",
