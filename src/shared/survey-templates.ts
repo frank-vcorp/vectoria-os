@@ -20,6 +20,7 @@ export type FieldType =
   | "notice"
   | "assignee-catalog"
   | "system-roles"
+  | "system-roles-multi"
   | "assignee-select"
   | "os-actions-v2"
   | "work-statuses-v2"
@@ -110,7 +111,7 @@ function systemRoles(id: string, label: string, hint?: string): TemplateField {
 function generalRoleSelect(id: string, label: string, hint?: string): TemplateField {
   return {
     id,
-    type: "assignee-select",
+    type: "system-roles-multi",
     label,
     hint,
     catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
@@ -550,8 +551,8 @@ function transversalSection(area: TransversalArea): TemplateSection {
       { id: `${p}.applicability`, type: "applicability", label: "Aplicabilidad" },
       generalRoleSelect(
         `${p}.role`,
-        "Rol general en esta área",
-        "Seleccione uno de los roles generales definidos en Datos generales.",
+        "Roles en esta área",
+        "Seleccione uno o más roles generales definidos en Datos generales.",
       ),
       checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowAddOptions: true }),
       checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowAddOptions: true }),

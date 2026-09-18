@@ -1,5 +1,11 @@
 import { assigneeLabel, coalesceAssigneeCatalog } from "@/shared/assignee-catalog";
-import { coalesceSystemRolesCatalog, systemRoleLabel } from "@/shared/system-roles";
+import {
+  coalesceSystemRoleIds,
+  coalesceSystemRolesCatalog,
+  systemRoleLabel,
+  systemRoleLabels,
+  systemRoleOptions,
+} from "@/shared/system-roles";
 import { coalesceModuleLinks, selectedModuleLinks } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions } from "@/shared/os-actions";
 import { buildSerV2References } from "@/shared/ser-v2-refs";
@@ -43,6 +49,19 @@ export function serV2FieldAnswerLines(
     }
     if (data.legacyNotes?.trim()) lines.push(`- Nota previa: ${mdEscape(data.legacyNotes)}`);
     return lines;
+  }
+
+  if (field.type === "system-roles-multi") {
+    const catalog = coalesceSystemRolesCatalog(answers.fields[field.catalogFieldId ?? "header.systemRoles"]);
+    if (blank) {
+      return [
+        `**${field.label}**`,
+        ...(systemRoleOptions(catalog).map((role) => `- [ ] ${role.label}`)),
+      ];
+    }
+    const roleIds = coalesceSystemRoleIds(answer);
+    const labels = systemRoleLabels(catalog, roleIds);
+    return [`**${field.label}**`, labels.length ? labels.map((label) => `- ${label}`).join("\n") : "Sin respuesta"];
   }
 
   if (field.type === "assignee-select") {

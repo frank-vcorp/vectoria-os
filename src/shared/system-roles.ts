@@ -22,3 +22,14 @@ export function systemRoleLabel(data: AssigneeCatalogData | undefined, roleId: s
   if (!roleId || !data) return "";
   return data.assignees.find((item) => item.id === roleId)?.label.trim() ?? "";
 }
+
+export function systemRoleLabels(data: AssigneeCatalogData | undefined, roleIds: string[]) {
+  return roleIds.map((roleId) => systemRoleLabel(data, roleId)).filter(Boolean);
+}
+
+export function coalesceSystemRoleIds(answer: { assigneeIds?: string[]; assigneeId?: string | null } | undefined) {
+  if (!answer) return [];
+  if (answer.assigneeIds?.length) return answer.assigneeIds;
+  if (answer.assigneeId) return [answer.assigneeId];
+  return [];
+}

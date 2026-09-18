@@ -8,6 +8,7 @@ import { SearchableSelect } from "@/components/searchable-select";
 import { SurveyAssigneeCatalogBuilder } from "@/components/survey-assignee-catalog-builder";
 import { SurveyAssigneeSelect } from "@/components/survey-assignee-select";
 import { SurveyProcessChecklist } from "@/components/survey-process-checklist";
+import { SurveySystemRolesMultiSelect } from "@/components/survey-system-roles-multi-select";
 import { SurveySystemRolesBuilder } from "@/components/survey-system-roles-builder";
 import { SurveyFlowBuilder } from "@/components/survey-flow-builder";
 import { SurveyRoleMapBuilder } from "@/components/survey-role-map-builder";
@@ -190,6 +191,19 @@ function FieldEditor({
         data={catalogAnswer}
         disabled={disabled}
         onChange={(assigneeCatalogNext) => onChange({ ...answer, assigneeCatalog: assigneeCatalogNext, text: undefined })}
+      />
+    );
+  }
+
+  if (field.type === "system-roles-multi") {
+    return (
+      <SurveySystemRolesMultiSelect
+        label={field.label}
+        hint={field.hint}
+        catalog={assigneeCatalogData}
+        answer={answer}
+        disabled={disabled}
+        onChange={onChange}
       />
     );
   }

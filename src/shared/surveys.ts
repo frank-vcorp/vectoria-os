@@ -237,6 +237,7 @@ export type FieldAnswer = {
   roleMap?: RoleMapData;
   assigneeCatalog?: AssigneeCatalogData;
   assigneeId?: string | null;
+  assigneeIds?: string[];
   osActions?: OsActionsData;
   workStatuses?: WorkStatusesData;
   moduleLinks?: ModuleLinksData;
@@ -296,6 +297,7 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.assigneeCatalog?.assignees.some((item) => item.label.trim() || item.personName.trim() || item.source === "custom")) return true;
   if (answer.assigneeCatalog?.legacyNotes?.trim()) return true;
   if (answer.assigneeId) return true;
+  if (answer.assigneeIds?.length) return true;
   if (answer.osActions?.actions.some((item) => item.enabled && (item.assigneeId || item.note?.trim() || item.kind === "custom"))) return true;
   if (answer.workStatuses?.statuses.some((item) => item.selected)) return true;
   if (answer.workStatuses?.other?.trim()) return true;

@@ -315,6 +315,9 @@ function htmlField(field: TemplateField): string {
       .join("");
     return `<p class="sv-label">${escapeHtml(field.label)}</p>${field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : ""}<div class="sv-role-grid">${roleBlocks}</div>${htmlBox("Agregar encargado personalizado")}`;
   }
+  if (field.type === "system-roles-multi") {
+    return `<p class="sv-label">${escapeHtml(field.label)}</p><div class="sv-checks">${htmlBox("Marcar roles que aplican")}</div>`;
+  }
   if (
     field.type === "assignee-select" ||
     field.type === "os-actions-v2" ||
