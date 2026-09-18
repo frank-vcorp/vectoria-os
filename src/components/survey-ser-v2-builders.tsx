@@ -5,7 +5,8 @@ import { SystemRolesCheckboxGroup } from "@/components/survey-system-roles-multi
 import { coalesceRoleIdList, systemRoleOptions } from "@/shared/system-roles";
 import { coalesceModuleLinks, newModuleLinkId } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions, newOsActionId } from "@/shared/os-actions";
-import { SER_V2_CLIENT_CATALOGS, SER_V2_REPORT_OUTPUTS } from "@/shared/ser-v2-constants";
+import { newOperationCatalogId } from "@/shared/operation-catalogs";
+import { SER_V2_REPORT_OUTPUTS } from "@/shared/ser-v2-constants";
 import { buildSerV2References } from "@/shared/ser-v2-refs";
 import { coalesceWorkStatuses, newWorkStatusId } from "@/shared/work-statuses";
 import type {
@@ -581,11 +582,67 @@ export function SurveyClientCatalogsBuilder({
   disabled?: boolean;
   onChange: (next: ClientCatalogsData) => void;
 }) {
-  const selected = new Set(data.selected);
+  const [newCatalog, setNewCatalog] = useState("");
+  const [newSubcatalog, setNewSubcatalog] = useState<Record<string, string>>({});
 
-  function toggleCatalog(name: string) {
-    const nextSelected = selected.has(name) ? data.selected.filter((item) => item !== name) : [...data.selected, name];
-    onChange({ ...data, selected: nextSelected });
+  function updateCatalogs(catalogs: ClientCatalogsData["catalogs"]) {
+    onChange({ catalogs });
+  }
+
+  function addCatalog(labelValue: string) {
+    const trimmed = labelValue.trim();
+    if (!trimmed) return;
+    updateCatalogs([...data.catalogs, { id: newOperationCatalogId(), label: trimmed, subcatalogs: [] }]);
+    setNewCatalog("");
+  }
+
+  function updateCatalog(catalogIdValue: string, patch: Partial<ClientCatalogsData["catalogs"][number]>) {
+    updateCatalogs(data.catalogs.map((item) => (item.id === catalogIdValue ? { ...item, ...patch } : item)));
+  }
+
+  function removeCatalog(catalogIdValue: string) {
+    updateCatalogs(data.catalogs.filter((item) => item.id !== catalogIdValue));
+  }
+
+  function addSubcatalog(catalogIdValue: string) {
+    const trimmed = (newSubcatalog[catalogIdValue] ?? "").trim();
+    if (!trimmed) return;
+    updateCatalogs(
+      data.catalogs.map((item) =>
+        item.id === catalogIdValue
+          ? {
+              ...item,
+              subcatalogs: [...item.subcatalogs, { id: newOperationCatalogId("sub"), label: trimmed }],
+            }
+          : item,
+      ),
+    );
+    setNewSubcatalog({ ...newSubcatalog, [catalogIdValue]: "" });
+  }
+
+  function updateSubcatalog(catalogIdValue: string, subcatalogId: string, labelValue: string) {
+    updateCatalogs(
+      data.catalogs.map((item) =>
+        item.id === catalogIdValue
+          ? {
+              ...item,
+              subcatalogs: item.subcatalogs.map((sub) =>
+                sub.id === subcatalogId ? { ...sub, label: labelValue } : sub,
+              ),
+            }
+          : item,
+      ),
+    );
+  }
+
+  function removeSubcatalog(catalogIdValue: string, subcatalogId: string) {
+    updateCatalogs(
+      data.catalogs.map((item) =>
+        item.id === catalogIdValue
+          ? { ...item, subcatalogs: item.subcatalogs.filter((sub) => sub.id !== subcatalogId) }
+          : item,
+      ),
+    );
   }
 
   return (
@@ -594,26 +651,89 @@ export function SurveyClientCatalogsBuilder({
         <p className="text-sm font-medium">{label}</p>
         {hint ? <p className="text-xs text-[var(--muted)]">{hint}</p> : null}
       </div>
-      <div className="grid gap-2 md:grid-cols-2">
-        {SER_V2_CLIENT_CATALOGS.map((option) => (
-          <label key={option} className="text-sm flex items-center gap-2">
-            <input
-              type="checkbox"
-              disabled={disabled}
-              checked={selected.has(option)}
-              onChange={() => toggleCatalog(option)}
-            />
-            {option}
-          </label>
+      {data.catalogs.length === 0 ? (
+        <p className="text-xs text-[var(--muted)]">Sin catálogos. Agregue el primero cuando lo necesite.</p>
+      ) : null}
+      <div className="space-y-3">
+        {data.catalogs.map((catalog) => (
+          <article key={catalog.id} className="survey-role-card space-y-2">
+            <div className="flex gap-2 items-center">
+              <input
+                className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                disabled={disabled}
+                placeholder="Nombre del catálogo"
+                value={catalog.label}
+                onChange={(e) => updateCatalog(catalog.id, { label: e.target.value })}
+              />
+              {!disabled ? (
+                <button type="button" className="btn btn-ghost text-xs shrink-0" onClick={() => removeCatalog(catalog.id)}>
+                  Quitar
+                </button>
+              ) : null}
+            </div>
+            <div className="space-y-2 pl-3 border-l border-[var(--border)]">
+              {catalog.subcatalogs.map((subcatalog) => (
+                <div key={subcatalog.id} className="flex gap-2 items-center">
+                  <input
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                    disabled={disabled}
+                    placeholder="Nombre del subcatálogo"
+                    value={subcatalog.label}
+                    onChange={(e) => updateSubcatalog(catalog.id, subcatalog.id, e.target.value)}
+                  />
+                  {!disabled ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost text-xs shrink-0"
+                      onClick={() => removeSubcatalog(catalog.id, subcatalog.id)}
+                    >
+                      Quitar
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+              {!disabled ? (
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                    placeholder="Agregar subcatálogo"
+                    value={newSubcatalog[catalog.id] ?? ""}
+                    onChange={(e) => setNewSubcatalog({ ...newSubcatalog, [catalog.id]: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addSubcatalog(catalog.id);
+                      }
+                    }}
+                  />
+                  <button type="button" className="btn btn-ghost text-xs" onClick={() => addSubcatalog(catalog.id)}>
+                    Agregar
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </article>
         ))}
       </div>
-      <input
-        className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-        disabled={disabled}
-        placeholder="Otros catálogos (especificar)"
-        value={data.other ?? ""}
-        onChange={(e) => onChange({ ...data, other: e.target.value })}
-      />
+      {!disabled ? (
+        <div className="flex gap-2">
+          <input
+            className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+            placeholder="Agregar catálogo"
+            value={newCatalog}
+            onChange={(e) => setNewCatalog(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCatalog(newCatalog);
+              }
+            }}
+          />
+          <button type="button" className="btn btn-ghost text-xs" onClick={() => addCatalog(newCatalog)}>
+            Agregar catálogo
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -848,9 +968,7 @@ export function SurveyExtraFieldsBuilder({
   );
 }
 
-export function coalesceClientCatalogs(answer: FieldAnswer | undefined): ClientCatalogsData {
-  return answer?.clientCatalogs ?? { selected: [], details: [] };
-}
+export { coalesceOperationCatalogs as coalesceClientCatalogs } from "@/shared/operation-catalogs";
 
 export function coalesceReportOutputs(answer: FieldAnswer | undefined): ReportOutputsData {
   return answer?.reportOutputs ?? { outputs: [] };

@@ -8,6 +8,7 @@ import {
   systemRoleLabels,
   systemRoleOptions,
 } from "@/shared/system-roles";
+import { coalesceOperationCatalogs } from "@/shared/operation-catalogs";
 import { coalesceModuleLinks, selectedModuleLinks } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions } from "@/shared/os-actions";
 import { buildSerV2References } from "@/shared/ser-v2-refs";
@@ -153,14 +154,16 @@ export function serV2FieldAnswerLines(
   }
 
   if (field.type === "client-catalogs-v2") {
-    const data = answer.clientCatalogs ?? { selected: [], details: [] };
-    if (blank) return [`**${field.label}**`, "Marque los catálogos maestros que aplican."];
+    const data = coalesceOperationCatalogs(answer);
+    if (blank) return [`**${field.label}**`, "Agregue catálogos y subcatálogos según aplique."];
     const lines = [`**${field.label}**`];
-    for (const name of data.selected) {
-      lines.push(`- ${name}`);
+    for (const catalog of data.catalogs) {
+      if (!catalog.label.trim()) continue;
+      const subs = catalog.subcatalogs.map((item) => item.label.trim()).filter(Boolean);
+      if (subs.length) lines.push(`- ${catalog.label.trim()}: ${subs.join(", ")}`);
+      else lines.push(`- ${catalog.label.trim()}`);
     }
-    if (data.other?.trim()) lines.push(`- Otros: ${mdEscape(data.other)}`);
-    if (lines.length === 1) lines.push("Sin catálogos seleccionados");
+    if (lines.length === 1) lines.push("Sin catálogos definidos");
     return lines;
   }
 

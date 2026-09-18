@@ -189,10 +189,23 @@ export type CatalogDetailEntry = {
   assigneeIds?: string[];
 };
 
+export type OperationSubcatalogEntry = {
+  id: string;
+  label: string;
+};
+
+export type OperationCatalogEntry = {
+  id: string;
+  label: string;
+  subcatalogs: OperationSubcatalogEntry[];
+};
+
 export type ClientCatalogsData = {
-  selected: string[];
+  catalogs: OperationCatalogEntry[];
+  /** Respuestas previas con checklist fijo */
+  selected?: string[];
   other?: string;
-  details: CatalogDetailEntry[];
+  details?: CatalogDetailEntry[];
 };
 
 export type ReportOutputEntry = {
@@ -316,7 +329,14 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.moduleLinks?.links.some((item) => item.selected)) return true;
   if (answer.specialRules?.hasRules?.trim()) return true;
   if (answer.specialRules?.rules.some((item) => item.rule.trim())) return true;
-  if (answer.clientCatalogs?.selected.length) return true;
+  if (
+    answer.clientCatalogs?.catalogs.some(
+      (item) => item.label.trim() || item.subcatalogs.some((sub) => sub.label.trim()),
+    )
+  ) {
+    return true;
+  }
+  if (answer.clientCatalogs?.selected?.length) return true;
   if (answer.clientCatalogs?.other?.trim()) return true;
   if (answer.reportOutputs?.outputs.some((item) => item.selected)) return true;
   if (answer.reportOutputs?.other?.trim()) return true;
