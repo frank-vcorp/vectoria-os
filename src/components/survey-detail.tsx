@@ -6,7 +6,9 @@ import { DateInput } from "@/components/date-input";
 import { EntityDetailLayout } from "@/components/entity-detail-layout";
 import { SearchableSelect } from "@/components/searchable-select";
 import { SurveyFlowBuilder } from "@/components/survey-flow-builder";
+import { SurveyRoleMapBuilder } from "@/components/survey-role-map-builder";
 import { coalesceFlowAnswer } from "@/shared/flow-blocks";
+import { coalesceRoleMapAnswer } from "@/shared/role-map";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/shared/commercial";
 import {
@@ -218,6 +220,26 @@ function FieldEditor({
         notes={flowAnswer.flowNotes}
         disabled={disabled}
         onChange={(next) => onChange({ ...flowAnswer, ...next, text: undefined })}
+      />
+    );
+  }
+
+  if (field.type === "role-map") {
+    const roleAnswer = coalesceRoleMapAnswer(answer, {
+      suggestedRoles: field.roleOptions ?? [],
+      frequent: field.frequentOptions ?? [],
+      secondary: field.secondaryOptions ?? [],
+    });
+    return (
+      <SurveyRoleMapBuilder
+        label={field.label}
+        hint={field.hint}
+        suggestedRoles={field.roleOptions ?? []}
+        frequent={field.frequentOptions ?? []}
+        secondary={field.secondaryOptions ?? []}
+        data={roleAnswer.roleMap}
+        disabled={disabled}
+        onChange={(roleMap) => onChange({ ...roleAnswer, roleMap, text: undefined })}
       />
     );
   }

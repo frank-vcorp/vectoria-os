@@ -1,5 +1,6 @@
 import { escapeHtml, wrapPrintableDocument } from "@/shared/document-letterhead";
 import { coalesceFlowAnswer, flowBlocksToArrowText } from "@/shared/flow-blocks";
+import { coalesceRoleMapAnswer, roleMapActivitiesForRole, roleMapUnassignedActivities } from "@/shared/role-map";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import {
   APPLICABILITY_LABELS,
@@ -79,6 +80,44 @@ function fieldAnswerLines(field: TemplateField, answer: FieldAnswer, blank: bool
     const sequence = flowBlocksToArrowText(flowAnswer.flowBlocks);
     lines.push(sequence || "Sin respuesta");
     if (flowAnswer.flowNotes?.trim()) lines.push(`Notas: ${mdEscape(flowAnswer.flowNotes)}`);
+    return lines;
+  }
+  if (field.type === "role-map") {
+    if (blank) {
+      lines.push(`**${field.label}**`);
+      for (const role of field.roleOptions ?? []) {
+        lines.push(`- **${role.label}**${role.hint ? ` — ${role.hint}` : ""}`);
+        lines.push("  - Persona: ____________________");
+        lines.push("  - Actividades: ____________________");
+      }
+      lines.push("- Actividades sin asignar: ____________________");
+      return lines;
+    }
+    const roleAnswer = coalesceRoleMapAnswer(answer, {
+      suggestedRoles: field.roleOptions ?? [],
+      frequent: field.frequentOptions ?? [],
+      secondary: field.secondaryOptions ?? [],
+    });
+    const data = roleAnswer.roleMap;
+    if (!data || data.roles.length === 0) {
+      lines.push("Sin respuesta");
+      return lines;
+    }
+    if (data.legacyNotes?.trim()) lines.push(`Nota previa: ${mdEscape(data.legacyNotes)}`);
+    for (const role of data.roles) {
+      const assigned = roleMapActivitiesForRole(data, role.id);
+      lines.push(`- **${role.label}**${role.personName.trim() ? ` — ${mdEscape(role.personName)}` : " — (sin persona)"}`);
+      if (role.hint) lines.push(`  - Rol sugerido: ${mdEscape(role.hint)}`);
+      if (assigned.length > 0) {
+        lines.push(`  - Actividades: ${assigned.map((item) => mdEscape(item.label)).join(", ")}`);
+      } else {
+        lines.push("  - Actividades: sin asignar");
+      }
+    }
+    const unassigned = roleMapUnassignedActivities(data);
+    if (unassigned.length > 0) {
+      lines.push(`- Sin asignar: ${unassigned.map((item) => mdEscape(item.label)).join(", ")}`);
+    }
     return lines;
   }
   lines.push(answer.text?.trim() ? mdEscape(answer.text) : "Sin respuesta");
@@ -236,6 +275,28 @@ function htmlField(field: TemplateField): string {
       .join("");
     return `<p class="sv-label">${escapeHtml(field.label)}</p><div class="sv-flow-row">${chips}</div>${htmlBox("Notas sobre cómo se realiza", true)}`;
   }
+  if (field.type === "role-map") {
+    const activities = [...(field.frequentOptions ?? []), ...(field.secondaryOptions ?? [])];
+    const activityChips = activities
+      .map((label) => `<span class="sv-flow-chip">${escapeHtml(label)}</span>`)
+      .join("");
+    const roleBlocks = (field.roleOptions ?? [])
+      .map(
+        (role) => `<div class="sv-role-card">
+          <p class="sv-label">${escapeHtml(role.label)}</p>
+          ${role.hint ? `<p class="sv-hint">${escapeHtml(role.hint)}</p>` : ""}
+          ${htmlBox("Persona que lo hace hoy")}
+          ${htmlBox("Actividades asignadas a este rol", true)}
+        </div>`,
+      )
+      .join("");
+    return `<p class="sv-label">${escapeHtml(field.label)}</p>
+      ${field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : ""}
+      <p class="sv-hint">Actividades sugeridas (arrastre en pantalla; en papel, escríbalas bajo cada rol):</p>
+      <div class="sv-flow-row">${activityChips}</div>
+      <div class="sv-role-grid">${roleBlocks}</div>
+      ${htmlBox("Actividades sin asignar", true)}`;
+  }
   const example = field.example
     ? `<p class="sv-example">Ejemplo de referencia (no es respuesta): ${escapeHtml(field.example)}</p>`
     : "";
@@ -269,6 +330,8 @@ export function renderSurveyPdfHtml(input: {
       .sv-flow-row { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; margin: .35rem 0 .55rem; }
       .sv-flow-chip { border: 1px solid #c5cedb; border-radius: 999px; padding: .2rem .55rem; font-size: 9pt; background: #f7f9fc; }
       .sv-flow-arrow { color: #5a6478; font-size: 9pt; }
+      .sv-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; margin: .35rem 0 .55rem; }
+      .sv-role-card { border: 1px solid #c5cedb; border-radius: 6px; padding: .45rem .55rem; break-inside: avoid; }
       .sv-line { min-height: 1.4rem; border-bottom: 1px solid #c5cedb; }
       .sv-line.tall { min-height: 2.6rem; }
       .sv-checks { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem .8rem; }

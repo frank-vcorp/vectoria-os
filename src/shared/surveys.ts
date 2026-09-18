@@ -76,6 +76,27 @@ export type FlowBlock = {
   source: "template" | "custom";
 };
 
+export type RoleMapRole = {
+  id: string;
+  label: string;
+  hint?: string;
+  personName: string;
+  source: "suggested" | "custom";
+};
+
+export type RoleMapActivity = {
+  id: string;
+  label: string;
+  source: "frequent" | "secondary" | "custom";
+  roleId: string | null;
+};
+
+export type RoleMapData = {
+  roles: RoleMapRole[];
+  activities: RoleMapActivity[];
+  legacyNotes?: string;
+};
+
 export type FieldAnswer = {
   text?: string;
   choice?: string | null;
@@ -87,6 +108,7 @@ export type FieldAnswer = {
   extraNotes?: Record<string, string>;
   flowBlocks?: FlowBlock[];
   flowNotes?: string;
+  roleMap?: RoleMapData;
   pending?: FieldPending;
 };
 
@@ -132,6 +154,9 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.extraNotes && Object.values(answer.extraNotes).some((value) => value.trim())) return true;
   if (answer.flowBlocks?.some((block) => block.label.trim())) return true;
   if (answer.flowNotes?.trim()) return true;
+  if (answer.roleMap?.roles.some((role) => role.personName.trim() || role.source === "custom")) return true;
+  if (answer.roleMap?.activities.some((activity) => activity.roleId)) return true;
+  if (answer.roleMap?.legacyNotes?.trim()) return true;
   if (answer.pending?.marked) return true;
   return false;
 }

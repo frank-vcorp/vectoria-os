@@ -7,12 +7,18 @@ import {
 export type FieldType =
   | "text"
   | "flow"
+  | "role-map"
   | "choice"
   | "checklist"
   | "tools"
   | "table"
   | "guide"
   | "applicability";
+
+export type SuggestedRole = {
+  label: string;
+  hint?: string;
+};
 
 export type TemplateField = {
   id: string;
@@ -21,6 +27,9 @@ export type TemplateField = {
   hint?: string;
   example?: string;
   options?: string[];
+  roleOptions?: SuggestedRole[];
+  frequentOptions?: string[];
+  secondaryOptions?: string[];
   allowOther?: boolean;
   exclusiveValues?: string[];
   columns?: { id: string; label: string }[];
@@ -52,6 +61,25 @@ function text(id: string, label: string, hint?: string, example?: string): Templ
 
 function flow(id: string, label: string, example?: string, hint?: string): TemplateField {
   return { id, type: "flow", label, example, hint };
+}
+
+function roleMap(
+  id: string,
+  label: string,
+  roleOptions: SuggestedRole[],
+  frequent: string[],
+  secondary: string[],
+  hint?: string,
+): TemplateField {
+  return {
+    id,
+    type: "role-map",
+    label,
+    hint,
+    roleOptions,
+    frequentOptions: frequent,
+    secondaryOptions: secondary,
+  };
 }
 
 function choice(id: string, label: string, options: string[]): TemplateField {
@@ -123,6 +151,7 @@ type TransversalArea = {
   flowExample: string;
   frequent: string[];
   secondary: string[];
+  suggestedRoles: SuggestedRole[];
   tools: string[];
   guides: GuideItem[];
 };
@@ -150,6 +179,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Contratos",
       "Licitaciones",
       "Renovaciones / ventas recurrentes",
+    ],
+    suggestedRoles: [
+      { label: "Vendedor", hint: "Cotiza y da seguimiento comercial" },
+      { label: "Gerente comercial", hint: "Aprueba condiciones, descuentos y cierre" },
+      { label: "Atención a clientes", hint: "Recibe solicitudes y canaliza" },
     ],
     tools: ["WhatsApp", "Excel", "Correo", "Papel"],
     guides: [
@@ -196,6 +230,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Clasificación / segmentación",
       "Documentos del cliente",
     ],
+    suggestedRoles: [
+      { label: "Atención / recepción", hint: "Primer contacto y registro inicial" },
+      { label: "Coordinador de cuenta", hint: "Actualiza datos y da seguimiento" },
+      { label: "Gerente", hint: "Autoriza condiciones especiales" },
+    ],
     tools: ["WhatsApp", "Excel", "Correo", "Papel"],
     guides: [
       { id: "a1", group: "Alta e información", text: "¿Cuándo consideran formalmente que alguien ya es cliente?" },
@@ -233,6 +272,12 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Devoluciones",
       "Evaluación de proveedores",
     ],
+    suggestedRoles: [
+      { label: "Solicitante", hint: "Detecta o solicita la compra" },
+      { label: "Comprador", hint: "Cotiza y gestiona con el proveedor" },
+      { label: "Autorizador de compra", hint: "Aprueba la compra" },
+      { label: "Recepción", hint: "Recibe y verifica mercancía" },
+    ],
     tools: ["WhatsApp", "Excel", "Correo", "Papel"],
     guides: [
       { id: "p1", group: "Proceso", text: "¿Quién detecta o solicita una compra?" },
@@ -269,6 +314,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Inventarios físicos",
       "Mínimos / máximos",
     ],
+    suggestedRoles: [
+      { label: "Almacenista", hint: "Entradas, salidas y existencias" },
+      { label: "Supervisor de almacén", hint: "Autoriza movimientos y ajustes" },
+      { label: "Conteo / ajustes", hint: "Realiza inventarios físicos" },
+    ],
     tools: ["Excel", "Papel", "Código de barras", "Conteo manual"],
     guides: [
       { id: "c1", group: "Control", text: "¿Qué controlan en inventario?" },
@@ -301,6 +351,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Cancelaciones",
       "Refacturación",
       "Facturación anticipada",
+    ],
+    suggestedRoles: [
+      { label: "Facturista", hint: "Genera facturas" },
+      { label: "Cobranza", hint: "Da seguimiento a pagos" },
+      { label: "Autorizador de crédito", hint: "Aprueba crédito o condiciones" },
     ],
     tools: ["Correo", "Excel", "Portal / PAC", "Contabilidad"],
     guides: [
@@ -337,6 +392,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Proyecciones",
       "Financiamientos",
     ],
+    suggestedRoles: [
+      { label: "Tesorería", hint: "Registra movimientos y bancos" },
+      { label: "Contabilidad", hint: "Control contable y reportes" },
+      { label: "Autorizador de egresos", hint: "Aprueba pagos y gastos" },
+    ],
     tools: ["Excel", "Bancos", "Papel", "Contabilidad externa"],
     guides: [
       { id: "i1", group: "Ingresos y egresos", text: "¿Cómo registran ingresos y gastos?" },
@@ -366,6 +426,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Relación con cliente / operación",
     ],
     secondary: ["Firmas", "Control de versiones", "Autorizaciones", "Expedientes", "Vigencias", "Documentos legales"],
+    suggestedRoles: [
+      { label: "Capturista / archivo", hint: "Genera y archiva documentos" },
+      { label: "Revisor", hint: "Revisa antes de enviar o firmar" },
+      { label: "Autorizador / firmante", hint: "Firma o autoriza documentos" },
+    ],
     tools: ["WhatsApp", "Correo", "Carpetas locales", "Nube / Drive", "Papel"],
     guides: [
       { id: "d1", group: "Documentos", text: "¿Qué documentos generan?" },
@@ -400,6 +465,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Comisiones",
       "Bajas",
     ],
+    suggestedRoles: [
+      { label: "RH / nómina", hint: "Altas, incidencias y pagos" },
+      { label: "Jefe inmediato", hint: "Supervisa al personal" },
+      { label: "Dirección", hint: "Aprueba cambios relevantes" },
+    ],
     tools: ["Excel", "Papel", "Reloj checador", "WhatsApp"],
     guides: [
       { id: "a1", group: "Administración", text: "¿Qué información guardan de cada colaborador?" },
@@ -431,6 +501,11 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       "Proyecciones",
       "Alertas automáticas",
       "Rentabilidad por área / proyecto",
+    ],
+    suggestedRoles: [
+      { label: "Dueño / director", hint: "Toma decisiones estratégicas" },
+      { label: "Control interno", hint: "Revisa cumplimiento" },
+      { label: "Quien prepara reportes", hint: "Consolida información" },
     ],
     tools: ["Excel", "WhatsApp", "Correo", "Reportes manuales"],
     guides: [
@@ -464,10 +539,20 @@ function transversalSection(area: TransversalArea): TemplateSection {
       checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowOther: true }),
       checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowOther: true }),
       text(`${p}.trigger`, area.trigger),
-      area.id === "comercial"
-        ? flow(`${p}.flow`, "Flujo de la empresa", area.flowExample)
-        : text(`${p}.flow`, "Flujo de la empresa", area.flowExample),
-      text(`${p}.people`, "Personas / áreas que intervienen"),
+      flow(
+        `${p}.flow`,
+        "Cómo ocurre hoy en esta área",
+        area.flowExample,
+        "Describa el flujo actual y cómo se realiza.",
+      ),
+      roleMap(
+        `${p}.people`,
+        "Personas, roles y actividades",
+        area.suggestedRoles,
+        area.frequent,
+        area.secondary,
+        "Arrastre cada actividad al rol que la realiza hoy e indique el nombre de la persona.",
+      ),
       tools(`${p}.tools`, "Herramientas utilizadas", area.tools),
       text(`${p}.problems`, "Problemas o necesidades detectadas"),
       text(`${p}.expected`, "Resultado esperado por el cliente"),
