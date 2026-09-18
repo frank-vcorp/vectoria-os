@@ -1,6 +1,7 @@
 import { escapeHtml, wrapPrintableDocument } from "@/shared/document-letterhead";
 import { coalesceFlowAnswer, flowBlocksToArrowText } from "@/shared/flow-blocks";
 import { coalesceRoleMapAnswer, roleMapActivitiesForRole, roleMapUnassignedActivities } from "@/shared/role-map";
+import { serV2FieldAnswerLines } from "@/shared/ser-v2-export";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import {
   APPLICABILITY_LABELS,
@@ -23,7 +24,14 @@ function mdEscape(value: string) {
   return value.replace(/\r\n/g, "\n");
 }
 
-function fieldAnswerLines(field: TemplateField, answer: FieldAnswer, blank: boolean): string[] {
+function fieldAnswerLines(
+  field: TemplateField,
+  answer: FieldAnswer,
+  blank: boolean,
+  answers?: SurveyAnswers,
+): string[] {
+  const serV2 = answers ? serV2FieldAnswerLines(field, answer, blank, answers) : null;
+  if (serV2) return serV2;
   if (field.type === "guide") {
     const lines = [`**${field.label}**`];
     for (const item of field.items ?? []) {
@@ -162,7 +170,7 @@ export function renderSurveyMarkdown(input: {
   objective?: string;
   notes?: string;
 }) {
-  const template = getSurveyTemplate(input.operationType);
+  const template = getSurveyTemplate(input.operationType, input.operationTemplateVersion);
   const lines: string[] = [
     "# Levantamiento VectorIA",
     "",
@@ -199,7 +207,7 @@ export function renderSurveyMarkdown(input: {
     if (progress === "sin_revisar" || progress === "en_captura") unreviewed.push(section.title);
     for (const field of section.fields) {
       const answer = answerOf(input.answers, field.id);
-      lines.push(...fieldAnswerLines(field, answer, false), ...pendingLines(answer), "");
+      lines.push(...fieldAnswerLines(field, answer, false, input.answers), ...pendingLines(answer), "");
     }
   }
 
@@ -224,11 +232,11 @@ export function renderSurveyMarkdown(input: {
     lines.push("", "## Antecedentes (información conservada fuera de la plantilla vigente)", "");
     for (const archived of input.archivedOperations) {
       lines.push(`### Tipo anterior: ${SURVEY_OPERATION_LABELS[archived.type]} (${archived.templateVersion})`, "");
-      const oldTemplate = getSurveyTemplate(archived.type);
+      const oldTemplate = getSurveyTemplate(archived.type, archived.templateVersion);
       for (const section of oldTemplate.sections.filter((item) => item.group === "operation")) {
         lines.push(`#### ${section.title}`, "");
         for (const field of section.fields) {
-          lines.push(...fieldAnswerLines(field, answerOf(archived.answers, field.id), false), "");
+          lines.push(...fieldAnswerLines(field, answerOf(archived.answers, field.id), false, archived.answers), "");
         }
       }
     }
@@ -282,6 +290,33 @@ function htmlField(field: TemplateField): string {
       .join("");
     return `<p class="sv-label">${escapeHtml(field.label)}</p><div class="sv-flow-row">${chips}</div>${htmlBox("Notas sobre cómo se realiza", true)}`;
   }
+  if (field.type === "notice") {
+    return `<div class="sv-role-card"><p class="sv-label">${escapeHtml(field.label)}</p>${field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : ""}</div>`;
+  }
+  if (field.type === "assignee-catalog") {
+    const roleBlocks = (field.roleOptions ?? [])
+      .map(
+        (role) => `<div class="sv-role-card">
+          <p class="sv-label">${escapeHtml(role.label)}</p>
+          ${role.hint ? `<p class="sv-hint">${escapeHtml(role.hint)}</p>` : ""}
+          ${htmlBox("Persona de referencia (opcional)")}
+        </div>`,
+      )
+      .join("");
+    return `<p class="sv-label">${escapeHtml(field.label)}</p>${field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : ""}<div class="sv-role-grid">${roleBlocks}</div>${htmlBox("Agregar encargado personalizado")}`;
+  }
+  if (
+    field.type === "assignee-select" ||
+    field.type === "os-actions-v2" ||
+    field.type === "work-statuses-v2" ||
+    field.type === "module-links-v2" ||
+    field.type === "special-rules-v2" ||
+    field.type === "client-catalogs-v2" ||
+    field.type === "report-outputs-v2" ||
+    field.type === "extra-fields-v2"
+  ) {
+    return `${field.hint ? `<p class="sv-hint">${escapeHtml(field.hint)}</p>` : ""}${htmlBox(field.label, true)}`;
+  }
   if (field.type === "role-map") {
     const activities = [...(field.frequentOptions ?? []), ...(field.secondaryOptions ?? [])];
     const activityChips = activities
@@ -316,10 +351,11 @@ export function renderSurveyPdfHtml(input: {
   clientName: string;
   quoteFolio: string;
   operationType: SurveyOperationType;
+  operationTemplateVersion?: string;
   responsibleName: string;
   interviewDate?: Date | null;
 }) {
-  const template = getSurveyTemplate(input.operationType);
+  const template = getSurveyTemplate(input.operationType, input.operationTemplateVersion);
   const sectionsHtml = template.sections
     .map((section: TemplateSection) => {
       return `<section class="sv-sec"><h2>${escapeHtml(section.title)}</h2>${section.fields.map(htmlField).join("")}</section>`;

@@ -18,6 +18,7 @@ export async function GET(_request: Request, { params }: Params) {
       clientName: survey.clientName,
       quoteFolio: survey.quoteFolio,
       operationType: survey.operationType,
+      operationTemplateVersion: survey.operationTemplateVersion,
       responsibleName: survey.responsibleName,
       interviewDate: survey.interviewDate,
     });

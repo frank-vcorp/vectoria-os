@@ -5,10 +5,30 @@ import Link from "next/link";
 import { DateInput } from "@/components/date-input";
 import { EntityDetailLayout } from "@/components/entity-detail-layout";
 import { SearchableSelect } from "@/components/searchable-select";
+import { SurveyAssigneeCatalogBuilder } from "@/components/survey-assignee-catalog-builder";
+import { SurveyAssigneeSelect } from "@/components/survey-assignee-select";
 import { SurveyFlowBuilder } from "@/components/survey-flow-builder";
 import { SurveyRoleMapBuilder } from "@/components/survey-role-map-builder";
+import {
+  SurveyClientCatalogsBuilder,
+  SurveyExtraFieldsBuilder,
+  SurveyModuleLinksBuilder,
+  SurveyOsActionsBuilder,
+  SurveyReportOutputsBuilder,
+  SurveySpecialRulesBuilder,
+  SurveyWorkStatusesBuilder,
+  coalesceClientCatalogs,
+  coalesceExtraFields,
+  coalesceReportOutputs,
+  coalesceSpecialRules,
+} from "@/components/survey-ser-v2-builders";
+import { coalesceAssigneeCatalog } from "@/shared/assignee-catalog";
 import { coalesceFlowAnswer } from "@/shared/flow-blocks";
+import { coalesceModuleLinks } from "@/shared/module-links";
+import { coalesceOsActions } from "@/shared/os-actions";
 import { coalesceRoleMapAnswer } from "@/shared/role-map";
+import { SER_V2_ASSIGNEE_CATALOG_FIELD, SER_V2_ACTIONS_FIELD } from "@/shared/ser-v2-constants";
+import { coalesceWorkStatuses } from "@/shared/work-statuses";
 import { getSurveyTemplate, type TemplateField, type TemplateSection } from "@/shared/survey-templates";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/shared/commercial";
 import {
@@ -57,6 +77,7 @@ type SurveyDetail = {
   liveClientName: string;
   clientIdentityChanged: boolean;
   operationType: SurveyOperationType;
+  operationTemplateVersion: string;
   responsibleUserId: string;
   responsibleName: string;
   status: SurveyStatus;
@@ -105,17 +126,163 @@ function AutoText({
   );
 }
 
+function fieldIsVisible(field: TemplateField, answers: SurveyAnswers) {
+  if (!field.showWhen) return true;
+  const source = answers.fields[field.showWhen.fieldId];
+  if (field.showWhen.equals !== undefined) return source?.choice === field.showWhen.equals;
+  if (field.showWhen.includes !== undefined) return Boolean(source?.selected?.includes(field.showWhen.includes));
+  return true;
+}
+
 function FieldEditor({
   field,
   answer,
+  answers,
   disabled,
   onChange,
 }: {
   field: TemplateField;
   answer: FieldAnswer;
+  answers: SurveyAnswers;
   disabled: boolean;
   onChange: (next: FieldAnswer) => void;
 }) {
+  const catalogFieldId = field.catalogFieldId ?? SER_V2_ASSIGNEE_CATALOG_FIELD;
+  const assigneeCatalogData = coalesceAssigneeCatalog(answers.fields[catalogFieldId], field.roleOptions ?? []);
+
+  if (field.type === "notice") {
+    return (
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm space-y-1">
+        <p className="font-medium">{field.label}</p>
+        {field.hint ? <p className="text-[var(--muted)]">{field.hint}</p> : null}
+      </div>
+    );
+  }
+
+  if (field.type === "assignee-catalog") {
+    const catalogAnswer = coalesceAssigneeCatalog(answer, field.roleOptions ?? []);
+    return (
+      <SurveyAssigneeCatalogBuilder
+        label={field.label}
+        hint={field.hint}
+        suggested={field.roleOptions ?? []}
+        data={catalogAnswer}
+        disabled={disabled}
+        onChange={(assigneeCatalogNext) => onChange({ ...answer, assigneeCatalog: assigneeCatalogNext, text: undefined })}
+      />
+    );
+  }
+
+  if (field.type === "assignee-select") {
+    return (
+      <SurveyAssigneeSelect
+        label={field.label}
+        hint={field.hint}
+        catalog={assigneeCatalogData}
+        value={answer.assigneeId}
+        disabled={disabled}
+        onChange={(assigneeId) => onChange({ ...answer, assigneeId })}
+      />
+    );
+  }
+
+  if (field.type === "os-actions-v2") {
+    const osActions = coalesceOsActions(answer);
+    return (
+      <SurveyOsActionsBuilder
+        label={field.label}
+        hint={field.hint}
+        catalog={assigneeCatalogData}
+        data={osActions}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, osActions: next })}
+      />
+    );
+  }
+
+  if (field.type === "work-statuses-v2") {
+    const workStatuses = coalesceWorkStatuses(answer);
+    const actions = coalesceOsActions(answers.fields[SER_V2_ACTIONS_FIELD]);
+    return (
+      <SurveyWorkStatusesBuilder
+        label={field.label}
+        hint={field.hint}
+        catalog={assigneeCatalogData}
+        actions={actions}
+        data={workStatuses}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, workStatuses: next })}
+      />
+    );
+  }
+
+  if (field.type === "module-links-v2") {
+    const moduleLinks = coalesceModuleLinks(answer);
+    return (
+      <SurveyModuleLinksBuilder
+        label={field.label}
+        catalog={assigneeCatalogData}
+        data={moduleLinks}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, moduleLinks: next })}
+      />
+    );
+  }
+
+  if (field.type === "special-rules-v2") {
+    const specialRules = coalesceSpecialRules(answer);
+    return (
+      <SurveySpecialRulesBuilder
+        label={field.label}
+        catalog={assigneeCatalogData}
+        answers={answers}
+        data={specialRules}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, specialRules: next })}
+      />
+    );
+  }
+
+  if (field.type === "client-catalogs-v2") {
+    const clientCatalogs = coalesceClientCatalogs(answer);
+    return (
+      <SurveyClientCatalogsBuilder
+        label={field.label}
+        catalog={assigneeCatalogData}
+        data={clientCatalogs}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, clientCatalogs: next })}
+      />
+    );
+  }
+
+  if (field.type === "report-outputs-v2") {
+    const reportOutputs = coalesceReportOutputs(answer);
+    return (
+      <SurveyReportOutputsBuilder
+        label={field.label}
+        catalog={assigneeCatalogData}
+        data={reportOutputs}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, reportOutputs: next })}
+      />
+    );
+  }
+
+  if (field.type === "extra-fields-v2") {
+    const extraFields = coalesceExtraFields(answer);
+    return (
+      <SurveyExtraFieldsBuilder
+        label={field.label}
+        fieldTypes={field.options ?? []}
+        locations={(field.items ?? []).map((item) => item.text)}
+        data={extraFields}
+        disabled={disabled}
+        onChange={(next) => onChange({ ...answer, extraFields: next })}
+      />
+    );
+  }
+
   if (field.type === "guide") {
     return (
       <details className="text-sm">
@@ -357,7 +524,7 @@ export function SurveyDetailView({ id }: { id: string }) {
   const timerRef = useRef<number | null>(null);
 
   const template = useMemo(
-    () => (survey ? getSurveyTemplate(survey.operationType) : null),
+    () => (survey ? getSurveyTemplate(survey.operationType, survey.operationTemplateVersion) : null),
     [survey],
   );
   const section = template?.sections.find((item) => item.id === sectionId) ?? template?.sections[0];
@@ -676,15 +843,17 @@ export function SurveyDetailView({ id }: { id: string }) {
 
           {section.fields
             .filter((field) => !hiddenDetail || field.id === section.applicabilityFieldId)
+            .filter((field) => fieldIsVisible(field, answers))
             .map((field) => (
               <div key={field.id} className="space-y-2">
                 <FieldEditor
                   field={field}
                   answer={answers.fields[field.id] ?? {}}
+                  answers={answers}
                   disabled={readonly}
                   onChange={(next) => setField(field.id, next)}
                 />
-                {!readonly && field.type !== "guide" && (
+                {!readonly && field.type !== "guide" && field.type !== "notice" && (
                   <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
                     <input
                       type="checkbox"

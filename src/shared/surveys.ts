@@ -107,6 +107,121 @@ export type RoleMapData = {
   legacyNotes?: string;
 };
 
+export type AssigneeEntry = {
+  id: string;
+  label: string;
+  hint?: string;
+  personName: string;
+  source: "suggested" | "custom";
+};
+
+export type AssigneeCatalogData = {
+  assignees: AssigneeEntry[];
+  legacyNotes?: string;
+};
+
+export type OsActionEntry = {
+  id: string;
+  label: string;
+  kind: "default" | "checklist" | "custom";
+  enabled: boolean;
+  fixed?: boolean;
+  assigneeId: string | null;
+  note?: string;
+  checklistItems?: string[];
+};
+
+export type OsActionsData = {
+  actions: OsActionEntry[];
+};
+
+export type WorkStatusUpdateMode = "manual" | "action" | "both";
+
+export type WorkStatusEntry = {
+  id: string;
+  label: string;
+  selected: boolean;
+  description?: string;
+  updateMode?: WorkStatusUpdateMode | null;
+  relatedActionId?: string | null;
+  manualAssigneeId?: string | null;
+};
+
+export type WorkStatusesData = {
+  statuses: WorkStatusEntry[];
+  other?: string;
+};
+
+export type ModuleLinkEntry = {
+  id: string;
+  group: string;
+  label: string;
+  selected: boolean;
+  assigneeId: string | null;
+  note?: string;
+};
+
+export type ModuleLinksData = {
+  links: ModuleLinkEntry[];
+};
+
+export type SpecialRuleEntry = {
+  id: string;
+  appliesTo: string;
+  rule: string;
+  authorizerId?: string | null;
+};
+
+export type SpecialRulesData = {
+  hasRules?: string | null;
+  rules: SpecialRuleEntry[];
+};
+
+export type CatalogDetailEntry = {
+  catalogId: string;
+  infoNeeded?: string;
+  usedWhere?: string;
+  assigneeId?: string | null;
+};
+
+export type ClientCatalogsData = {
+  selected: string[];
+  other?: string;
+  details: CatalogDetailEntry[];
+};
+
+export type ReportOutputEntry = {
+  id: string;
+  label: string;
+  selected: boolean;
+  content?: string;
+  assigneeId?: string | null;
+};
+
+export type AccessRestrictionEntry = {
+  assigneeId: string;
+  restriction: string;
+};
+
+export type ReportOutputsData = {
+  outputs: ReportOutputEntry[];
+  other?: string;
+  productivityCalc?: string;
+  accessRestrictions?: AccessRestrictionEntry[];
+};
+
+export type ExtraFieldEntry = {
+  id: string;
+  name: string;
+  fieldType: string;
+  required: boolean;
+  location: string;
+};
+
+export type ExtraFieldsData = {
+  fields: ExtraFieldEntry[];
+};
+
 export type FieldAnswer = {
   text?: string;
   choice?: string | null;
@@ -119,6 +234,15 @@ export type FieldAnswer = {
   flowBlocks?: FlowBlock[];
   flowNotes?: string;
   roleMap?: RoleMapData;
+  assigneeCatalog?: AssigneeCatalogData;
+  assigneeId?: string | null;
+  osActions?: OsActionsData;
+  workStatuses?: WorkStatusesData;
+  moduleLinks?: ModuleLinksData;
+  specialRules?: SpecialRulesData;
+  clientCatalogs?: ClientCatalogsData;
+  reportOutputs?: ReportOutputsData;
+  extraFields?: ExtraFieldsData;
   pending?: FieldPending;
 };
 
@@ -167,6 +291,21 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.roleMap?.roles.some((role) => role.personName.trim() || role.source === "custom")) return true;
   if (answer.roleMap?.activities.some((activity) => activity.roleId)) return true;
   if (answer.roleMap?.legacyNotes?.trim()) return true;
+  if (answer.assigneeCatalog?.assignees.some((item) => item.personName.trim() || item.source === "custom")) return true;
+  if (answer.assigneeCatalog?.legacyNotes?.trim()) return true;
+  if (answer.assigneeId) return true;
+  if (answer.osActions?.actions.some((item) => item.enabled && (item.assigneeId || item.note?.trim() || item.kind === "custom"))) return true;
+  if (answer.workStatuses?.statuses.some((item) => item.selected)) return true;
+  if (answer.workStatuses?.other?.trim()) return true;
+  if (answer.moduleLinks?.links.some((item) => item.selected)) return true;
+  if (answer.specialRules?.hasRules?.trim()) return true;
+  if (answer.specialRules?.rules.some((item) => item.rule.trim())) return true;
+  if (answer.clientCatalogs?.selected.length) return true;
+  if (answer.clientCatalogs?.other?.trim()) return true;
+  if (answer.reportOutputs?.outputs.some((item) => item.selected)) return true;
+  if (answer.reportOutputs?.other?.trim()) return true;
+  if (answer.reportOutputs?.productivityCalc?.trim()) return true;
+  if (answer.extraFields?.fields.some((item) => item.name.trim())) return true;
   if (answer.pending?.marked) return true;
   return false;
 }

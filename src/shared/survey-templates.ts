@@ -1,3 +1,5 @@
+import { SER_V2_OPERATION_VERSION } from "@/shared/ser-v2-constants";
+import { buildSerV2Sections } from "@/shared/survey-templates-ser-v2";
 import {
   SURVEY_OPERATION_LABELS,
   TEMPLATE_VERSION,
@@ -13,7 +15,17 @@ export type FieldType =
   | "tools"
   | "table"
   | "guide"
-  | "applicability";
+  | "applicability"
+  | "notice"
+  | "assignee-catalog"
+  | "assignee-select"
+  | "os-actions-v2"
+  | "work-statuses-v2"
+  | "module-links-v2"
+  | "special-rules-v2"
+  | "client-catalogs-v2"
+  | "report-outputs-v2"
+  | "extra-fields-v2";
 
 export type SuggestedRole = {
   label: string;
@@ -35,6 +47,8 @@ export type TemplateField = {
   columns?: { id: string; label: string }[];
   addLabel?: string;
   items?: { id: string; group?: string; text: string }[];
+  catalogFieldId?: string;
+  showWhen?: { fieldId: string; equals?: string; includes?: string };
 };
 
 export type TemplateSection = {
@@ -2081,28 +2095,42 @@ const LOG: OperationSpec = {
 
 const SPECS: Record<SurveyOperationType, OperationSpec> = { SER, DIS, MAN, PRY, CIT, LOG };
 
-export function getSurveyTemplate(type: SurveyOperationType): SurveyTemplate {
+function isSerLegacyVersion(operationVersion?: string | null) {
+  return operationVersion === "SER-1.0";
+}
+
+function operationSectionsFor(type: SurveyOperationType, operationVersion?: string | null) {
+  if (type === "SER" && !isSerLegacyVersion(operationVersion)) return buildSerV2Sections();
+  return buildOperationSections(SPECS[type]);
+}
+
+function operationVersionFor(type: SurveyOperationType, operationVersion?: string | null) {
+  if (type === "SER" && !isSerLegacyVersion(operationVersion)) return SER_V2_OPERATION_VERSION;
+  return `${type}-${TEMPLATE_VERSION}`;
+}
+
+export function getSurveyTemplate(type: SurveyOperationType, operationVersion?: string | null): SurveyTemplate {
   return {
     version: TEMPLATE_VERSION,
     transversalVersion: TEMPLATE_VERSION,
-    operationVersion: `${type}-${TEMPLATE_VERSION}`,
+    operationVersion: operationVersionFor(type, operationVersion),
     operationType: type,
     sections: [
       headerSection(),
       ...TRANSVERSAL_AREAS.map(transversalSection),
-      ...buildOperationSections(SPECS[type]),
+      ...operationSectionsFor(type, operationVersion),
       attachmentsSection(),
       closureSection(),
     ],
   };
 }
 
-export function listReviewableSections(type: SurveyOperationType) {
-  return getSurveyTemplate(type).sections.filter((section) => section.reviewable);
+export function listReviewableSections(type: SurveyOperationType, operationVersion?: string | null) {
+  return getSurveyTemplate(type, operationVersion).sections.filter((section) => section.reviewable);
 }
 
-export function getTemplateField(type: SurveyOperationType, fieldId: string) {
-  for (const section of getSurveyTemplate(type).sections) {
+export function getTemplateField(type: SurveyOperationType, fieldId: string, operationVersion?: string | null) {
+  for (const section of getSurveyTemplate(type, operationVersion).sections) {
     const field = section.fields.find((item) => item.id === fieldId);
     if (field) return { section, field };
   }

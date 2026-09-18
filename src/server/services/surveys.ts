@@ -39,8 +39,10 @@ export type SurveyActor = Pick<User, "id" | "role">;
 
 const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads", "levantamientos");
 
-function defaultSectionStates(type: SurveyOperationType): SectionStateMap {
-  return Object.fromEntries(listReviewableSections(type).map((section) => [section.id, { status: "sin_revisar" as const }]));
+function defaultSectionStates(type: SurveyOperationType, operationVersion?: string): SectionStateMap {
+  return Object.fromEntries(
+    listReviewableSections(type, operationVersion).map((section) => [section.id, { status: "sin_revisar" as const }]),
+  );
 }
 
 export async function listRelatedSurveyQuoteIdsForProgrammer(userId: string) {
@@ -240,7 +242,7 @@ export async function createSurvey(params: {
       transversalTemplateVersion: template.transversalVersion,
       operationTemplateVersion: template.operationVersion,
       answers: emptyAnswers(),
-      sectionStates: defaultSectionStates(params.operationType),
+      sectionStates: defaultSectionStates(params.operationType, template.operationVersion),
       createdBy: params.actor.id,
       updatedBy: params.actor.id,
     })
@@ -265,14 +267,23 @@ function mergeAnswers(current: SurveyAnswers, incoming?: SurveyAnswers): SurveyA
   return { fields: { ...current.fields, ...incoming.fields } };
 }
 
-function normalizeSectionStates(type: SurveyOperationType, incoming?: SectionStateMap): SectionStateMap {
-  const base = defaultSectionStates(type);
+function normalizeSectionStates(
+  type: SurveyOperationType,
+  incoming?: SectionStateMap,
+  operationVersion?: string,
+): SectionStateMap {
+  const base = defaultSectionStates(type, operationVersion);
   if (!incoming) return base;
   return { ...base, ...incoming };
 }
 
-function applyApplicability(type: SurveyOperationType, answers: SurveyAnswers, states: SectionStateMap) {
-  const template = getSurveyTemplate(type);
+function applyApplicability(
+  type: SurveyOperationType,
+  answers: SurveyAnswers,
+  states: SectionStateMap,
+  operationVersion?: string,
+) {
+  const template = getSurveyTemplate(type, operationVersion);
   for (const section of template.sections) {
     if (!section.applicabilityFieldId) continue;
     const value = answers.fields[section.applicabilityFieldId]?.choice;
@@ -309,8 +320,17 @@ export async function updateSurvey(params: {
   }
 
   const answers = mergeAnswers(existing.answers, params.answers);
-  let sectionStates = normalizeSectionStates(existing.operationType, params.sectionStates ?? existing.sectionStates);
-  sectionStates = applyApplicability(existing.operationType, answers, sectionStates);
+  let sectionStates = normalizeSectionStates(
+    existing.operationType,
+    params.sectionStates ?? existing.sectionStates,
+    existing.operationTemplateVersion,
+  );
+  sectionStates = applyApplicability(
+    existing.operationType,
+    answers,
+    sectionStates,
+    existing.operationTemplateVersion,
+  );
   const status = nextStatus(existing.status, answers);
   const interviewDate =
     params.interviewDate === undefined
@@ -367,8 +387,13 @@ export async function markSectionReviewed(params: {
   });
 }
 
-function unfinishedSections(type: SurveyOperationType, states: SectionStateMap, answers: SurveyAnswers) {
-  return listReviewableSections(type).filter((section) => {
+function unfinishedSections(
+  type: SurveyOperationType,
+  states: SectionStateMap,
+  answers: SurveyAnswers,
+  operationVersion?: string,
+) {
+  return listReviewableSections(type, operationVersion).filter((section) => {
     const applicability = section.applicabilityFieldId
       ? answers.fields[section.applicabilityFieldId]?.choice
       : undefined;
@@ -389,7 +414,12 @@ export async function finalizeSurvey(params: { id: string; actor: SurveyActor; e
   if (existing.clientIdentityChanged && !existing.correspondenceReviewed) {
     throw new Error("CORRESPONDENCE_REQUIRED");
   }
-  const pending = unfinishedSections(existing.operationType, existing.sectionStates, existing.answers);
+  const pending = unfinishedSections(
+    existing.operationType,
+    existing.sectionStates,
+    existing.answers,
+    existing.operationTemplateVersion,
+  );
   if (pending.length > 0) throw new Error("SECTIONS_UNREVIEWED");
 
   const db = getDb();
@@ -475,7 +505,7 @@ export async function changeOperationType(params: {
   const sectionStates = applyApplicability(
     params.operationType,
     { fields: keptFields },
-    defaultSectionStates(params.operationType),
+    defaultSectionStates(params.operationType, template.operationVersion),
   );
 
   const db = getDb();
