@@ -621,9 +621,9 @@ export function SurveyDetailView({ id }: { id: string }) {
           </select>
           <div className="hidden lg:block space-y-3">
             {groups.map((group) => (
-              <div key={group.id}>
-                <p className="text-xs uppercase tracking-wide text-[var(--muted)] mb-1">{group.title}</p>
-                <div className="space-y-1">
+              <div key={group.id} className="survey-nav-group">
+                <p className="survey-nav-group-title">{group.title}</p>
+                <div className="survey-nav-group-items space-y-1">
                   {group.items.map((item) => {
                     const progress = survey.sectionStates[item.id]?.status ?? "sin_revisar";
                     const reviewed = group.id === "transversal" && progress === "revisada";

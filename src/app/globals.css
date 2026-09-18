@@ -968,6 +968,26 @@ button {
   cursor: grabbing;
 }
 
+.survey-nav-group + .survey-nav-group {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.survey-nav-group-title {
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.55rem 0.4rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--brand-orange);
+  background: color-mix(in srgb, var(--brand-navy) 7%, var(--surface-2));
+  font-family: Montserrat, Inter, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-navy);
+}
+
 .survey-nav-item {
   border: 1px solid transparent;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
