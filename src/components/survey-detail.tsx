@@ -192,7 +192,7 @@ function FieldEditor({
             </label>
           ))}
         </div>
-        {field.allowOther || field.type === "tools" ? (
+        {field.type === "checklist" && field.allowOther ? (
           <input
             className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
             placeholder="Otro"
