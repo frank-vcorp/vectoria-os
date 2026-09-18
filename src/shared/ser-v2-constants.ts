@@ -23,12 +23,7 @@ export const SER_V2_DEFAULT_OS_ACTIONS = [
   "Garantía",
 ] as const;
 
-export const SER_V2_OS_ORIGINS = [
-  "Cotización autorizada",
-  "Contrato vigente con servicios autorizados",
-  "Servicio recurrente previamente autorizado",
-  "Registro directo con autorización",
-] as const;
+export const SER_V2_OS_ORIGINS = ["Cotización autorizada", "Crearla desde cero"] as const;
 
 export const SER_V2_WORK_STATUS_SUGGESTIONS = [
   "Pendiente de iniciar",

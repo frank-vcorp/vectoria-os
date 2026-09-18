@@ -74,7 +74,7 @@ export function SurveyProcessChecklist({ field, answer, disabled = false, onChan
         <div className="flex gap-2">
           <input
             className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
-            placeholder="Agregar proceso"
+            placeholder={field.addLabel ?? "Agregar proceso"}
             value={newProcess}
             onChange={(e) => setNewProcess(e.target.value)}
             onKeyDown={(e) => {

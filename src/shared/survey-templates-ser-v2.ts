@@ -40,7 +40,7 @@ function checklist(
   id: string,
   label: string,
   options: readonly string[],
-  extras?: { allowOther?: boolean; hint?: string },
+  extras?: { allowOther?: boolean; allowAddOptions?: boolean; hint?: string; addLabel?: string },
 ): TemplateField {
   return {
     id,
@@ -48,7 +48,9 @@ function checklist(
     label,
     options: [...options],
     allowOther: extras?.allowOther,
+    allowAddOptions: extras?.allowAddOptions,
     hint: extras?.hint,
+    addLabel: extras?.addLabel,
   };
 }
 
@@ -80,7 +82,8 @@ export function buildSerV2Sections(): TemplateSection[] {
         "Toda OS representa un servicio autorizado. Heredará automáticamente la información aplicable de su origen (cliente, contacto, servicios, alcance, importes, condiciones y documentos). Crear una OS no significa que el trabajo esté pagado, programado o listo para ejecutarse.",
       ),
       checklist("op.SER.v2.create.origins", "¿Desde dónde podrá generarse una OS?", SER_V2_OS_ORIGINS, {
-        allowOther: true,
+        allowAddOptions: true,
+        addLabel: "Agregar origen",
       }),
       generalRoleSelect(
         "op.SER.v2.create.creator",
