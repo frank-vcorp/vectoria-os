@@ -1,4 +1,5 @@
 import { SER_V2_OPERATION_VERSION } from "@/shared/ser-v2-constants";
+import { SYSTEM_ROLES_CATALOG_FIELD } from "@/shared/system-roles";
 import { buildSerV2Sections } from "@/shared/survey-templates-ser-v2";
 import {
   SURVEY_OPERATION_LABELS,
@@ -93,6 +94,20 @@ function roleMap(
     roleOptions,
     frequentOptions: frequent,
     secondaryOptions: secondary,
+  };
+}
+
+function assigneeCatalog(id: string, label: string, roleOptions: SuggestedRole[], hint?: string): TemplateField {
+  return { id, type: "assignee-catalog", label, hint, roleOptions };
+}
+
+function generalRoleSelect(id: string, label: string, hint?: string): TemplateField {
+  return {
+    id,
+    type: "assignee-select",
+    label,
+    hint,
+    catalogFieldId: SYSTEM_ROLES_CATALOG_FIELD,
   };
 }
 
@@ -541,6 +556,20 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
   },
 ];
 
+function collectSystemRoleSuggestions(): SuggestedRole[] {
+  const seen = new Set<string>();
+  const roles: SuggestedRole[] = [];
+  for (const area of TRANSVERSAL_AREAS) {
+    for (const role of area.suggestedRoles) {
+      const key = role.label.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      roles.push(role);
+    }
+  }
+  return roles;
+}
+
 function transversalSection(area: TransversalArea): TemplateSection {
   const p = `tx.${area.id}`;
   return {
@@ -552,10 +581,10 @@ function transversalSection(area: TransversalArea): TemplateSection {
     applicabilityFieldId: `${p}.applicability`,
     fields: pendingable([
       { id: `${p}.applicability`, type: "applicability", label: "Aplicabilidad" },
-      text(
-        `${p}.responsable`,
-        "Responsable del proceso",
-        "Persona de contacto directo si hay dudas sobre este proceso (opcional).",
+      generalRoleSelect(
+        `${p}.role`,
+        "Rol general en esta área",
+        "Seleccione uno de los roles generales definidos en Datos generales.",
       ),
       checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowOther: true }),
       checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowOther: true }),
@@ -565,14 +594,6 @@ function transversalSection(area: TransversalArea): TemplateSection {
         "Cómo ocurre hoy en esta área",
         area.flowExample,
         "Describa el flujo actual y cómo se realiza.",
-      ),
-      roleMap(
-        `${p}.people`,
-        "Personas, roles y actividades",
-        area.suggestedRoles,
-        area.frequent,
-        area.secondary,
-        "Arrastre cada actividad al rol que la realiza hoy e indique el nombre de la persona.",
       ),
       tools(`${p}.tools`, "Herramientas utilizadas", area.tools),
       text(`${p}.problems`, "Problemas o necesidades detectadas"),
@@ -769,6 +790,12 @@ function headerSection(): TemplateSection {
     fields: [
       text("header.intervieweeName", "Persona entrevistada"),
       text("header.intervieweeRole", "Puesto"),
+      assigneeCatalog(
+        SYSTEM_ROLES_CATALOG_FIELD,
+        "Roles generales de todo el sistema",
+        collectSystemRoleSuggestions(),
+        "Defina los roles que intervienen en la operación del cliente. En cada área transversal se seleccionará uno de estos roles.",
+      ),
       text("header.activity", "Actividad, producto o servicio principal del cliente"),
       text("header.objective", "Objetivo general del cliente"),
       text("header.notes", "Notas generales"),
