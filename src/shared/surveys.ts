@@ -63,6 +63,16 @@ export const SURVEY_ATTACHMENT_TYPES = [
 export const SURVEY_ATTACHMENT_ACCEPT =
   ".pdf,.jpg,.jpeg,.png,.webp,.gif,.xls,.xlsx,.doc,.docx,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
+export const TOOL_SOFTWARE_OPTION = "Software";
+
+export function toolOptionUsesSoftware(selected: string[] | undefined) {
+  return (selected ?? []).some((option) => /software/i.test(option));
+}
+
+export function toolOptionUsesFileFormat(selected: string[] | undefined) {
+  return (selected ?? []).some((option) => /papel|formato|archivo/i.test(option));
+}
+
 export type FieldPending = {
   marked: boolean;
   what?: string;

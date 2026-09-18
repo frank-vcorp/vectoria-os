@@ -104,7 +104,9 @@ function checklist(
 }
 
 function tools(id: string, label: string, options: string[]): TemplateField {
-  return { id, type: "tools", label, options, allowOther: true };
+  const hasSoftware = options.some((option) => /software/i.test(option));
+  const merged = hasSoftware ? options : [...options, "Software"];
+  return { id, type: "tools", label, options: merged, allowOther: true };
 }
 
 function table(id: string, label: string, columns: { id: string; label: string }[], addLabel: string): TemplateField {

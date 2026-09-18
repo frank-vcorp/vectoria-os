@@ -8,6 +8,8 @@ import {
   SURVEY_OPERATION_LABELS,
   SURVEY_STATUS_LABELS,
   hasFieldContent,
+  toolOptionUsesFileFormat,
+  toolOptionUsesSoftware,
   type FieldAnswer,
   type SurveyAnswers,
   type SurveyOperationType,
@@ -58,8 +60,13 @@ function fieldAnswerLines(field: TemplateField, answer: FieldAnswer, blank: bool
     }
     if (answer.other?.trim()) lines.push(`- Otro: ${mdEscape(answer.other)}`);
     if (field.type === "tools") {
-      if (answer.software?.trim()) lines.push(`- Software: ${mdEscape(answer.software)}`);
-      if (answer.fileName?.trim()) lines.push(`- Archivo / formato: ${mdEscape(answer.fileName)}`);
+      const selected = answer.selected ?? [];
+      if (toolOptionUsesSoftware(selected) && answer.software?.trim()) {
+        lines.push(`- Software: ${mdEscape(answer.software)}`);
+      }
+      if (toolOptionUsesFileFormat(selected) && answer.fileName?.trim()) {
+        lines.push(`- Archivo / formato: ${mdEscape(answer.fileName)}`);
+      }
     }
     if (!hasFieldContent(answer)) lines.push("Sin respuesta");
     return lines;
@@ -250,7 +257,7 @@ function htmlField(field: TemplateField): string {
     const options = (field.options ?? []).map((option) => `<label class="sv-check">□ ${escapeHtml(option)}</label>`).join("");
     const extra =
       field.type === "tools"
-        ? `${htmlBox("Software")}${htmlBox("Archivo / formato")}`
+        ? `${htmlBox("Si marcó Software, indique cuál")}${htmlBox("Si marcó Papel / formatos, indique cuál archivo o formato")}`
         : field.allowOther
           ? htmlBox("Otro")
           : "";

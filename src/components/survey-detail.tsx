@@ -21,6 +21,8 @@ import {
   emptyAnswers,
   hasFieldContent,
   toggleChecklistValue,
+  toolOptionUsesFileFormat,
+  toolOptionUsesSoftware,
   type FieldAnswer,
   type SectionProgress,
   type SurveyAnswers,
@@ -157,6 +159,13 @@ function FieldEditor({
 
   if (field.type === "checklist" || field.type === "tools") {
     const selected = answer.selected ?? [];
+    const showsSoftware =
+      field.type === "tools" &&
+      (toolOptionUsesSoftware(selected) || Boolean(answer.software?.trim()));
+    const showsFileFormat =
+      field.type === "tools" &&
+      (toolOptionUsesFileFormat(selected) || Boolean(answer.fileName?.trim()));
+
     return (
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">{field.label}</legend>
@@ -167,12 +176,17 @@ function FieldEditor({
                 type="checkbox"
                 checked={selected.includes(option)}
                 disabled={disabled}
-                onChange={() =>
-                  onChange({
-                    ...answer,
-                    selected: toggleChecklistValue(selected, option, field.exclusiveValues),
-                  })
-                }
+                onChange={() => {
+                  const nextSelected = toggleChecklistValue(selected, option, field.exclusiveValues);
+                  const nextAnswer: FieldAnswer = { ...answer, selected: nextSelected };
+                  if (field.type === "tools" && !toolOptionUsesSoftware(nextSelected)) {
+                    nextAnswer.software = undefined;
+                  }
+                  if (field.type === "tools" && !toolOptionUsesFileFormat(nextSelected)) {
+                    nextAnswer.fileName = undefined;
+                  }
+                  onChange(nextAnswer);
+                }}
               />
               {option}
             </label>
@@ -187,23 +201,29 @@ function FieldEditor({
             onChange={(e) => onChange({ ...answer, other: e.target.value })}
           />
         ) : null}
-        {field.type === "tools" ? (
-          <div className="grid gap-2 md:grid-cols-2">
+        {showsSoftware ? (
+          <label className="block space-y-1">
+            <span className="text-xs text-[var(--muted)]">¿Qué software utilizan?</span>
             <input
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-              placeholder="Software"
+              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+              placeholder="Ej. SAP, Odoo, Excel, sistema propio…"
               disabled={disabled}
               value={answer.software ?? ""}
               onChange={(e) => onChange({ ...answer, software: e.target.value })}
             />
+          </label>
+        ) : null}
+        {showsFileFormat ? (
+          <label className="block space-y-1">
+            <span className="text-xs text-[var(--muted)]">¿Qué archivo o formato utilizan?</span>
             <input
-              className="bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-              placeholder="Archivo / formato"
+              className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+              placeholder="Ej. Excel de ventas, formato impreso, carpeta compartida…"
               disabled={disabled}
               value={answer.fileName ?? ""}
               onChange={(e) => onChange({ ...answer, fileName: e.target.value })}
             />
-          </div>
+          </label>
         ) : null}
       </fieldset>
     );
