@@ -189,19 +189,14 @@ export type CatalogDetailEntry = {
   assigneeIds?: string[];
 };
 
-export type OperationSubcatalogEntry = {
+export type OperationCatalogNode = {
   id: string;
   label: string;
-};
-
-export type OperationCatalogEntry = {
-  id: string;
-  label: string;
-  subcatalogs: OperationSubcatalogEntry[];
+  children: OperationCatalogNode[];
 };
 
 export type ClientCatalogsData = {
-  catalogs: OperationCatalogEntry[];
+  catalogs: OperationCatalogNode[];
   /** Respuestas previas con checklist fijo */
   selected?: string[];
   other?: string;
@@ -297,6 +292,11 @@ export function isExclusiveChoice(value: string) {
   return normalized === "no" || normalized === "ninguno" || normalized === "no condiciona";
 }
 
+function operationCatalogTreeHasContent(nodes: OperationCatalogNode[] | undefined): boolean {
+  if (!nodes?.length) return false;
+  return nodes.some((node) => node.label.trim() || operationCatalogTreeHasContent(node.children));
+}
+
 export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (!answer) return false;
   if (answer.text?.trim()) return true;
@@ -329,13 +329,7 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.moduleLinks?.links.some((item) => item.selected)) return true;
   if (answer.specialRules?.hasRules?.trim()) return true;
   if (answer.specialRules?.rules.some((item) => item.rule.trim())) return true;
-  if (
-    answer.clientCatalogs?.catalogs.some(
-      (item) => item.label.trim() || item.subcatalogs.some((sub) => sub.label.trim()),
-    )
-  ) {
-    return true;
-  }
+  if (operationCatalogTreeHasContent(answer.clientCatalogs?.catalogs)) return true;
   if (answer.clientCatalogs?.selected?.length) return true;
   if (answer.clientCatalogs?.other?.trim()) return true;
   if (answer.reportOutputs?.outputs.some((item) => item.selected)) return true;

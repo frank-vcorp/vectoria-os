@@ -5,13 +5,19 @@ import { SystemRolesCheckboxGroup } from "@/components/survey-system-roles-multi
 import { coalesceRoleIdList, systemRoleOptions } from "@/shared/system-roles";
 import { coalesceModuleLinks, newModuleLinkId } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions, newOsActionId } from "@/shared/os-actions";
-import { newOperationCatalogId } from "@/shared/operation-catalogs";
+import {
+  addCatalogNode,
+  newOperationCatalogId,
+  removeCatalogNode,
+  updateCatalogNode,
+} from "@/shared/operation-catalogs";
 import { SER_V2_REPORT_OUTPUTS } from "@/shared/ser-v2-constants";
 import { buildSerV2References } from "@/shared/ser-v2-refs";
 import { coalesceWorkStatuses, newWorkStatusId } from "@/shared/work-statuses";
 import type {
   AssigneeCatalogData,
   ClientCatalogsData,
+  OperationCatalogNode,
   ExtraFieldsData,
   FieldAnswer,
   ModuleLinksData,
@@ -569,6 +575,79 @@ function catalogId(label: string) {
   return label.toLowerCase().replace(/\W+/g, "-");
 }
 
+function OperationCatalogNodeEditor({
+  node,
+  depth,
+  disabled,
+  newChildDraft,
+  onNewChildDraftChange,
+  onUpdateLabel,
+  onRemove,
+  onAddChild,
+}: {
+  node: OperationCatalogNode;
+  depth: number;
+  disabled?: boolean;
+  newChildDraft: Record<string, string>;
+  onNewChildDraftChange: (nodeId: string, value: string) => void;
+  onUpdateLabel: (nodeId: string, label: string) => void;
+  onRemove: (nodeId: string) => void;
+  onAddChild: (parentId: string) => void;
+}) {
+  const childPlaceholder = depth === 0 ? "Agregar subcatálogo" : "Agregar subnivel";
+
+  return (
+    <div className={depth > 0 ? "space-y-2 pl-3 border-l border-[var(--border)]" : "space-y-2"}>
+      <div className="flex gap-2 items-center">
+        <input
+          className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+          disabled={disabled}
+          placeholder={depth === 0 ? "Nombre del catálogo" : "Nombre del subnivel"}
+          value={node.label}
+          onChange={(e) => onUpdateLabel(node.id, e.target.value)}
+        />
+        {!disabled ? (
+          <button type="button" className="btn btn-ghost text-xs shrink-0" onClick={() => onRemove(node.id)}>
+            Quitar
+          </button>
+        ) : null}
+      </div>
+      {node.children.map((child) => (
+        <OperationCatalogNodeEditor
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          disabled={disabled}
+          newChildDraft={newChildDraft}
+          onNewChildDraftChange={onNewChildDraftChange}
+          onUpdateLabel={onUpdateLabel}
+          onRemove={onRemove}
+          onAddChild={onAddChild}
+        />
+      ))}
+      {!disabled ? (
+        <div className="flex gap-2">
+          <input
+            className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+            placeholder={childPlaceholder}
+            value={newChildDraft[node.id] ?? ""}
+            onChange={(e) => onNewChildDraftChange(node.id, e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onAddChild(node.id);
+              }
+            }}
+          />
+          <button type="button" className="btn btn-ghost text-xs" onClick={() => onAddChild(node.id)}>
+            Agregar
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function SurveyClientCatalogsBuilder({
   label,
   hint,
@@ -583,66 +662,24 @@ export function SurveyClientCatalogsBuilder({
   onChange: (next: ClientCatalogsData) => void;
 }) {
   const [newCatalog, setNewCatalog] = useState("");
-  const [newSubcatalog, setNewSubcatalog] = useState<Record<string, string>>({});
+  const [newChildDraft, setNewChildDraft] = useState<Record<string, string>>({});
 
   function updateCatalogs(catalogs: ClientCatalogsData["catalogs"]) {
     onChange({ catalogs });
   }
 
-  function addCatalog(labelValue: string) {
+  function addRootCatalog(labelValue: string) {
     const trimmed = labelValue.trim();
     if (!trimmed) return;
-    updateCatalogs([...data.catalogs, { id: newOperationCatalogId(), label: trimmed, subcatalogs: [] }]);
+    updateCatalogs(addCatalogNode(data.catalogs, null, trimmed));
     setNewCatalog("");
   }
 
-  function updateCatalog(catalogIdValue: string, patch: Partial<ClientCatalogsData["catalogs"][number]>) {
-    updateCatalogs(data.catalogs.map((item) => (item.id === catalogIdValue ? { ...item, ...patch } : item)));
-  }
-
-  function removeCatalog(catalogIdValue: string) {
-    updateCatalogs(data.catalogs.filter((item) => item.id !== catalogIdValue));
-  }
-
-  function addSubcatalog(catalogIdValue: string) {
-    const trimmed = (newSubcatalog[catalogIdValue] ?? "").trim();
+  function addChild(parentId: string) {
+    const trimmed = (newChildDraft[parentId] ?? "").trim();
     if (!trimmed) return;
-    updateCatalogs(
-      data.catalogs.map((item) =>
-        item.id === catalogIdValue
-          ? {
-              ...item,
-              subcatalogs: [...item.subcatalogs, { id: newOperationCatalogId("sub"), label: trimmed }],
-            }
-          : item,
-      ),
-    );
-    setNewSubcatalog({ ...newSubcatalog, [catalogIdValue]: "" });
-  }
-
-  function updateSubcatalog(catalogIdValue: string, subcatalogId: string, labelValue: string) {
-    updateCatalogs(
-      data.catalogs.map((item) =>
-        item.id === catalogIdValue
-          ? {
-              ...item,
-              subcatalogs: item.subcatalogs.map((sub) =>
-                sub.id === subcatalogId ? { ...sub, label: labelValue } : sub,
-              ),
-            }
-          : item,
-      ),
-    );
-  }
-
-  function removeSubcatalog(catalogIdValue: string, subcatalogId: string) {
-    updateCatalogs(
-      data.catalogs.map((item) =>
-        item.id === catalogIdValue
-          ? { ...item, subcatalogs: item.subcatalogs.filter((sub) => sub.id !== subcatalogId) }
-          : item,
-      ),
-    );
+    updateCatalogs(addCatalogNode(data.catalogs, parentId, trimmed));
+    setNewChildDraft({ ...newChildDraft, [parentId]: "" });
   }
 
   return (
@@ -656,62 +693,19 @@ export function SurveyClientCatalogsBuilder({
       ) : null}
       <div className="space-y-3">
         {data.catalogs.map((catalog) => (
-          <article key={catalog.id} className="survey-role-card space-y-2">
-            <div className="flex gap-2 items-center">
-              <input
-                className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                disabled={disabled}
-                placeholder="Nombre del catálogo"
-                value={catalog.label}
-                onChange={(e) => updateCatalog(catalog.id, { label: e.target.value })}
-              />
-              {!disabled ? (
-                <button type="button" className="btn btn-ghost text-xs shrink-0" onClick={() => removeCatalog(catalog.id)}>
-                  Quitar
-                </button>
-              ) : null}
-            </div>
-            <div className="space-y-2 pl-3 border-l border-[var(--border)]">
-              {catalog.subcatalogs.map((subcatalog) => (
-                <div key={subcatalog.id} className="flex gap-2 items-center">
-                  <input
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                    disabled={disabled}
-                    placeholder="Nombre del subcatálogo"
-                    value={subcatalog.label}
-                    onChange={(e) => updateSubcatalog(catalog.id, subcatalog.id, e.target.value)}
-                  />
-                  {!disabled ? (
-                    <button
-                      type="button"
-                      className="btn btn-ghost text-xs shrink-0"
-                      onClick={() => removeSubcatalog(catalog.id, subcatalog.id)}
-                    >
-                      Quitar
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-              {!disabled ? (
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                    placeholder="Agregar subcatálogo"
-                    value={newSubcatalog[catalog.id] ?? ""}
-                    onChange={(e) => setNewSubcatalog({ ...newSubcatalog, [catalog.id]: e.target.value })}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addSubcatalog(catalog.id);
-                      }
-                    }}
-                  />
-                  <button type="button" className="btn btn-ghost text-xs" onClick={() => addSubcatalog(catalog.id)}>
-                    Agregar
-                  </button>
-                </div>
-              ) : null}
-            </div>
+          <article key={catalog.id} className="survey-role-card">
+            <OperationCatalogNodeEditor
+              node={catalog}
+              depth={0}
+              disabled={disabled}
+              newChildDraft={newChildDraft}
+              onNewChildDraftChange={(nodeId, value) => setNewChildDraft({ ...newChildDraft, [nodeId]: value })}
+              onUpdateLabel={(nodeId, labelValue) =>
+                updateCatalogs(updateCatalogNode(data.catalogs, nodeId, { label: labelValue }))
+              }
+              onRemove={(nodeId) => updateCatalogs(removeCatalogNode(data.catalogs, nodeId))}
+              onAddChild={addChild}
+            />
           </article>
         ))}
       </div>
@@ -725,11 +719,11 @@ export function SurveyClientCatalogsBuilder({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                addCatalog(newCatalog);
+                addRootCatalog(newCatalog);
               }
             }}
           />
-          <button type="button" className="btn btn-ghost text-xs" onClick={() => addCatalog(newCatalog)}>
+          <button type="button" className="btn btn-ghost text-xs" onClick={() => addRootCatalog(newCatalog)}>
             Agregar catálogo
           </button>
         </div>

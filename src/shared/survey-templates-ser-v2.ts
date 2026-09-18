@@ -70,7 +70,7 @@ export function buildSerV2Sections(): TemplateSection[] {
         id: "op.SER.v2.cat.clientCatalogs",
         type: "client-catalogs-v2",
         label: "¿Qué catálogos necesitará la operación del cliente?",
-        hint: "Agregue los catálogos y subcatálogos del negocio. Suele ser lo que más diferencia una operación de otra.",
+        hint: "Agregue catálogos y subniveles según aplique. Puede anidar tantos niveles como necesite el negocio.",
       },
     ]),
     opSection("b1", "1. Creación OS", "1. Creación de la orden de servicio", [
