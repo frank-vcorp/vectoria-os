@@ -132,12 +132,6 @@ function checklist(
   };
 }
 
-function tools(id: string, label: string, options: string[]): TemplateField {
-  const hasSoftware = options.some((option) => /software/i.test(option));
-  const merged = hasSoftware ? options : [...options, "Software"];
-  return { id, type: "tools", label, options: merged };
-}
-
 function table(id: string, label: string, columns: { id: string; label: string }[], addLabel: string): TemplateField {
   return { id, type: "table", label, columns, addLabel };
 }
@@ -163,16 +157,6 @@ const EXEC_COLUMNS = [
   { id: "result", label: "Resultado / salida" },
 ];
 
-const DEFAULT_TOOLS = [
-  "WhatsApp",
-  "Excel",
-  "Correo",
-  "Papel / formatos impresos",
-  "Agenda / calendario",
-  "Carpetas locales",
-  "Drive / nube",
-];
-
 type GuideItem = { id: string; group?: string; text: string };
 
 type TransversalArea = {
@@ -183,7 +167,6 @@ type TransversalArea = {
   frequent: string[];
   secondary: string[];
   suggestedRoles: SuggestedRole[];
-  tools: string[];
   guides: GuideItem[];
 };
 
@@ -216,7 +199,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Gerente comercial", hint: "Aprueba condiciones, descuentos y cierre" },
       { label: "Atención a clientes", hint: "Recibe solicitudes y canaliza" },
     ],
-    tools: ["WhatsApp", "Excel", "Correo", "Papel"],
     guides: [
       { id: "p1", group: "Prospectos", text: "¿Cómo registran actualmente a un prospecto?" },
       { id: "p2", group: "Prospectos", text: "¿Quién puede registrarlo?" },
@@ -266,7 +248,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Coordinador de cuenta", hint: "Actualiza datos y da seguimiento" },
       { label: "Gerente", hint: "Autoriza condiciones especiales" },
     ],
-    tools: ["WhatsApp", "Excel", "Correo", "Papel"],
     guides: [
       { id: "a1", group: "Alta e información", text: "¿Cuándo consideran formalmente que alguien ya es cliente?" },
       { id: "a2", group: "Alta e información", text: "¿Quién puede darlo de alta?" },
@@ -309,7 +290,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Autorizador de compra", hint: "Aprueba la compra" },
       { label: "Recepción", hint: "Recibe y verifica mercancía" },
     ],
-    tools: ["WhatsApp", "Excel", "Correo", "Papel"],
     guides: [
       { id: "p1", group: "Proceso", text: "¿Quién detecta o solicita una compra?" },
       { id: "p2", group: "Proceso", text: "¿Cómo se registra la necesidad?" },
@@ -350,7 +330,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Supervisor de almacén", hint: "Autoriza movimientos y ajustes" },
       { label: "Conteo / ajustes", hint: "Realiza inventarios físicos" },
     ],
-    tools: ["Excel", "Papel", "Código de barras", "Conteo manual"],
     guides: [
       { id: "c1", group: "Control", text: "¿Qué controlan en inventario?" },
       { id: "c2", group: "Control", text: "¿Cómo se registran entradas y salidas?" },
@@ -388,7 +367,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Cobranza", hint: "Da seguimiento a pagos" },
       { label: "Autorizador de crédito", hint: "Aprueba crédito o condiciones" },
     ],
-    tools: ["Correo", "Excel", "Portal / PAC", "Contabilidad"],
     guides: [
       { id: "p1", group: "Proceso", text: "¿Cuándo se factura?" },
       { id: "p2", group: "Proceso", text: "¿Quién solicita y quién genera la factura?" },
@@ -428,7 +406,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Contabilidad", hint: "Control contable y reportes" },
       { label: "Autorizador de egresos", hint: "Aprueba pagos y gastos" },
     ],
-    tools: ["Excel", "Bancos", "Papel", "Contabilidad externa"],
     guides: [
       { id: "i1", group: "Ingresos y egresos", text: "¿Cómo registran ingresos y gastos?" },
       { id: "i2", group: "Ingresos y egresos", text: "¿Cómo relacionan un pago con una venta o servicio?" },
@@ -462,7 +439,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Revisor", hint: "Revisa antes de enviar o firmar" },
       { label: "Autorizador / firmante", hint: "Firma o autoriza documentos" },
     ],
-    tools: ["WhatsApp", "Correo", "Carpetas locales", "Nube / Drive", "Papel"],
     guides: [
       { id: "d1", group: "Documentos", text: "¿Qué documentos generan?" },
       { id: "d2", group: "Documentos", text: "¿Quién los crea?" },
@@ -501,7 +477,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Jefe inmediato", hint: "Supervisa al personal" },
       { label: "Dirección", hint: "Aprueba cambios relevantes" },
     ],
-    tools: ["Excel", "Papel", "Reloj checador", "WhatsApp"],
     guides: [
       { id: "a1", group: "Administración", text: "¿Qué información guardan de cada colaborador?" },
       { id: "a2", group: "Administración", text: "¿Cómo controlan asistencia e incidencias?" },
@@ -538,7 +513,6 @@ const TRANSVERSAL_AREAS: TransversalArea[] = [
       { label: "Control interno", hint: "Revisa cumplimiento" },
       { label: "Quien prepara reportes", hint: "Consolida información" },
     ],
-    tools: ["Excel", "WhatsApp", "Correo", "Reportes manuales"],
     guides: [
       { id: "i1", group: "Información", text: "¿Qué necesita saber normalmente el dueño o director?" },
       { id: "i2", group: "Información", text: "¿Qué consulta diariamente?" },
@@ -595,7 +569,6 @@ function transversalSection(area: TransversalArea): TemplateSection {
         area.flowExample,
         "Describa el flujo actual y cómo se realiza.",
       ),
-      tools(`${p}.tools`, "Herramientas utilizadas", area.tools),
       text(`${p}.problems`, "Problemas o necesidades detectadas"),
       text(`${p}.expected`, "Resultado esperado por el cliente"),
       text(`${p}.rules`, "Reglas, autorizaciones y excepciones"),
@@ -614,7 +587,6 @@ type OperationSpec = {
   startEvent: string;
   receives: string;
   finishedWhen: string;
-  howTools: string[];
   recaptureExample: string;
   extraAfterHow?: TemplateSection[];
   extraAfterExec?: TemplateSection[];
@@ -696,7 +668,6 @@ function buildOperationSections(spec: OperationSpec): TemplateSection[] {
     ]),
     opSection(t, "como", "Cómo se realiza actualmente", [
       table(`${p}.como.stages`, "Etapa / actividad, cómo se realiza y herramienta", STAGE_COLUMNS, "Agregar etapa"),
-      tools(`${p}.como.tools`, "Herramientas utilizadas", spec.howTools),
       choice(`${p}.como.recapture`, "¿La información se captura más de una vez?", ["Sí", "No"]),
       text(`${p}.como.recaptureWhere`, "¿Dónde?"),
       choice(`${p}.como.manual`, "¿La información pasa manualmente de una herramienta a otra?", ["Sí", "No"]),
@@ -860,7 +831,6 @@ const SER: OperationSpec = {
   startEvent: "¿Qué evento inicia formalmente el servicio?",
   receives: "¿Qué recibe operación para poder comenzar?",
   finishedWhen: "¿Cuándo se considera terminado?",
-  howTools: DEFAULT_TOOLS,
   recaptureExample: "Excel → WhatsApp → Software → Facturación",
   prepTitle: "Preparación",
   prepReady: [
@@ -1040,7 +1010,6 @@ const DIS: OperationSpec = {
   startEvent: "¿Qué evento inicia formalmente la operación?",
   receives: "¿Qué información recibe operación para comenzar?",
   finishedWhen: "¿Cuándo se considera terminado un pedido?",
-  howTools: DEFAULT_TOOLS,
   recaptureExample: "WhatsApp → Excel → Sistema → Facturación",
   prepTitle: "Preparación del pedido",
   prepReady: [
@@ -1262,7 +1231,6 @@ const MAN: OperationSpec = {
   startEvent: "¿Qué evento genera la necesidad de producir?",
   receives: "¿Qué recibe producción para poder comenzar?",
   finishedWhen: "¿Cuándo se considera terminada una orden de producción?",
-  howTools: ["WhatsApp", "Pizarrón", "Excel", "Carpetas locales", "Correo", "Drive / nube", "Papel / formatos impresos"],
   recaptureExample: "Excel → Orden impresa → Formato de producción → Sistema",
   extraAfterHow: [
     opSection("MAN", "planeacion", "Planeación y preparación", [
@@ -1526,7 +1494,6 @@ const PRY: OperationSpec = {
   startEvent: "¿Qué evento inicia formalmente un proyecto?",
   receives: "¿Qué recibe operación para poder comenzar?",
   finishedWhen: "¿Cuándo se considera terminado un proyecto?",
-  howTools: ["WhatsApp", "Excel", "Correo", "Papel / formatos", "Agenda / calendario", "Drive / nube", "Software de proyectos"],
   recaptureExample: "Cotización → Excel → WhatsApp → Software de proyecto → Facturación",
   extraAfterHow: [
     opSection("PRY", "definicion", "Definición y preparación del proyecto", [
@@ -1721,7 +1688,6 @@ const CIT: OperationSpec = {
   startEvent: "¿Qué evento inicia formalmente la atención?",
   receives: "¿Qué información debe existir antes de atender?",
   finishedWhen: "¿Cuándo se considera terminada una atención?",
-  howTools: ["WhatsApp", "Excel", "Correo", "Agenda física", "Google Calendar", "Papel / formatos impresos", "Carpetas físicas", "Drive / nube"],
   recaptureExample: "WhatsApp → Agenda → Expediente → Excel → Facturación",
   extraAfterHow: [
     opSection("CIT", "agenda", "Agenda y programación", [
@@ -1933,7 +1899,6 @@ const LOG: OperationSpec = {
   startEvent: "¿Qué evento inicia formalmente el servicio?",
   receives: "¿Qué información necesita operación para comenzar?",
   finishedWhen: "¿Cuándo se considera terminado un viaje / envío?",
-  howTools: ["WhatsApp", "Excel", "Correo", "Papel / formatos impresos", "Agenda / calendario", "GPS / rastreo", "Drive / nube"],
   recaptureExample: "WhatsApp → Excel → GPS → Evidencia → Facturación",
   extraAfterHow: [
     opSection("LOG", "programacion", "Programación y preparación", [
