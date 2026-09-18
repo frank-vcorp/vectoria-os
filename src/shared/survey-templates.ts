@@ -45,6 +45,7 @@ export type TemplateField = {
   frequentOptions?: string[];
   secondaryOptions?: string[];
   allowOther?: boolean;
+  allowAddOptions?: boolean;
   exclusiveValues?: string[];
   columns?: { id: string; label: string }[];
   addLabel?: string;
@@ -124,7 +125,7 @@ function checklist(
   id: string,
   label: string,
   options: string[],
-  extras?: { allowOther?: boolean; exclusiveValues?: string[]; hint?: string },
+  extras?: { allowOther?: boolean; allowAddOptions?: boolean; exclusiveValues?: string[]; hint?: string },
 ): TemplateField {
   return {
     id,
@@ -132,6 +133,7 @@ function checklist(
     label,
     options,
     allowOther: extras?.allowOther,
+    allowAddOptions: extras?.allowAddOptions,
     exclusiveValues: extras?.exclusiveValues,
     hint: extras?.hint,
   };
@@ -551,8 +553,8 @@ function transversalSection(area: TransversalArea): TemplateSection {
         "Rol general en esta área",
         "Seleccione uno de los roles generales definidos en Datos generales.",
       ),
-      checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowOther: true }),
-      checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowOther: true }),
+      checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowAddOptions: true }),
+      checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowAddOptions: true }),
       text(`${p}.trigger`, area.trigger),
       flow(
         `${p}.flow`,

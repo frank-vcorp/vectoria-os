@@ -226,6 +226,7 @@ export type FieldAnswer = {
   text?: string;
   choice?: string | null;
   selected?: string[];
+  customOptions?: string[];
   other?: string;
   software?: string;
   fileName?: string;
@@ -284,6 +285,7 @@ export function hasFieldContent(answer: FieldAnswer | undefined): boolean {
   if (answer.software?.trim()) return true;
   if (answer.fileName?.trim()) return true;
   if (answer.selected && answer.selected.length > 0) return true;
+  if (answer.customOptions?.some((option) => option.trim())) return true;
   if (answer.rows?.some((row) => Object.values(row).some((value) => value.trim()))) return true;
   if (answer.extraNotes && Object.values(answer.extraNotes).some((value) => value.trim())) return true;
   if (answer.flowBlocks?.some((block) => block.label.trim())) return true;

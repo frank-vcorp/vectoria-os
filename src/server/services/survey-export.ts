@@ -1,3 +1,4 @@
+import { checklistAllOptions } from "@/shared/checklist-options";
 import { escapeHtml, wrapPrintableDocument } from "@/shared/document-letterhead";
 import { coalesceFlowAnswer, flowBlocksToArrowText } from "@/shared/flow-blocks";
 import { coalesceRoleMapAnswer, roleMapActivitiesForRole, roleMapUnassignedActivities } from "@/shared/role-map";
@@ -43,7 +44,10 @@ function fieldAnswerLines(
   }
   if (blank) {
     if (field.type === "checklist" || field.type === "tools") {
-      return [`**${field.label}**`, ...(field.options ?? []).map((option) => `- [ ] ${option}`), field.allowOther ? "- [ ] Otro: ________" : ""].filter(Boolean);
+      const blankLines = [`**${field.label}**`, ...(field.options ?? []).map((option) => `- [ ] ${option}`)];
+      if (field.allowAddOptions) blankLines.push("- [ ] (agregar procesos según aplique)");
+      else if (field.allowOther) blankLines.push("- [ ] Otro: ________");
+      return blankLines;
     }
     if (field.type === "table") {
       return [`**${field.label}**`, `| ${(field.columns ?? []).map((col) => col.label).join(" | ")} |`, `| ${(field.columns ?? []).map(() => "---").join(" | ")} |`];
@@ -63,10 +67,11 @@ function fieldAnswerLines(
   }
   if (field.type === "checklist" || field.type === "tools") {
     const selected = new Set(answer.selected ?? []);
-    for (const option of field.options ?? []) {
+    const options = field.allowAddOptions ? checklistAllOptions(field.options, answer) : (field.options ?? []);
+    for (const option of options) {
       lines.push(`- [${selected.has(option) ? "x" : " "}] ${option}${selected.has(option) ? "" : " *(no seleccionada; no es una respuesta negativa)*"}`);
     }
-    if (answer.other?.trim()) lines.push(`- Otro: ${mdEscape(answer.other)}`);
+    if (!field.allowAddOptions && answer.other?.trim()) lines.push(`- Otro: ${mdEscape(answer.other)}`);
     if (field.type === "tools") {
       const selected = answer.selected ?? [];
       if (toolOptionUsesSoftware(selected) && answer.software?.trim()) {
@@ -266,9 +271,11 @@ function htmlField(field: TemplateField): string {
     const extra =
       field.type === "tools"
         ? `${htmlBox("Si marcó Software, indique cuál")}${htmlBox("Si marcó Papel / formatos, indique cuál archivo o formato")}`
-        : field.allowOther
-          ? htmlBox("Otro")
-          : "";
+        : field.allowAddOptions
+          ? htmlBox("Agregar procesos adicionales")
+          : field.allowOther
+            ? htmlBox("Otro")
+            : "";
     return `<p class="sv-label">${escapeHtml(field.label)}</p><div class="sv-checks">${options}</div>${extra}`;
   }
   if (field.type === "table") {
