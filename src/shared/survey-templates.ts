@@ -538,6 +538,11 @@ function transversalSection(area: TransversalArea): TemplateSection {
     applicabilityFieldId: `${p}.applicability`,
     fields: pendingable([
       { id: `${p}.applicability`, type: "applicability", label: "Aplicabilidad" },
+      text(
+        `${p}.responsable`,
+        "Responsable del proceso",
+        "Persona de contacto directo si hay dudas sobre este proceso (opcional).",
+      ),
       checklist(`${p}.frequent`, "Procesos frecuentes", area.frequent, { allowOther: true }),
       checklist(`${p}.secondary`, "Procesos según aplique", area.secondary, { allowOther: true }),
       text(`${p}.trigger`, area.trigger),
