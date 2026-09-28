@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-/** Genera HTML de muestra con membrete VectorIA en public/samples/ */
+/** Genera HTML de muestra con membrete SystronIA en public/samples/ */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderQuoteHtml, renderServiceOrderHtml } from "../src/server/pdf/document-html";
@@ -17,7 +17,7 @@ const quoteHtml = renderQuoteHtml({
   price: 185_000_00,
   deliveryTime: "45 días hábiles",
   paymentConditionName: "50% anticipo · 50% contra entrega",
-  termsConditionName: "Términos generales VectorIA",
+  termsConditionName: "Términos generales SystronIA",
   termsText:
     "1. Vigencia: esta cotización tiene validez de 15 días naturales.\n2. Alcance: incluye únicamente lo descrito en Implementación y Suscripciones.",
   observations: "Incluye capacitación inicial de 4 horas para el equipo operativo.",
@@ -75,8 +75,8 @@ const emailHtml = renderBrandedEmailHtml({
     { label: "Cliente", value: "Acme Industrial S.A. de C.V." },
     { label: "Folio", value: "COT-2026-0042" },
   ],
-  ctaLabel: "Visitar vector-ia.mx",
-  ctaUrl: "https://vector-ia.mx",
+  ctaLabel: "Visitar systronia.com",
+  ctaUrl: "https://systronia.com",
 });
 
 writeFileSync(join(outDir, "cotizacion-muestra.html"), quoteHtml, "utf8");

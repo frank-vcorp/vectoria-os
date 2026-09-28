@@ -18,9 +18,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "VectorIA OS",
-  description: "Sistema operativo interno VectorIA",
-  applicationName: "VectorIA OS",
+  title: "SystronIA OS",
+  description: "Sistema operativo interno SystronIA",
+  applicationName: "SystronIA OS",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "VectorIA",
+    title: "SystronIA",
   },
   formatDetection: {
     telephone: false,
@@ -41,8 +41,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0A1F44" },
-    { media: "(prefers-color-scheme: dark)", color: "#0A1F44" },
+    { media: "(prefers-color-scheme: light)", color: "#1A1D20" },
+    { media: "(prefers-color-scheme: dark)", color: "#0A0A0A" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -50,7 +50,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const themeInitScript = `(function(){try{var t=localStorage.getItem('vectoria-theme');document.documentElement.dataset.theme=t==='dark'?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();`;
+const themeInitScript = `(function(){try{var t=localStorage.getItem('systronia-theme')||localStorage.getItem('vectoria-theme');document.documentElement.dataset.theme=t==='dark'?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

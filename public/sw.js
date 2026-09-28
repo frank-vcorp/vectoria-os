@@ -1,14 +1,15 @@
 /**
- * VectorIA OS — Service Worker
+ * SystronIA OS — Service Worker
  * Caché de shell, assets estáticos y páginas visitadas; fallback offline.
  */
-const SW_VERSION = "2";
-const STATIC_CACHE = `vectoria-static-${SW_VERSION}`;
-const RUNTIME_CACHE = `vectoria-runtime-${SW_VERSION}`;
+const SW_VERSION = "3";
+const STATIC_CACHE = `systronia-static-${SW_VERSION}`;
+const RUNTIME_CACHE = `systronia-runtime-${SW_VERSION}`;
 
 const PRECACHE_URLS = [
   "/offline",
   "/logo.png",
+  "/logo-on-dark.png",
   "/favicon.png",
   "/icon-192.png",
   "/icon-512.png",

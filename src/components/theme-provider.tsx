@@ -10,7 +10,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
-    const stored = localStorage.getItem("vectoria-theme") as Theme | null;
+    const stored = (localStorage.getItem("systronia-theme") ??
+      localStorage.getItem("vectoria-theme")) as Theme | null;
     const next = stored === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = next;
     setThemeState(next);
@@ -18,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   function setTheme(next: Theme) {
     document.documentElement.dataset.theme = next;
-    localStorage.setItem("vectoria-theme", next);
+    localStorage.setItem("systronia-theme", next);
     setThemeState(next);
   }
 

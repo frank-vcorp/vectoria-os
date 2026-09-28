@@ -166,7 +166,7 @@ export function CatalogsManager({ isAdmin = false, canManageBanks = false }: Cat
   const [emailSettings, setEmailSettingsState] = useState({
     enabled: false,
     fromEmail: "",
-    fromName: "VectorIA",
+    fromName: "SystronIA",
     apiKey: "",
     subjectBase: "Documento fiscal",
     bodyBase: "Adjunto encontrará su documento.",
@@ -222,7 +222,7 @@ export function CatalogsManager({ isAdmin = false, canManageBanks = false }: Cat
         setEmailSettingsState({
           enabled: json.email.enabled ?? false,
           fromEmail: json.email.fromEmail ?? "",
-          fromName: json.email.fromName ?? "VectorIA",
+          fromName: json.email.fromName ?? "SystronIA",
           apiKey: "",
           subjectBase: json.email.subjectBase ?? "Documento fiscal",
           bodyBase: json.email.bodyBase ?? "Adjunto encontrará su documento.",

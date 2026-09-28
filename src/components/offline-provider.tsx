@@ -47,7 +47,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         setLastSyncError(result.errors[0]?.error ?? "Error al sincronizar");
       }
       if (result.processed > 0) {
-        window.dispatchEvent(new CustomEvent("vectoria:offline-synced"));
+        window.dispatchEvent(new CustomEvent("systronia:offline-synced"));
       }
     } finally {
       setSyncing(false);

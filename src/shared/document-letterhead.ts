@@ -1,4 +1,4 @@
-import { VECTORIA_BRAND, brandLogoUrl } from "@/shared/brand-contact";
+import { SYSTRONIA_BRAND, brandLogoUrl } from "@/shared/brand-contact";
 
 export function escapeHtml(value: string) {
   return value
@@ -9,7 +9,7 @@ export function escapeHtml(value: string) {
 }
 
 export function documentStyles() {
-  const c = VECTORIA_BRAND.colors;
+  const c = SYSTRONIA_BRAND.colors;
   return `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap');
     @page {
@@ -36,7 +36,7 @@ export function documentStyles() {
       flex-direction: column;
     }
     .doc-header {
-      background: linear-gradient(135deg, ${c.navy} 0%, #152d5c 100%);
+      background: linear-gradient(135deg, ${c.navy} 0%, #2a2e33 100%);
       color: #fff;
       padding: 0.7rem 0.85rem 0.55rem;
       border-radius: 6px 6px 0 0;
@@ -264,7 +264,7 @@ export function documentStyles() {
 }
 
 export function renderDocumentFooter() {
-  const b = VECTORIA_BRAND;
+  const b = SYSTRONIA_BRAND;
   return `
     <footer class="doc-footer">
       <div class="doc-footer-line">
@@ -278,7 +278,7 @@ export function renderDocumentFooter() {
 export function renderDocumentHeader(logoUrl: string) {
   return `
     <div class="doc-logo-wrap">
-      <img class="doc-logo" src="${escapeHtml(logoUrl)}" alt="${escapeHtml(VECTORIA_BRAND.name)}" />
+      <img class="doc-logo" src="${escapeHtml(logoUrl)}" alt="${escapeHtml(SYSTRONIA_BRAND.name)}" />
     </div>
   `;
 }
@@ -370,7 +370,7 @@ export function renderDataTable(headers: string[], rows: string[][]) {
 }
 
 export function quoteDocumentStyles() {
-  const c = VECTORIA_BRAND.colors;
+  const c = SYSTRONIA_BRAND.colors;
   return `
     .quote-doc { display: flex; flex-direction: column; gap: 0.75rem; }
     .quote-summary {
@@ -413,7 +413,7 @@ export function quoteDocumentStyles() {
     .quote-summary-total {
       min-width: 2.4in;
       padding: 0.75rem 0.85rem;
-      background: linear-gradient(160deg, ${c.navy} 0%, #152d5c 100%);
+      background: linear-gradient(160deg, ${c.navy} 0%, #2a2e33 100%);
       color: #fff;
       text-align: right;
       display: flex;

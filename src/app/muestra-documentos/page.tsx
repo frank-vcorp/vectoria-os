@@ -10,7 +10,7 @@ const SAMPLES = [
 export default function MuestraDocumentosIndexPage() {
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", maxWidth: 560, margin: "3rem auto", padding: "0 1rem" }}>
-      <h1 style={{ fontSize: "1.35rem", marginBottom: "0.5rem" }}>Muestras de documentos VectorIA</h1>
+      <h1 style={{ fontSize: "1.35rem", marginBottom: "0.5rem" }}>Muestras de documentos SystronIA</h1>
       <p style={{ color: "#64748b", marginBottom: "1.5rem" }}>
         Datos de ejemplo. Usa Imprimir / Guardar PDF en cada documento para ver el resultado final.
       </p>

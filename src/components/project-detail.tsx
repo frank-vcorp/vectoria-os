@@ -199,8 +199,12 @@ export function ProjectDetailView({ id }: { id: string }) {
     function onSynced() {
       void load();
     }
+    window.addEventListener("systronia:offline-synced", onSynced);
     window.addEventListener("vectoria:offline-synced", onSynced);
-    return () => window.removeEventListener("vectoria:offline-synced", onSynced);
+    return () => {
+      window.removeEventListener("systronia:offline-synced", onSynced);
+      window.removeEventListener("vectoria:offline-synced", onSynced);
+    };
   }, [id]);
 
   useEffect(() => {

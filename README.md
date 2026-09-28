@@ -1,6 +1,8 @@
-# VectorIA OS
+# SystronIA OS
 
-Sistema web interno para VectorIA: flujo comercial, ejecución de proyectos, suscripciones, finanzas y facturación CFDI.
+Sistema web interno para **SystronIA** (*Inteligencia aplicada a tu negocio*): flujo comercial, ejecución de proyectos, suscripciones, finanzas y facturación CFDI.
+
+**Producción:** https://os.systronia.com · **Contacto:** contacto@systronia.com
 
 | | |
 |---|---|
@@ -67,8 +69,8 @@ Referencia: [`Docs/plan-desarrollo-vectoria-v1.0.md`](Docs/plan-desarrollo-vecto
 
 Credenciales seed (cambiar en producción):
 
-- Correo: `admin@vector-ia.mx`
-- Contraseña: `VectorIA2026!`
+- Correo: `admin@systronia.com` (o `ADMIN_EMAIL` en seed)
+- Contraseña: `SystronIA2026!` (o `ADMIN_PASSWORD`)
 
 ---
 
@@ -89,10 +91,13 @@ Scripts de Fase 4 (no usados en Fase 1): `npm run test:plan-parser`
 ## Despliegue Coolify
 
 - Dockerfile incluido · puerto `43123`
-- Variables: `DATABASE_URL`, `SESSION_SECRET`, `FACTURAPI_API_KEY`
+- Variables: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_APP_URL` (p. ej. `https://os.systronia.com`), `FACTURAPI_API_KEY`
 - Healthcheck: `GET /api/health` · start-period **30s** (Coolify + Dockerfile)
 - El entrypoint ejecuta migraciones al arrancar y el seed en segundo plano (idempotente)
+- Dominio app: **`os.systronia.com`** (antes `vectoria-os.vector-ia.mx`). Script: `./scripts/coolify-systronia-domains.sh` (FQDN + `NEXT_PUBLIC_APP_URL`)
 - Deploy sin espera larga: `./scripts/coolify-deploy.sh` (dispara y sigue; `--wait` espera máx. ~90s)
+
+Tras cambiar dominio: actualizar DNS (`os` → servidor Coolify), certificado SSL en Coolify, quitar el dominio antiguo y redeploy.
 
 ---
 

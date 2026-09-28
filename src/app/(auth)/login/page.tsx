@@ -38,8 +38,8 @@ export default function LoginPage() {
       <PwaInstallPrompt />
       <div className="auth-card">
         <div className="auth-brand">
-          <Image src="/logo.png" alt="VectorIA" width={168} height={44} priority />
-          <p>Sistema operativo interno</p>
+          <Image src="/logo.png" alt="SystronIA" width={220} height={52} className="auth-logo" priority />
+          <p>Inteligencia aplicada a tu negocio</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

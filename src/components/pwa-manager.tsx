@@ -7,7 +7,7 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-const DISMISS_KEY = "vectoria-pwa-install-dismissed";
+const DISMISS_KEY = "systronia-pwa-install-dismissed";
 const DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
 
 function isStandalone() {
@@ -94,7 +94,7 @@ export function PwaInstallPrompt() {
   return (
     <div className="pwa-banner" role="region" aria-label="Instalar aplicación">
       <div className="pwa-banner-text">
-        <p className="pwa-banner-title">Instalar VectorIA OS</p>
+        <p className="pwa-banner-title">Instalar SystronIA OS</p>
         <p className="pwa-banner-desc">
           {iosHint
             ? "En Safari: Compartir → Agregar a pantalla de inicio."

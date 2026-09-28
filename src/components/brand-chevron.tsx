@@ -1,4 +1,4 @@
-/** Chevron del isotipo VectorIA — decoración de UI, no lógica. */
+/** Chevron del isotipo SystronIA — decoración de UI, no lógica. */
 export function BrandChevron({ className = "" }: { className?: string }) {
   return (
     <svg

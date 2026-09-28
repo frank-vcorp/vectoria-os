@@ -1,39 +1,39 @@
 @import "tailwindcss";
 
-/* ─── VectorIA — tokens de marca ─── */
+/* ─── SystronIA — tokens de marca ─── */
 :root,
 [data-theme="light"] {
   color-scheme: light;
 
-  --brand-navy: #0a1f44;
-  --brand-orange: #d35400;
+  --brand-navy: #1a1d20;
+  --brand-orange: #b30f1a;
   --brand-slate: #2c3e50;
 
-  --bg: #e8edf5;
+  --bg: #eef0f2;
   --surface: #ffffff;
-  --surface-2: #f4f7fb;
-  --surface-3: #e9eef6;
-  --border: #cfd8e6;
-  --border-subtle: #e4eaf3;
+  --surface-2: #f6f7f8;
+  --surface-3: #e9ecef;
+  --border: #d4d8de;
+  --border-subtle: #e8eaed;
 
-  --text: #0a1f44;
+  --text: #1a1d20;
   --text-secondary: #334155;
   --muted: #64748b;
 
-  --accent: #0a1f44;
-  --accent-hover: #152d5c;
-  --accent-soft: #e8eef8;
-  --accent-brand: #d35400;
-  --accent-brand-hover: #b84700;
-  --accent-brand-soft: #fdf0e6;
+  --accent: #1a1d20;
+  --accent-hover: #2a2e33;
+  --accent-soft: #eceef0;
+  --accent-brand: #b30f1a;
+  --accent-brand-hover: #961018;
+  --accent-brand-soft: #fce8ea;
 
-  --sidebar-bg: #0a1f44;
-  --sidebar-bg-2: #0d274f;
-  --sidebar-text: #e8edf5;
-  --sidebar-muted: #94a3b8;
+  --sidebar-bg: #0a0a0a;
+  --sidebar-bg-2: #141414;
+  --sidebar-text: #f4f4f5;
+  --sidebar-muted: #a1a1aa;
   --sidebar-hover: rgb(255 255 255 / 0.06);
-  --sidebar-active: rgb(211 84 0 / 0.18);
-  --sidebar-active-border: #d35400;
+  --sidebar-active: rgb(179 15 26 / 0.22);
+  --sidebar-active-border: #b30f1a;
 
   --success: #166534;
   --success-soft: #ecfdf3;
@@ -42,8 +42,8 @@
   --warning: #92400e;
   --warning-soft: #fffbeb;
 
-  --shadow-sm: 0 1px 2px rgb(10 31 68 / 0.05);
-  --shadow-md: 0 8px 28px rgb(10 31 68 / 0.08);
+  --shadow-sm: 0 1px 2px rgb(26 29 32 / 0.06);
+  --shadow-md: 0 8px 28px rgb(26 29 32 / 0.1);
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -73,20 +73,20 @@
   --text-secondary: #cbd5e1;
   --muted: #8b9bb4;
 
-  --accent: #5b8def;
-  --accent-hover: #7aa3f5;
-  --accent-soft: #1a2740;
-  --accent-brand: #e67e22;
-  --accent-brand-hover: #f39c12;
-  --accent-brand-soft: #2a2018;
+  --accent: #f87171;
+  --accent-hover: #fca5a5;
+  --accent-soft: #2a1518;
+  --accent-brand: #ef4444;
+  --accent-brand-hover: #f87171;
+  --accent-brand-soft: #2a1518;
 
-  --sidebar-bg: #060b12;
-  --sidebar-bg-2: #0c1420;
-  --sidebar-text: #e8edf5;
-  --sidebar-muted: #7d8da6;
+  --sidebar-bg: #050505;
+  --sidebar-bg-2: #0f0f0f;
+  --sidebar-text: #f4f4f5;
+  --sidebar-muted: #9ca3af;
   --sidebar-hover: rgb(255 255 255 / 0.05);
-  --sidebar-active: rgb(230 126 34 / 0.2);
-  --sidebar-active-border: #e67e22;
+  --sidebar-active: rgb(179 15 26 / 0.28);
+  --sidebar-active-border: #ef4444;
 
   --success: #4ade80;
   --success-soft: #14281e;
@@ -115,8 +115,8 @@ body {
   font-size: 0.9375rem;
   line-height: 1.5;
   background:
-    radial-gradient(ellipse 80% 50% at 0% -10%, rgb(10 31 68 / 0.08), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(211 84 0 / 0.05), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 0% -10%, rgb(26 29 32 / 0.06), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(179 15 26 / 0.05), transparent 50%),
     var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -127,8 +127,8 @@ body {
 
 [data-theme="dark"] body {
   background:
-    radial-gradient(ellipse 70% 45% at 0% -10%, rgb(91 141 239 / 0.08), transparent 55%),
-    radial-gradient(ellipse 50% 35% at 100% 0%, rgb(230 126 34 / 0.06), transparent 50%),
+    radial-gradient(ellipse 70% 45% at 0% -10%, rgb(179 15 26 / 0.08), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 100% 0%, rgb(239 68 68 / 0.05), transparent 50%),
     var(--bg);
 }
 
@@ -260,14 +260,16 @@ button {
 .app-logo {
   height: auto;
   width: auto;
-  max-width: 120px;
+  max-width: 168px;
+  max-height: 40px;
   object-fit: contain;
 }
 
 .app-logo-top {
   height: auto;
   width: auto;
-  max-width: 108px;
+  max-width: 140px;
+  max-height: 32px;
   object-fit: contain;
 }
 
@@ -1340,8 +1342,11 @@ tbody tr:last-child td {
   margin-bottom: 1.75rem;
 }
 
-.auth-brand img {
+.auth-brand img,
+.auth-logo {
   margin: 0 auto 0.85rem;
+  max-width: min(240px, 100%);
+  height: auto;
 }
 
 .auth-brand p {

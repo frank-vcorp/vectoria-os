@@ -8,7 +8,7 @@ import type { ModuleKey, RoleKey } from "@/shared/modules";
 import { DEFAULT_ROLE_MODULES } from "@/shared/modules";
 import { getModuleAccess } from "@/server/services/permissions";
 
-const SESSION_COOKIE = "vectoria_session";
+const SESSION_COOKIE = "systronia_session";
 const SESSION_DAYS = 7;
 
 export type ModuleAccessLevel = "read" | "write";

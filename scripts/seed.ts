@@ -21,8 +21,8 @@ import { ensureDefaultBankAccount } from "@/server/services/bank-accounts";
 import { ensureDefaultSettings } from "@/server/services/settings";
 
 async function seed() {
-  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@vector-ia.mx";
-  const adminPassword = process.env.ADMIN_PASSWORD ?? "VectorIA2026!";
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@systronia.com";
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "SystronIA2026!";
   const adminName = process.env.ADMIN_NAME ?? "Administrador";
 
   const existingAdmin = await findUserByEmail(adminEmail);
@@ -99,7 +99,7 @@ async function seed() {
   const termsConditions = await listTermsConditions();
   if (termsConditions.length === 0) {
     await createTermsCondition({
-      name: "Términos generales VectorIA",
+      name: "Términos generales SystronIA",
       body: [
         "1. Vigencia: esta cotización tiene validez de 15 días naturales a partir de su emisión.",
         "2. Alcance: el servicio incluye únicamente lo descrito en Implementación y Suscripciones.",

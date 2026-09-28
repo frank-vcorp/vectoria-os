@@ -73,7 +73,7 @@ function SidebarCollapseIcon() {
   );
 }
 
-const SIDEBAR_COLLAPSED_KEY = "vectoria-sidebar-collapsed";
+const SIDEBAR_COLLAPSED_KEY = "systronia-sidebar-collapsed";
 
 export function AppShell({
   groups,
@@ -92,7 +92,8 @@ export function AppShell({
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      const stored =
+        localStorage.getItem(SIDEBAR_COLLAPSED_KEY) ?? localStorage.getItem("vectoria-sidebar-collapsed");
       if (stored === "0") setSidebarCollapsed(false);
       else if (stored === "1") setSidebarCollapsed(true);
     } catch {
@@ -133,7 +134,7 @@ export function AppShell({
     <>
       <div className="app-brand">
         <div className="app-logo-wrap">
-          <Image src="/logo.png" alt="VectorIA" width={140} height={36} className="app-logo" priority />
+          <Image src="/logo-on-dark.png" alt="SystronIA" width={200} height={42} className="app-logo" priority />
         </div>
         <p className="app-user-name">{user.name}</p>
         <span className="badge badge-role">{roleLabel}</span>
@@ -184,7 +185,7 @@ export function AppShell({
         </button>
         {sidebarCollapsed ? (
           <Link href="/dashboard" className="app-sidebar-mini-logo" aria-label="Inicio">
-            <Image src="/logo.png" alt="" width={32} height={32} className="app-sidebar-mini-logo-img" />
+            <Image src="/logo-on-dark.png" alt="" width={40} height={14} className="app-sidebar-mini-logo-img" />
           </Link>
         ) : null}
         <div className="app-sidebar-inner">{sidebar}</div>
@@ -230,7 +231,7 @@ export function AppShell({
           >
             <MenuIcon />
           </button>
-          <Image src="/logo.png" alt="VectorIA" width={108} height={28} className="app-logo-top" priority />
+          <Image src="/logo.png" alt="SystronIA" width={140} height={32} className="app-logo-top" priority />
           <ThemeToggle />
         </header>
 

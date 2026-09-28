@@ -21,7 +21,7 @@ export async function getEmailSettings() {
   return {
     enabled: map[EMAIL_SETTINGS_KEYS.enabled] === "true",
     fromEmail: map[EMAIL_SETTINGS_KEYS.fromEmail] ?? "",
-    fromName: map[EMAIL_SETTINGS_KEYS.fromName] ?? "VectorIA",
+    fromName: map[EMAIL_SETTINGS_KEYS.fromName] ?? "SystronIA",
     apiKey: map[EMAIL_SETTINGS_KEYS.apiKey] ?? "",
     subjectBase: map[EMAIL_SETTINGS_KEYS.subjectBase] ?? "Documento fiscal",
     bodyBase: map[EMAIL_SETTINGS_KEYS.bodyBase] ?? "Adjunto encontrará su documento.",

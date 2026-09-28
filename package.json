@@ -2,7 +2,7 @@
   "name": "vectoria-os",
   "version": "0.1.0",
   "private": true,
-  "description": "Sistema web interno VectorIA — comercial, proyectos, finanzas y facturación",
+  "description": "SystronIA OS — comercial, proyectos, finanzas y facturación",
   "engines": {
     "node": ">=20.0.0"
   },

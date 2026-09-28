@@ -20,7 +20,7 @@ export type ParsedValidationPlan = {
   phases: ParsedValidationPhase[];
 };
 
-const REQUIRED_HEADER = "# VECTORIA_PLAN_VALIDACION";
+const PLAN_HEADERS = ["# SYSTRONIA_PLAN_VALIDACION", "# VECTORIA_PLAN_VALIDACION"] as const;
 const PHASE_HEADER = /^#\s+Fase\s+(\d+)\s+[—-]\s+(.+)$/im;
 const META_LINE = /^([a-z_]+):\s*(.+)$/i;
 
@@ -79,8 +79,10 @@ function parseBool(value: string | undefined, field: string): boolean {
 export function parseValidationPlanMarkdown(content: string): ParsedValidationPlan {
   const trimmed = content.replace(/^\uFEFF/, "").trim();
   const firstLine = trimmed.split(/\r?\n/)[0]?.trim();
-  if (firstLine !== REQUIRED_HEADER) {
-    throw new Error(`El archivo debe comenzar exactamente con "${REQUIRED_HEADER}"`);
+  if (!PLAN_HEADERS.includes(firstLine as (typeof PLAN_HEADERS)[number])) {
+    throw new Error(
+      `El archivo debe comenzar exactamente con "${PLAN_HEADERS[0]}" (se acepta "${PLAN_HEADERS[1]}" por compatibilidad)`,
+    );
   }
 
   const meta = parseMetaBlock(trimmed);

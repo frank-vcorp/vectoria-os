@@ -177,7 +177,7 @@ export function renderSurveyMarkdown(input: {
 }) {
   const template = getSurveyTemplate(input.operationType, input.operationTemplateVersion);
   const lines: string[] = [
-    "# Levantamiento VectorIA",
+    "# Levantamiento SystronIA",
     "",
     "> Este documento contiene información de levantamiento. Se usa como insumo para elaborar y validar un discovery posterior. Las respuestas no constituyen alcance aprobado.",
     "",
