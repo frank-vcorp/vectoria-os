@@ -5,12 +5,7 @@ import { SystemRolesCheckboxGroup } from "@/components/survey-system-roles-multi
 import { coalesceRoleIdList, systemRoleOptions } from "@/shared/system-roles";
 import { coalesceModuleLinks, newModuleLinkId } from "@/shared/module-links";
 import { coalesceOsActions, enabledOsActions, newOsActionId } from "@/shared/os-actions";
-import {
-  addCatalogNode,
-  newOperationCatalogId,
-  removeCatalogNode,
-  updateCatalogNode,
-} from "@/shared/operation-catalogs";
+import { addCatalogNode, removeCatalogNode, updateCatalogNode } from "@/shared/operation-catalogs";
 import { SER_V2_REPORT_OUTPUTS } from "@/shared/ser-v2-constants";
 import { buildSerV2References } from "@/shared/ser-v2-refs";
 import { coalesceWorkStatuses, newWorkStatusId } from "@/shared/work-statuses";

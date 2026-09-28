@@ -24,7 +24,8 @@ import {
   DetailSection,
   EntityDetailLayout,
 } from "@/components/entity-detail-layout";
-import { QUOTE_STATUS_LABELS, formatMoney, type QuoteStatus } from "@/shared/commercial";
+import { QUOTE_STATUS_LABELS, formatDeliveryDate, formatMoney, type QuoteStatus } from "@/shared/commercial";
+import { suggestDeliveryDateFromTimeLabel } from "@/shared/delivery-schedule";
 import { SURVEY_OPERATION_LABELS, SURVEY_STATUS_LABELS, type SurveyOperationType, type SurveyStatus } from "@/shared/surveys";
 
 type SubscriptionItem = {
@@ -223,6 +224,12 @@ export function QuoteDetailView({ id }: { id: string }) {
     }
   }
 
+  function openAuthorizeModal() {
+    const suggested = suggestDeliveryDateFromTimeLabel(quote?.deliveryTime, new Date());
+    setDeliveryDate(suggested ?? "");
+    setShowAuthorize(true);
+  }
+
   async function authorize(e: React.FormEvent) {
     e.preventDefault();
     if (!deliveryDate || !programmerId) return;
@@ -232,6 +239,10 @@ export function QuoteDetailView({ id }: { id: string }) {
       router.push(`/ordenes-servicio/${result.order.id}`);
     }
   }
+
+  const suggestedDeliveryDate = quote
+    ? suggestDeliveryDateFromTimeLabel(quote.deliveryTime, new Date())
+    : null;
 
   if (loading) return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
   if (!quote) {
@@ -271,7 +282,7 @@ export function QuoteDetailView({ id }: { id: string }) {
           </button>
           {canEdit && !editing && (
             <>
-              <button type="button" className="btn btn-primary" onClick={() => setShowAuthorize(true)}>
+              <button type="button" className="btn btn-primary" onClick={openAuthorizeModal}>
                 Autorizar
               </button>
               <button type="button" className="btn btn-ghost" onClick={() => setEditing(true)}>
@@ -460,7 +471,18 @@ export function QuoteDetailView({ id }: { id: string }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <form className="card max-w-md w-full space-y-3" onSubmit={(e) => void authorize(e)}>
             <h3 className="font-medium">Autorizar cotización → crear OS</h3>
-            <p className="text-sm text-[var(--muted)]">Indica la fecha de entrega para la Orden de Servicio.</p>
+            <p className="text-sm text-[var(--muted)]">
+              Fecha de entrega para la Orden de Servicio. Se sugiere según el tiempo de entrega de la cotización; puede
+              ajustarla si hace falta.
+            </p>
+            {quote.deliveryTime ? (
+              <p className="text-xs text-[var(--muted)]">
+                Tiempo en cotización: {quote.deliveryTime}
+                {suggestedDeliveryDate
+                  ? ` · Fecha calculada: ${formatDeliveryDate(suggestedDeliveryDate)}`
+                  : " · No se pudo calcular automáticamente (revise el catálogo o indique la fecha)."}
+              </p>
+            ) : null}
             <DateInput
               className="w-full"
               value={deliveryDate}
