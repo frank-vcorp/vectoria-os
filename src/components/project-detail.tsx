@@ -454,7 +454,7 @@ export function ProjectDetailView({ id }: { id: string }) {
           <p className="text-sm text-[var(--muted)]">
             Importe un archivo `.md` con encabezado{" "}
             <code className="text-xs"># SYSTRONIA_PLAN_VALIDACION</code> o{" "}
-            <code className="text-xs"># VECTORIA_PLAN_VALIDACION</code> (5 a 7 fases). Los metadatos
+            <code className="text-xs"># VECTORIA_PLAN_VALIDACION</code> (todas las fases del archivo). Los metadatos
             pueden ir en el archivo o completarse abajo.
           </p>
           {canWrite && (

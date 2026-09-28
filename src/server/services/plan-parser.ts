@@ -124,25 +124,24 @@ export function parseValidationPlanMarkdown(content: string): ParsedValidationPl
       "Falta el metadato discovery. Agregue una línea `discovery: nombre-del-documento.md` debajo del encabezado en el .md, o indique la referencia en el campo «Documento discovery» del formulario.",
     );
   }
-  if (!phaseCountRaw) throw new Error("Falta campo obligatorio: fases");
-
-  const declaredCount = parseInt(phaseCountRaw, 10);
-  if (Number.isNaN(declaredCount)) throw new Error("El campo fases debe ser un número entero");
-
   const checklistRequired = parseBool(checklistRaw, "checklist_obligatorio");
 
   const headers = [...trimmed.matchAll(new RegExp(PHASE_HEADER.source, "gim"))];
-  if (headers.length < 5) {
-    throw new Error(`Se requieren entre 5 y 7 fases; se encontraron ${headers.length}`);
+  if (headers.length < 1) {
+    throw new Error("El plan debe incluir al menos una fase con encabezado `# Fase N — Nombre`");
   }
-  if (headers.length > 7) {
-    throw new Error(`Se requieren entre 5 y 7 fases; se encontraron ${headers.length}`);
+
+  const declaredCount = phaseCountRaw ? parseInt(phaseCountRaw, 10) : headers.length;
+  if (phaseCountRaw && Number.isNaN(declaredCount)) {
+    throw new Error("El campo fases debe ser un número entero");
   }
-  if (headers.length !== declaredCount) {
+  if (phaseCountRaw && declaredCount !== headers.length) {
     throw new Error(
-      `El campo fases (${declaredCount}) no coincide con las fases encontradas (${headers.length})`,
+      `El campo fases (${declaredCount}) no coincide con las fases encontradas (${headers.length}). Ajuste el número o omita la línea fases:`,
     );
   }
+
+  const phaseCount = headers.length;
 
   const phases: ParsedValidationPhase[] = headers.map((match, index) => {
     const phaseNumber = parseInt(match[1], 10);
@@ -180,7 +179,7 @@ export function parseValidationPlanMarkdown(content: string): ParsedValidationPl
     version,
     name,
     discovery,
-    phaseCount: declaredCount,
+    phaseCount,
     checklistRequired,
     phases,
   };

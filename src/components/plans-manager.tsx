@@ -55,7 +55,7 @@ export function PlansManager() {
         <p className="text-sm text-[var(--muted)]">
           Sube un archivo markdown con fases en formato: <code># Fase N — Nombre</code>, secciones{" "}
           <code>## Objetivo</code>, <code>## Incluye</code> y opcionalmente{" "}
-          <code>## Validación de salida</code>. Máximo 7 fases.
+          <code>## Validación de salida</code>. Se importan todas las fases definidas en el archivo.
         </p>
         <input type="file" accept=".md,.txt" onChange={importFile} disabled={loading} />
         {loading && <p className="text-sm text-[var(--muted)]">Importando…</p>}

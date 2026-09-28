@@ -44,18 +44,15 @@ ${withChecks ? "- Check 1." : ""}
 Resultado ${n}.
 `;
 
-assertThrows(
-  () => parseValidationPlanMarkdown(`${baseHeader}${phaseBlock(1)}`),
-  "entre 5 y 7 fases",
-);
+const onePhase = parseValidationPlanMarkdown(`${baseHeader.replace("fases: 5", "fases: 1")}${phaseBlock(1)}`);
+if (onePhase.phases.length !== 1) throw new Error("Expected 1 phase");
 
-assertThrows(
-  () =>
-    parseValidationPlanMarkdown(
-      `${baseHeader.replace("fases: 5", "fases: 8")}${Array.from({ length: 8 }, (_, i) => phaseBlock(i + 1)).join("\n")}`,
-    ),
-  "entre 5 y 7 fases",
+const eightPhases = parseValidationPlanMarkdown(
+  `${baseHeader.replace("fases: 5", "fases: 8")}${Array.from({ length: 8 }, (_, i) => phaseBlock(i + 1)).join("\n")}`,
 );
+if (eightPhases.phases.length !== 8) throw new Error("Expected 8 phases");
+
+console.log("OK: flexible phase count (1 y 8 fases)");
 
 assertThrows(
   () =>
