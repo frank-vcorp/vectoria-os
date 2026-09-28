@@ -90,6 +90,16 @@ function pendingChecks(phase: Phase) {
   return phase.checks.filter((c) => !c.checked && !c.notApplicable);
 }
 
+function suggestPlanDiscoveryRef(
+  surveys: { folio: string; status: SurveyStatus }[],
+  fileName: string,
+): string {
+  const linked = surveys.find((s) => s.status === "finalizado") ?? surveys[0];
+  if (linked) return `levantamiento-${linked.folio}.md`;
+  const base = fileName.replace(/\.(md|markdown|txt)$/i, "");
+  return base ? `${base}-discovery.md` : "";
+}
+
 export function ProjectDetailView({ id }: { id: string }) {
   const router = useRouter();
   const { setFromCache, refreshPending } = useOffline();
@@ -107,6 +117,7 @@ export function ProjectDetailView({ id }: { id: string }) {
   const [error, setError] = useState("");
   const [planContent, setPlanContent] = useState("");
   const [planFileName, setPlanFileName] = useState("plan-validacion.md");
+  const [planDiscoveryRef, setPlanDiscoveryRef] = useState("");
   const [evidenceDraft, setEvidenceDraft] = useState("");
   const [returnNotes, setReturnNotes] = useState("");
   const [offlineHint, setOfflineHint] = useState("");
@@ -217,6 +228,14 @@ export function ProjectDetailView({ id }: { id: string }) {
       setError("Importar plan requiere conexión.");
       return;
     }
+    const discoveryRef = planDiscoveryRef.trim();
+    if (!discoveryRef && !/\ndiscovery:\s*.+/i.test(planContent) && !/^discovery:\s*.+/im.test(planContent)) {
+      setError(
+        "Indique la referencia al documento discovery (no es otro archivo). Ej.: levantamiento-LEV-000004.md",
+      );
+      return;
+    }
+
     const res = await fetch("/api/projects", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -225,6 +244,7 @@ export function ProjectDetailView({ id }: { id: string }) {
         id,
         content: planContent,
         fileName: planFileName,
+        discoveryRef: discoveryRef || undefined,
         replace,
       }),
     });
@@ -235,6 +255,7 @@ export function ProjectDetailView({ id }: { id: string }) {
       return;
     }
     setPlanContent("");
+    setPlanDiscoveryRef("");
     setShowReplaceConfirm(false);
     setPhases(data.phases ?? []);
     await load();
@@ -244,7 +265,12 @@ export function ProjectDetailView({ id }: { id: string }) {
     if (!file) return;
     setPlanFileName(file.name);
     const reader = new FileReader();
-    reader.onload = () => setPlanContent(String(reader.result ?? ""));
+    reader.onload = () => {
+      setPlanContent(String(reader.result ?? ""));
+      setPlanDiscoveryRef((prev) =>
+        prev.trim() ? prev : suggestPlanDiscoveryRef(surveys, file.name),
+      );
+    };
     reader.readAsText(file);
   }
 
@@ -426,7 +452,10 @@ export function ProjectDetailView({ id }: { id: string }) {
         <div className="card space-y-3 border border-amber-500/30">
           <h2 className="font-medium">Plan de Validación pendiente de importar</h2>
           <p className="text-sm text-[var(--muted)]">
-            Importe un archivo `.md` con el formato VECTORIA_PLAN_VALIDACION (5 a 7 fases).
+            Importe un archivo `.md` con encabezado{" "}
+            <code className="text-xs"># SYSTRONIA_PLAN_VALIDACION</code> o{" "}
+            <code className="text-xs"># VECTORIA_PLAN_VALIDACION</code> (5 a 7 fases). Los metadatos
+            pueden ir en el archivo o completarse abajo.
           </p>
           {canWrite && (
             <form
@@ -442,12 +471,32 @@ export function ProjectDetailView({ id }: { id: string }) {
                 onChange={(e) => onPlanFile(e.target.files?.[0] ?? null)}
                 className="text-sm"
               />
+              <div className="field">
+                <label htmlFor="plan-discovery-ref">Documento discovery (referencia)</label>
+                <input
+                  id="plan-discovery-ref"
+                  type="text"
+                  value={planDiscoveryRef}
+                  onChange={(e) => setPlanDiscoveryRef(e.target.value)}
+                  placeholder="levantamiento-LEV-000004.md"
+                  className="w-full"
+                />
+                <p className="text-xs text-[var(--muted)] mt-1">
+                  Nombre del alcance o discovery vinculado al plan (no se sube otro archivo). Si su `.md` ya
+                  incluye la línea <code>discovery: …</code>, este campo es opcional.
+                </p>
+              </div>
               <textarea
                 value={planContent}
                 onChange={(e) => setPlanContent(e.target.value)}
                 rows={8}
                 className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 font-mono text-xs"
-                placeholder="# VECTORIA_PLAN_VALIDACION"
+                placeholder={`# SYSTRONIA_PLAN_VALIDACION
+version: 1.0
+nombre: Mi plan
+discovery: levantamiento-LEV-000004.md
+fases: 6
+checklist_obligatorio: false`}
                 required
               />
               <button type="submit" className="btn-primary">
@@ -718,12 +767,23 @@ export function ProjectDetailView({ id }: { id: string }) {
               onChange={(e) => onPlanFile(e.target.files?.[0] ?? null)}
               className="text-sm"
             />
+            <div className="field">
+              <label htmlFor="plan-discovery-ref-replace">Documento discovery (referencia)</label>
+              <input
+                id="plan-discovery-ref-replace"
+                type="text"
+                value={planDiscoveryRef}
+                onChange={(e) => setPlanDiscoveryRef(e.target.value)}
+                placeholder="levantamiento-LEV-000004.md"
+                className="w-full"
+              />
+            </div>
             <textarea
               value={planContent}
               onChange={(e) => setPlanContent(e.target.value)}
               rows={6}
               className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 font-mono text-xs"
-              placeholder="# VECTORIA_PLAN_VALIDACION"
+              placeholder="# SYSTRONIA_PLAN_VALIDACION"
               required
             />
             <button type="submit" className="btn btn-secondary text-sm">

@@ -53,6 +53,7 @@ const patchSchema = z.discriminatedUnion("action", [
     id: z.string().uuid(),
     content: z.string().min(1),
     fileName: z.string().optional(),
+    discoveryRef: z.string().optional(),
     replace: z.boolean().optional(),
   }),
   z.object({
@@ -119,6 +120,7 @@ export async function PATCH(request: Request) {
         projectId: body.id,
         content: body.content,
         fileName: body.fileName,
+        discoveryRef: body.discoveryRef,
         userId: user.id,
         replace: body.replace,
       });

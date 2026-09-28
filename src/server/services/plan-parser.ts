@@ -24,6 +24,31 @@ const PLAN_HEADERS = ["# SYSTRONIA_PLAN_VALIDACION", "# VECTORIA_PLAN_VALIDACION
 const PHASE_HEADER = /^#\s+Fase\s+(\d+)\s+[—-]\s+(.+)$/im;
 const META_LINE = /^([a-z_]+):\s*(.+)$/i;
 
+/** Inserta `discovery:` en el bloque de metadatos si el .md no lo trae. */
+export function withPlanDiscoveryRef(content: string, discoveryRef?: string): string {
+  const ref = discoveryRef?.trim();
+  if (!ref) return content;
+
+  const trimmed = content.replace(/^\uFEFF/, "");
+  const meta = parseMetaBlock(trimmed);
+  if (meta.discovery) return trimmed;
+
+  const lines = trimmed.split(/\r?\n/);
+  const firstLine = lines[0]?.trim() ?? "";
+  if (!PLAN_HEADERS.includes(firstLine as (typeof PLAN_HEADERS)[number])) return trimmed;
+
+  let insertAt = 1;
+  for (let i = 1; i < lines.length; i++) {
+    if (PHASE_HEADER.test(lines[i])) {
+      insertAt = i;
+      break;
+    }
+    insertAt = i + 1;
+  }
+  lines.splice(insertAt, 0, `discovery: ${ref}`);
+  return lines.join("\n");
+}
+
 function parseMetaBlock(content: string): Record<string, string> {
   const meta: Record<string, string> = {};
   const lines = content.split(/\r?\n/);
@@ -94,7 +119,11 @@ export function parseValidationPlanMarkdown(content: string): ParsedValidationPl
 
   if (!version) throw new Error("Falta campo obligatorio: version");
   if (!name) throw new Error("Falta campo obligatorio: nombre");
-  if (!discovery) throw new Error("Falta campo obligatorio: discovery");
+  if (!discovery) {
+    throw new Error(
+      "Falta el metadato discovery. Agregue una línea `discovery: nombre-del-documento.md` debajo del encabezado en el .md, o indique la referencia en el campo «Documento discovery» del formulario.",
+    );
+  }
   if (!phaseCountRaw) throw new Error("Falta campo obligatorio: fases");
 
   const declaredCount = parseInt(phaseCountRaw, 10);

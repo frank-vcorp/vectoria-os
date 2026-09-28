@@ -13,7 +13,7 @@ import type { ProjectPhaseStatus, ProjectStatus } from "@/shared/commercial";
 import { writeAudit } from "@/server/services/audit";
 import { nextFolio } from "@/server/services/folios";
 import { folioOrClientNameFilter } from "@/server/services/list-search";
-import { parseValidationPlanMarkdown } from "@/server/services/plan-parser";
+import { parseValidationPlanMarkdown, withPlanDiscoveryRef } from "@/server/services/plan-parser";
 
 export type PhaseWithChecks = {
   id: string;
@@ -124,6 +124,7 @@ export async function importPlanToProject(params: {
   projectId: string;
   content: string;
   fileName?: string;
+  discoveryRef?: string;
   userId?: string;
   replace?: boolean;
 }) {
@@ -134,7 +135,8 @@ export async function importPlanToProject(params: {
   const existingPhases = await listProjectPhases(params.projectId);
   if (existingPhases.length > 0 && !params.replace) throw new Error("PLAN_EXISTS");
 
-  const parsed = parseValidationPlanMarkdown(params.content);
+  const content = withPlanDiscoveryRef(params.content, params.discoveryRef);
+  const parsed = parseValidationPlanMarkdown(content);
   const hadPhases = existingPhases.length > 0;
 
   await db.delete(projectPhases).where(eq(projectPhases.projectId, params.projectId));
