@@ -558,8 +558,9 @@ export function SurveyDetailView({ id }: { id: string }) {
   const [answers, setAnswers] = useState<SurveyAnswers>(emptyAnswers());
   const [sectionId, setSectionId] = useState("header");
   const [saveState, setSaveState] = useState<SaveState>("saved");
-  const [savedFlash, setSavedFlash] = useState(false);
-  const savedFlashTimerRef = useRef<number | null>(null);
+  const [reviewedFlash, setReviewedFlash] = useState<null | "revisada" | "con_pendientes">(null);
+  const reviewedFlashTimerRef = useRef<number | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
   const [error, setError] = useState("");
   const [interviewDate, setInterviewDate] = useState("");
   const [quotes, setQuotes] = useState<{ id: string; folio: string; clientName: string; status: QuoteStatus }[]>([]);
@@ -645,19 +646,10 @@ export function SurveyDetailView({ id }: { id: string }) {
     return data.survey as SurveyDetail;
   }
 
-  function showSavedConfirmation() {
-    setSavedFlash(true);
-    if (savedFlashTimerRef.current) window.clearTimeout(savedFlashTimerRef.current);
-    savedFlashTimerRef.current = window.setTimeout(() => setSavedFlash(false), 3000);
-  }
-
-  async function saveNow() {
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    const result = await persist(answers);
-    if (result) showSavedConfirmation();
+  function showReviewedConfirmation(status: "revisada" | "con_pendientes") {
+    setReviewedFlash(status);
+    if (reviewedFlashTimerRef.current) window.clearTimeout(reviewedFlashTimerRef.current);
+    reviewedFlashTimerRef.current = window.setTimeout(() => setReviewedFlash(null), 4000);
   }
 
   function queueSave(next: SurveyAnswers, nextStates?: SurveyDetail["sectionStates"]) {
@@ -681,26 +673,43 @@ export function SurveyDetailView({ id }: { id: string }) {
   }
 
   async function action(body: Record<string, unknown>) {
-    let current = survey;
-    if (dirtyRef.current) {
-      const saved = await persist();
-      if (!saved) return;
-      current = saved;
+    if (!survey) return false;
+    setActionBusy(true);
+    try {
+      let current = survey;
+      if (dirtyRef.current) {
+        if (timerRef.current) {
+          window.clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        const saved = await persist(answers);
+        if (!saved) return false;
+        current = saved;
+      }
+      if ("expectedUpdatedAt" in body && current) body.expectedUpdatedAt = current.updatedAt;
+      const res = await fetch(`/api/surveys/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        setError((await res.json()).error ?? "Error");
+        return false;
+      }
+      const data = await res.json();
+      setSurvey(data.survey);
+      setAnswers(data.survey.answers);
+      setError("");
+      if (body.action === "review_section" && typeof body.sectionId === "string") {
+        const status = data.survey.sectionStates?.[body.sectionId]?.status;
+        if (status === "revisada" || status === "con_pendientes") {
+          showReviewedConfirmation(status);
+        }
+      }
+      return true;
+    } finally {
+      setActionBusy(false);
     }
-    if ("expectedUpdatedAt" in body && current) body.expectedUpdatedAt = current.updatedAt;
-    const res = await fetch(`/api/surveys/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      setError((await res.json()).error ?? "Error");
-      return;
-    }
-    const data = await res.json();
-    setSurvey(data.survey);
-    setAnswers(data.survey.answers);
-    setError("");
   }
 
   async function uploadAttachment(file: File) {
@@ -989,37 +998,38 @@ export function SurveyDetailView({ id }: { id: string }) {
             </div>
           )}
 
+          {reviewedFlash ? (
+            <div
+              className="rounded-lg border border-[var(--success)] bg-[var(--success-soft)] px-3 py-2 text-sm text-[var(--success)] font-medium"
+              aria-live="polite"
+            >
+              {reviewedFlash === "con_pendientes"
+                ? "✓ Sección guardada y marcada como revisada (con pendientes)"
+                : "✓ Sección guardada y marcada como revisada"}
+            </div>
+          ) : null}
+
           {!readonly && (
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border)]">
               <button
                 type="button"
-                className="btn btn-ghost"
-                disabled={saveState === "saving"}
-                onClick={() => void saveNow()}
-              >
-                {saveState === "saving" ? "Guardando…" : "Guardar"}
-              </button>
-              <button
-                type="button"
                 className="btn btn-primary"
+                disabled={actionBusy || saveState === "saving"}
                 onClick={() =>
                   void action({
                     action: "review_section",
                     expectedUpdatedAt: survey.updatedAt,
                     sectionId: section.id,
-                    pending: Object.values(answers.fields).some((item) => item.pending?.marked) && section.fields.some((field) => answers.fields[field.id]?.pending?.marked),
+                    pending:
+                      Object.values(answers.fields).some((item) => item.pending?.marked) &&
+                      section.fields.some((field) => answers.fields[field.id]?.pending?.marked),
                   })
                 }
               >
-                Marcar revisada
+                {actionBusy || saveState === "saving" ? "Guardando…" : "Marcar revisada"}
               </button>
-              {savedFlash ? (
-                <span className="text-sm text-[var(--success)] font-medium" aria-live="polite">
-                  ✓ Guardado
-                </span>
-              ) : null}
-              {!savedFlash && saveState === "pending" ? (
-                <span className="text-xs text-[var(--warning)]">Hay cambios sin guardar</span>
+              {saveState === "pending" && !actionBusy ? (
+                <span className="text-xs text-[var(--muted)]">Se guardará al marcar revisada</span>
               ) : null}
             </div>
           )}
