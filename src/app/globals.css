@@ -211,8 +211,13 @@ button {
   display: flex;
   justify-content: center;
   margin-top: 0.75rem;
-  padding: 0 0.35rem;
+  padding: 0.35rem 0.45rem;
   opacity: 0.95;
+  background: #fff;
+  border-radius: var(--radius-md);
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
 }
 
 .app-sidebar-mini-logo:hover {

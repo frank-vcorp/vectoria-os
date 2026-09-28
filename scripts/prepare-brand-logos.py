@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Genera public/logo.png y public/logo-on-dark.png con canal alpha real.
+Copia los logos oficiales de Docs/Marca a public/.
 
-Si existe Docs/Marca/systronia-logo-transparent.png (RGBA), se usa tal cual.
-Si no, se elimina el fondo negro o blanco de los PNG fuente (export sin alpha).
+- logo-transparente.png → public/logo.png (fondos claros, login, tarjeta blanca)
+- logo-blanco.png → public/logo-blanco.png (referencia con fondo blanco; opcional en documentos)
+
+public/logo-on-dark.png es el mismo arte que logo.png (texto oscuro); en sidebar va dentro del recuadro blanco.
 """
 from __future__ import annotations
 
@@ -15,49 +17,31 @@ ROOT = Path(__file__).resolve().parents[1]
 MARCA = ROOT / "Docs" / "Marca"
 PUBLIC = ROOT / "public"
 
-DARK_SOURCE = MARCA / "systronia-logo-dark-source.png"
-LIGHT_SOURCE = MARCA / "systronia-logo-light-source.png"
-TRANSPARENT_MASTER = MARCA / "systronia-logo-transparent.png"
+SRC_TRANSPARENT = MARCA / "logo-transparente.png"
+SRC_BLANCO = MARCA / "logo-blanco.png"
 
-OUT_LIGHT = PUBLIC / "logo.png"
-OUT_DARK = PUBLIC / "logo-on-dark.png"
+OUT_LOGO = PUBLIC / "logo.png"
+OUT_LOGO_BLANCO = PUBLIC / "logo-blanco.png"
+OUT_LOGO_ON_DARK = PUBLIC / "logo-on-dark.png"
+
+MAX_WIDTH = 1400
 
 
-def _black_key_rgba(im: Image.Image, cutoff: int = 20, feather: int = 12) -> Image.Image:
-    im = im.convert("RGBA")
-    px = im.load()
-    w, h = im.size
-    for y in range(h):
-        for x in range(w):
-            r, g, b, _a = px[x, y]
-            lum = max(r, g, b)
-            if lum <= cutoff:
-                px[x, y] = (r, g, b, 0)
-            elif lum <= cutoff + feather:
-                alpha = int(255 * (lum - cutoff) / feather)
-                px[x, y] = (r, g, b, alpha)
+def _load_rgba(path: Path) -> Image.Image:
+    if not path.exists():
+        raise SystemExit(f"No se encontró {path}")
+    im = Image.open(path)
+    if im.mode != "RGBA":
+        im = im.convert("RGBA")
     return im
 
 
-def _white_key_rgba(im: Image.Image, cutoff: int = 246, feather: int = 10) -> Image.Image:
-    im = im.convert("RGBA")
-    px = im.load()
-    w, h = im.size
-    for y in range(h):
-        for x in range(w):
-            r, g, b, _a = px[x, y]
-            if r >= cutoff and g >= cutoff and b >= cutoff:
-                px[x, y] = (r, g, b, 0)
-                continue
-            if min(r, g, b) >= cutoff - feather:
-                # borde suave hacia blanco
-                dist = min(r, g, b) - (cutoff - feather)
-                alpha = int(255 * (1 - dist / feather))
-                alpha = max(0, min(255, alpha))
-                px[x, y] = (r, g, b, alpha)
-            else:
-                px[x, y] = (r, g, b, 255)
-    return im
+def _maybe_resize(im: Image.Image) -> Image.Image:
+    if im.width <= MAX_WIDTH:
+        return im
+    ratio = MAX_WIDTH / im.width
+    height = max(1, int(im.height * ratio))
+    return im.resize((MAX_WIDTH, height), Image.Resampling.LANCZOS)
 
 
 def _save_png(im: Image.Image, path: Path) -> None:
@@ -65,29 +49,22 @@ def _save_png(im: Image.Image, path: Path) -> None:
     im.save(path, format="PNG", optimize=True)
 
 
-def build_light_logo() -> Image.Image:
-    if TRANSPARENT_MASTER.exists():
-        master = Image.open(TRANSPARENT_MASTER)
-        if master.mode == "RGBA":
-            return master
-    if not DARK_SOURCE.exists():
-        raise SystemExit(f"Falta {DARK_SOURCE} (logo oscuro sobre negro)")
-    return _black_key_rgba(Image.open(DARK_SOURCE))
-
-
-def build_dark_bg_logo() -> Image.Image:
-    if not LIGHT_SOURCE.exists():
-        raise SystemExit(f"Falta {LIGHT_SOURCE} (logo claro sobre blanco)")
-    return _white_key_rgba(Image.open(LIGHT_SOURCE))
-
-
 def main() -> None:
-    light = build_light_logo()
-    dark = build_dark_bg_logo()
-    _save_png(light, OUT_LIGHT)
-    _save_png(dark, OUT_DARK)
-    print(f"OK {OUT_LIGHT} mode={light.mode} size={light.size}")
-    print(f"OK {OUT_DARK} mode={dark.mode} size={dark.size}")
+    transparent = _maybe_resize(_load_rgba(SRC_TRANSPARENT))
+    _save_png(transparent, OUT_LOGO)
+    _save_png(transparent, OUT_LOGO_ON_DARK)
+
+    if SRC_BLANCO.exists():
+        blanco = Image.open(SRC_BLANCO)
+        if blanco.mode != "RGB":
+            blanco = blanco.convert("RGB")
+        blanco = _maybe_resize(blanco)
+        _save_png(blanco.convert("RGBA"), OUT_LOGO_BLANCO)
+
+    print(f"OK {OUT_LOGO} {transparent.size} RGBA")
+    print(f"OK {OUT_LOGO_ON_DARK} (mismo arte que logo.png)")
+    if SRC_BLANCO.exists():
+        print(f"OK {OUT_LOGO_BLANCO}")
 
 
 if __name__ == "__main__":

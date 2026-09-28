@@ -2,7 +2,7 @@
  * SystronIA OS — Service Worker
  * Caché de shell, assets estáticos y páginas visitadas; fallback offline.
  */
-const SW_VERSION = "5";
+const SW_VERSION = "6";
 const STATIC_CACHE = `systronia-static-${SW_VERSION}`;
 const RUNTIME_CACHE = `systronia-runtime-${SW_VERSION}`;
 
