@@ -968,6 +968,10 @@ button {
   cursor: grabbing;
 }
 
+.survey-nav-sidebar {
+  scrollbar-gutter: stable;
+}
+
 .survey-nav-group + .survey-nav-group {
   margin-top: 0.75rem;
   padding-top: 0.75rem;

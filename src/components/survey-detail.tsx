@@ -855,7 +855,10 @@ export function SurveyDetailView({ id }: { id: string }) {
       {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
       <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
-        <nav className="card space-y-3 text-sm">
+        <nav
+          className="survey-nav-sidebar card space-y-3 text-sm lg:sticky lg:top-4 lg:z-10 lg:self-start lg:max-h-[calc(100dvh-5rem)] lg:overflow-y-auto"
+          aria-label="Secciones del levantamiento"
+        >
           <select
             className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 lg:hidden"
             value={sectionId}
