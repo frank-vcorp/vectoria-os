@@ -36,6 +36,8 @@ export function SurveyFlowBuilder({
   const [dragId, setDragId] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
   const [committed, setCommitted] = useState(persisted);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const savedFlashTimerRef = useRef<number | null>(null);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -47,10 +49,19 @@ export function SurveyFlowBuilder({
     }
   }, [blocks, notes, persisted]);
 
-  function commit(nextBlocks: FlowBlock[], nextNotes = draftNotes) {
+  function commit(nextBlocks: FlowBlock[], nextNotes = draftNotes, showConfirmation = false) {
     setCommitted(true);
     setDraft(nextBlocks);
     onChange({ flowBlocks: nextBlocks, flowNotes: nextNotes.trim() || undefined });
+    if (showConfirmation) {
+      setSavedFlash(true);
+      if (savedFlashTimerRef.current) window.clearTimeout(savedFlashTimerRef.current);
+      savedFlashTimerRef.current = window.setTimeout(() => setSavedFlash(false), 3000);
+    }
+  }
+
+  function saveFlow() {
+    commit(draft, draftNotes, true);
   }
 
   function reorder(fromId: string, toId: string) {
@@ -165,6 +176,10 @@ export function SurveyFlowBuilder({
               Restablecer ejemplo
             </button>
           ) : null}
+          <button type="button" className="btn btn-primary text-sm" onClick={saveFlow}>
+            Guardar
+          </button>
+          {savedFlash ? <span className="text-sm text-[var(--success)] font-medium">✓ Guardado</span> : null}
         </div>
       )}
 

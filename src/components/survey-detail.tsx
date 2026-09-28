@@ -558,6 +558,8 @@ export function SurveyDetailView({ id }: { id: string }) {
   const [answers, setAnswers] = useState<SurveyAnswers>(emptyAnswers());
   const [sectionId, setSectionId] = useState("header");
   const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [savedFlash, setSavedFlash] = useState(false);
+  const savedFlashTimerRef = useRef<number | null>(null);
   const [error, setError] = useState("");
   const [interviewDate, setInterviewDate] = useState("");
   const [quotes, setQuotes] = useState<{ id: string; folio: string; clientName: string; status: QuoteStatus }[]>([]);
@@ -643,6 +645,21 @@ export function SurveyDetailView({ id }: { id: string }) {
     return data.survey as SurveyDetail;
   }
 
+  function showSavedConfirmation() {
+    setSavedFlash(true);
+    if (savedFlashTimerRef.current) window.clearTimeout(savedFlashTimerRef.current);
+    savedFlashTimerRef.current = window.setTimeout(() => setSavedFlash(false), 3000);
+  }
+
+  async function saveNow() {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const result = await persist(answers);
+    if (result) showSavedConfirmation();
+  }
+
   function queueSave(next: SurveyAnswers, nextStates?: SurveyDetail["sectionStates"]) {
     setAnswers(next);
     dirtyRef.current = true;
@@ -712,7 +729,7 @@ export function SurveyDetailView({ id }: { id: string }) {
   const hiddenDetail = section.applicabilityFieldId && answers.fields[section.applicabilityFieldId]?.choice === "no_aplica";
   const saveLabel =
     saveState === "saving"
-      ? "Guardando"
+      ? "Guardando…"
       : saveState === "pending"
         ? "Cambios pendientes de guardar"
         : saveState === "conflict"
@@ -720,6 +737,14 @@ export function SurveyDetailView({ id }: { id: string }) {
           : saveState === "error"
             ? "No guardado"
             : "Guardado";
+  const saveLabelClass =
+    saveState === "saved"
+      ? "text-[var(--success)] font-medium"
+      : saveState === "saving"
+        ? "text-[var(--muted)]"
+        : saveState === "pending"
+          ? "text-[var(--warning)]"
+          : "text-[var(--danger)]";
 
   return (
     <EntityDetailLayout
@@ -773,7 +798,7 @@ export function SurveyDetailView({ id }: { id: string }) {
         </div>
         <div>
           <p className="text-[var(--muted)]">Guardado</p>
-          <p>{saveLabel}</p>
+          <p className={saveLabelClass} aria-live="polite">{saveLabel}</p>
         </div>
       </div>
 
@@ -965,7 +990,15 @@ export function SurveyDetailView({ id }: { id: string }) {
           )}
 
           {!readonly && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border)]">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={saveState === "saving"}
+                onClick={() => void saveNow()}
+              >
+                {saveState === "saving" ? "Guardando…" : "Guardar"}
+              </button>
               <button
                 type="button"
                 className="btn btn-primary"
@@ -980,6 +1013,14 @@ export function SurveyDetailView({ id }: { id: string }) {
               >
                 Marcar revisada
               </button>
+              {savedFlash ? (
+                <span className="text-sm text-[var(--success)] font-medium" aria-live="polite">
+                  ✓ Guardado
+                </span>
+              ) : null}
+              {!savedFlash && saveState === "pending" ? (
+                <span className="text-xs text-[var(--warning)]">Hay cambios sin guardar</span>
+              ) : null}
             </div>
           )}
         </section>
