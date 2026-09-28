@@ -268,7 +268,12 @@ export function QuoteDetailView({ id }: { id: string }) {
       actions={
         <>
           {quote.status === "autorizada" ? (
-            <Link href={`/levantamientos?quoteId=${id}`} className="btn btn-ghost">
+            <Link
+              href={`/levantamientos?quoteId=${id}`}
+              className="btn btn-ghost"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Crear levantamiento
             </Link>
           ) : null}
@@ -455,7 +460,12 @@ export function QuoteDetailView({ id }: { id: string }) {
               <ul className="text-sm space-y-1">
                 {surveys.map((item) => (
                   <li key={item.id}>
-                    <Link href={`/levantamientos/${item.id}`} className="underline font-mono text-xs">
+                    <Link
+                      href={`/levantamientos/${item.id}`}
+                      className="underline font-mono text-xs"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       {item.folio}
                     </Link>{" "}
                     · {SURVEY_OPERATION_LABELS[item.operationType]} · {SURVEY_STATUS_LABELS[item.status]}

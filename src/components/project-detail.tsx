@@ -387,7 +387,12 @@ export function ProjectDetailView({ id }: { id: string }) {
             <p className="text-[var(--muted)]">Levantamientos</p>
             {surveys.map((item) => (
               <p key={item.id}>
-                <Link href={`/levantamientos/${item.id}`} className="font-medium text-[var(--accent)]">
+                <Link
+                  href={`/levantamientos/${item.id}`}
+                  className="font-medium text-[var(--accent)]"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {item.folio}
                 </Link>{" "}
                 <span className="text-xs text-[var(--muted)]">

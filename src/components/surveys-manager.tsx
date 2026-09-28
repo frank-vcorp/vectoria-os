@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormField, FormPanel } from "@/components/form-panel";
 import { ListSearchInput } from "@/components/list-search-input";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -30,8 +30,9 @@ type SurveyRow = {
 
 type QuoteOption = { id: string; folio: string; clientName: string; status: QuoteStatus };
 
+const surveyTabProps = { target: "_blank" as const, rel: "noopener noreferrer" };
+
 export function SurveysManager() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const presetQuoteId = searchParams.get("quoteId") ?? "";
   const [rows, setRows] = useState<SurveyRow[]>([]);
@@ -102,7 +103,8 @@ export function SurveysManager() {
       return;
     }
     const data = await res.json();
-    router.push(`/levantamientos/${data.survey.id}`);
+    window.open(`/levantamientos/${data.survey.id}`, "_blank", "noopener,noreferrer");
+    void loadSurveys(search);
   }
 
   if (loading) return <p className="text-sm text-[var(--muted)]">Cargando…</p>;
@@ -171,7 +173,7 @@ export function SurveysManager() {
             {rows.map((row) => (
               <tr key={row.id} className="border-b border-[var(--border)] last:border-0">
                 <td className="py-2 pr-2 font-mono text-xs">
-                  <Link href={`/levantamientos/${row.id}`} className="underline">
+                  <Link href={`/levantamientos/${row.id}`} className="underline" {...surveyTabProps}>
                     {row.folio}
                   </Link>
                 </td>
@@ -244,7 +246,7 @@ export function SurveysManager() {
                 <p className="text-[var(--muted)]">Esta cotización ya tiene levantamientos. Puede continuar uno o crear otro independiente:</p>
                 {existingForQuote.map((row) => (
                   <div key={row.id}>
-                    <Link href={`/levantamientos/${row.id}`} className="underline font-mono text-xs">
+                    <Link href={`/levantamientos/${row.id}`} className="underline font-mono text-xs" {...surveyTabProps}>
                       {row.folio}
                     </Link>{" "}
                     · {SURVEY_OPERATION_LABELS[row.operationType]} · {SURVEY_STATUS_LABELS[row.status]}

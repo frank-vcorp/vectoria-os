@@ -461,7 +461,12 @@ export function ServiceOrderDetailView({ id }: { id: string }) {
                 <span className="space-y-1 block">
                   {surveys.map((item) => (
                     <span key={item.id} className="block">
-                      <Link href={`/levantamientos/${item.id}`} className="underline font-mono text-xs">
+                      <Link
+                        href={`/levantamientos/${item.id}`}
+                        className="underline font-mono text-xs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {item.folio}
                       </Link>{" "}
                       {SURVEY_OPERATION_LABELS[item.operationType]} · {SURVEY_STATUS_LABELS[item.status]}
