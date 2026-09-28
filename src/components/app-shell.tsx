@@ -134,7 +134,16 @@ export function AppShell({
     <>
       <div className="app-brand">
         <div className="app-logo-wrap">
-          <Image src="/logo.png" alt="SystronIA" width={400} height={84} className="app-logo" priority />
+          <Image
+            src="/logo.png"
+            alt="SystronIA"
+            width={560}
+            height={187}
+            className="app-logo"
+            priority
+            quality={95}
+            sizes="(min-width: 1024px) 252px, 0px"
+          />
         </div>
         <p className="app-user-name">{user.name}</p>
         <span className="badge badge-role">{roleLabel}</span>

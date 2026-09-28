@@ -196,6 +196,14 @@ button {
   color: var(--sidebar-muted);
 }
 
+.app-sidebar:not(.is-collapsed) .app-sidebar-toggle {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.35rem;
+  z-index: 2;
+  margin: 0;
+}
+
 .app-sidebar.is-collapsed .app-sidebar-toggle {
   align-self: center;
   margin: 0.75rem auto 0;
@@ -239,13 +247,14 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1rem 0.75rem;
+  padding: 0.65rem 0.65rem 1rem;
   gap: 0.5rem;
 }
 
 .app-brand {
-  margin: 0 -0.75rem 0.35rem;
-  padding: 0 0.5rem 0.9rem;
+  margin: 0 -0.65rem 0.35rem;
+  padding: 0.35rem 0.65rem 0.85rem;
+  padding-right: 2.1rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -253,6 +262,7 @@ button {
   display: block;
   width: 100%;
   padding: 0;
+  line-height: 0;
   background: transparent;
 }
 
@@ -260,9 +270,8 @@ button {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 3.25rem;
   object-fit: contain;
-  object-position: left center;
+  object-position: center center;
 }
 
 .app-logo-top {
@@ -274,7 +283,8 @@ button {
 }
 
 .app-user-name {
-  margin: 0.75rem 0 0.35rem;
+  margin: 0.65rem 0 0.35rem;
+  padding: 0 0.1rem;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--sidebar-text);
