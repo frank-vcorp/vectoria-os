@@ -17,6 +17,7 @@ import type { User } from "@/server/db/schema";
 import { writeAudit } from "@/server/services/audit";
 import { nextFolio } from "@/server/services/folios";
 import { getQuoteById } from "@/server/services/quotes";
+import { todaySurveyInterviewDate } from "@/shared/delivery-schedule";
 import { getSurveyTemplate, listReviewableSections } from "@/shared/survey-templates";
 import {
   emptyAnswers,
@@ -240,6 +241,7 @@ export async function createSurvey(params: {
       operationType: params.operationType,
       responsibleUserId: params.actor.id,
       status: "borrador",
+      interviewDate: todaySurveyInterviewDate(),
       transversalTemplateVersion: template.transversalVersion,
       operationTemplateVersion: template.operationVersion,
       answers: emptyAnswers(),

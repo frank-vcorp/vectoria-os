@@ -94,6 +94,7 @@ type SurveyDetail = {
   correspondenceReviewed: boolean;
   revisionNumber: number;
   updatedAt: string;
+  createdAt?: string;
   serviceName: string;
   quoteDescription: string;
   related: Related[];
@@ -103,10 +104,12 @@ type SurveyDetail = {
 
 type SaveState = "saved" | "saving" | "pending" | "error" | "conflict";
 
+const SURVEY_NAV_REVIEWABLE_GROUPS = new Set(["transversal", "operation"]);
+
 function surveyNavItemClass(active: boolean, groupId: string, progress: SectionProgress) {
   const classes = ["survey-nav-item", "w-full", "text-left", "px-2", "py-1", "rounded"];
   if (active) classes.push("is-active");
-  if (groupId === "transversal" && progress === "revisada") classes.push("is-revisada");
+  if (SURVEY_NAV_REVIEWABLE_GROUPS.has(groupId) && progress === "revisada") classes.push("is-revisada");
   return classes.join(" ");
 }
 
@@ -579,7 +582,11 @@ export function SurveyDetailView({ id }: { id: string }) {
     const data = await res.json();
     setSurvey(data.survey);
     setAnswers(data.survey.answers ?? emptyAnswers());
-    setInterviewDate(data.survey.interviewDate ? data.survey.interviewDate.slice(0, 10) : "");
+    const interview =
+      data.survey.interviewDate?.slice(0, 10) ||
+      data.survey.createdAt?.slice(0, 10) ||
+      "";
+    setInterviewDate(interview);
     dirtyRef.current = false;
     setSaveState("saved");
   }, [id]);
@@ -833,7 +840,7 @@ export function SurveyDetailView({ id }: { id: string }) {
                 <div className="survey-nav-group-items space-y-1">
                   {group.items.map((item) => {
                     const progress = survey.sectionStates[item.id]?.status ?? "sin_revisar";
-                    const reviewed = group.id === "transversal" && progress === "revisada";
+                    const reviewed = SURVEY_NAV_REVIEWABLE_GROUPS.has(group.id) && progress === "revisada";
                     return (
                       <button
                         key={item.id}

@@ -1,3 +1,19 @@
+const DEFAULT_CALENDAR_TIME_ZONE = "America/Mexico_City";
+
+/** Fecha calendario (YYYY-MM-DD) en la zona horaria indicada. */
+export function calendarDateIsoInTimeZone(date = new Date(), timeZone = DEFAULT_CALENDAR_TIME_ZONE): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(date);
+}
+
+/** Timestamp estable para guardar una fecha calendario (evita desfases al mostrar YYYY-MM-DD). */
+export function dateFromCalendarIso(iso: string): Date {
+  return new Date(`${iso}T12:00:00.000Z`);
+}
+
+export function todaySurveyInterviewDate(timeZone = DEFAULT_CALENDAR_TIME_ZONE): Date {
+  return dateFromCalendarIso(calendarDateIsoInTimeZone(new Date(), timeZone));
+}
+
 /** Convierte Date local a YYYY-MM-DD (input type=date). */
 export function toIsoDateLocal(date: Date): string {
   const y = date.getFullYear();
