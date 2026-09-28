@@ -95,6 +95,12 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     const msg = e instanceof Error ? e.message : "ERROR";
+    if (msg === "QUOTE_NOT_AUTHORIZED") {
+      return NextResponse.json(
+        { error: "Solo puede vincular cotizaciones autorizadas." },
+        { status: 400 },
+      );
+    }
     const status =
       msg === "NOT_FOUND" || msg === "QUOTE_NOT_FOUND"
         ? 404

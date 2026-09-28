@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormField, FormPanel } from "@/components/form-panel";
 import { ListSearchInput } from "@/components/list-search-input";
 import { SearchableSelect } from "@/components/searchable-select";
-import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/shared/commercial";
+import type { QuoteStatus } from "@/shared/commercial";
 import {
   SURVEY_OPERATION_LABELS,
   SURVEY_OPERATION_TYPES,
@@ -45,8 +45,6 @@ export function SurveysManager() {
   const [form, setForm] = useState({ operationType: "" as string, quoteId: presetQuoteId });
   const [existingForQuote, setExistingForQuote] = useState<SurveyRow[]>([]);
 
-  const selectedQuote = useMemo(() => quotes.find((quote) => quote.id === form.quoteId), [quotes, form.quoteId]);
-
   async function loadMeta() {
     const me = await fetch("/api/auth/me");
     if (me.ok) {
@@ -56,7 +54,14 @@ export function SurveysManager() {
     const quotesRes = await fetch("/api/quotes");
     if (quotesRes.ok) {
       const data = await quotesRes.json();
-      setQuotes(data.quotes ?? []);
+      const authorized = (data.quotes ?? []).filter(
+        (quote: QuoteOption) => quote.status === "autorizada",
+      );
+      setQuotes(authorized);
+      setForm((current) => ({
+        ...current,
+        quoteId: authorized.some((quote: QuoteOption) => quote.id === current.quoteId) ? current.quoteId : "",
+      }));
     }
   }
 
@@ -197,7 +202,7 @@ export function SurveysManager() {
         <form onSubmit={(e) => void createSurvey(e)}>
           <FormPanel
             title="Nuevo levantamiento"
-            description="Seleccione un tipo de operación y una cotización existente. No se crea cliente ni cotización desde aquí."
+            description="Seleccione un tipo de operación y una cotización autorizada. No se crea cliente ni cotización desde aquí."
             actions={
               <button type="submit" className="btn btn-primary" disabled={!form.operationType || !form.quoteId}>
                 Crear levantamiento
@@ -226,15 +231,13 @@ export function SurveysManager() {
                 placeholder="Buscar por folio o cliente…"
                 options={quotes.map((quote) => ({
                   value: quote.id,
-                  label: `${quote.folio} — ${quote.clientName} (${QUOTE_STATUS_LABELS[quote.status]})`,
+                  label: `${quote.folio} — ${quote.clientName}`,
                   keywords: `${quote.folio} ${quote.clientName}`,
                 }))}
               />
             </FormField>
-            {selectedQuote && (selectedQuote.status === "rechazada" || selectedQuote.status === "cancelada") && (
-              <p className="text-sm text-[var(--warning)]">
-                La cotización está {QUOTE_STATUS_LABELS[selectedQuote.status]}. Puede entrevistarse, pero no se reactiva.
-              </p>
+            {quotes.length === 0 && (
+              <p className="text-sm text-[var(--muted)]">No hay cotizaciones autorizadas disponibles.</p>
             )}
             {existingForQuote.length > 0 && (
               <div className="text-sm space-y-1">

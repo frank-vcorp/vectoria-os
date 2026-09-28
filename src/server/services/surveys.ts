@@ -226,6 +226,7 @@ export async function createSurvey(params: {
   if (!(await canWriteSurvey(params.actor))) throw new Error("FORBIDDEN");
   const quote = await getQuoteById(params.quoteId);
   if (!quote) throw new Error("QUOTE_NOT_FOUND");
+  if (quote.status !== "autorizada") throw new Error("QUOTE_NOT_AUTHORIZED");
 
   const template = getSurveyTemplate(params.operationType);
   const db = getDb();
@@ -547,6 +548,7 @@ export async function changeQuote(params: {
   }
   const quote = await getQuoteById(params.quoteId);
   if (!quote) throw new Error("QUOTE_NOT_FOUND");
+  if (quote.status !== "autorizada") throw new Error("QUOTE_NOT_AUTHORIZED");
 
   const history: QuoteLinkHistory[] = [
     ...existing.quoteLinkHistory,

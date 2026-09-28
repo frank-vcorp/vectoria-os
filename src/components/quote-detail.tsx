@@ -267,9 +267,11 @@ export function QuoteDetailView({ id }: { id: string }) {
       statusBadge={<span className="badge">{QUOTE_STATUS_LABELS[quote.status]}</span>}
       actions={
         <>
-          <Link href={`/levantamientos?quoteId=${id}`} className="btn btn-ghost">
-            Crear levantamiento
-          </Link>
+          {quote.status === "autorizada" ? (
+            <Link href={`/levantamientos?quoteId=${id}`} className="btn btn-ghost">
+              Crear levantamiento
+            </Link>
+          ) : null}
           <a href={`/api/quotes/${id}/pdf`} target="_blank" rel="noreferrer" className="btn btn-ghost">
             Imprimir PDF
           </a>

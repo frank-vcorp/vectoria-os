@@ -49,6 +49,12 @@ export async function POST(request: Request) {
   } catch (e) {
     if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     const msg = e instanceof Error ? e.message : "ERROR";
+    if (msg === "QUOTE_NOT_AUTHORIZED") {
+      return NextResponse.json(
+        { error: "Solo puede crear levantamientos sobre cotizaciones autorizadas." },
+        { status: 400 },
+      );
+    }
     const status = msg === "QUOTE_NOT_FOUND" ? 404 : msg === "UNAUTHORIZED" ? 401 : 403;
     return NextResponse.json({ error: msg }, { status });
   }
