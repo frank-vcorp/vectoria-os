@@ -27,12 +27,12 @@
   --accent-brand-hover: #961018;
   --accent-brand-soft: #fce8ea;
 
-  --sidebar-bg: #0a0a0a;
-  --sidebar-bg-2: #141414;
-  --sidebar-text: #f4f4f5;
-  --sidebar-muted: #a1a1aa;
-  --sidebar-hover: rgb(255 255 255 / 0.06);
-  --sidebar-active: rgb(179 15 26 / 0.22);
+  --sidebar-bg: #ffffff;
+  --sidebar-bg-2: #ffffff;
+  --sidebar-text: #1a1d20;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: rgb(26 29 32 / 0.06);
+  --sidebar-active: rgb(179 15 26 / 0.1);
   --sidebar-active-border: #b30f1a;
 
   --success: #166534;
@@ -80,12 +80,12 @@
   --accent-brand-hover: #f87171;
   --accent-brand-soft: #2a1518;
 
-  --sidebar-bg: #050505;
-  --sidebar-bg-2: #0f0f0f;
-  --sidebar-text: #f4f4f5;
-  --sidebar-muted: #9ca3af;
-  --sidebar-hover: rgb(255 255 255 / 0.05);
-  --sidebar-active: rgb(179 15 26 / 0.28);
+  --sidebar-bg: #ffffff;
+  --sidebar-bg-2: #fafafa;
+  --sidebar-text: #1a1d20;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: rgb(26 29 32 / 0.06);
+  --sidebar-active: rgb(239 68 68 / 0.12);
   --sidebar-active-border: #ef4444;
 
   --success: #4ade80;
@@ -168,9 +168,8 @@ button {
 .app-sidebar {
   width: var(--sidebar-width);
   flex-shrink: 0;
-  border-right: 1px solid color-mix(in srgb, var(--sidebar-bg) 80%, #000);
-  background:
-    linear-gradient(180deg, var(--sidebar-bg-2) 0%, var(--sidebar-bg) 100%);
+  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -211,13 +210,9 @@ button {
   display: flex;
   justify-content: center;
   margin-top: 0.75rem;
-  padding: 0.35rem 0.45rem;
+  padding: 0 0.25rem;
   opacity: 0.95;
-  background: #fff;
-  border-radius: var(--radius-md);
-  margin-left: auto;
-  margin-right: auto;
-  width: fit-content;
+  width: 100%;
 }
 
 .app-sidebar-mini-logo:hover {
@@ -225,9 +220,10 @@ button {
 }
 
 .app-sidebar-mini-logo-img {
-  width: 2rem;
+  width: 100%;
+  max-width: 2.5rem;
   height: auto;
-  border-radius: var(--radius-sm);
+  object-fit: contain;
 }
 
 .app-sidebar.is-collapsed .app-sidebar-inner {
@@ -248,26 +244,25 @@ button {
 }
 
 .app-brand {
-  padding: 0.35rem 0.5rem 0.9rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.08);
-  margin-bottom: 0.35rem;
+  margin: 0 -0.75rem 0.35rem;
+  padding: 0 0.5rem 0.9rem;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .app-brand .app-logo-wrap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.4rem 0.55rem;
-  border-radius: var(--radius-md);
-  background: #fff;
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: transparent;
 }
 
 .app-logo {
+  display: block;
+  width: 100%;
   height: auto;
-  width: auto;
-  max-width: 168px;
-  max-height: 40px;
+  max-height: 3.25rem;
   object-fit: contain;
+  object-position: left center;
 }
 
 .app-logo-top {
@@ -287,8 +282,8 @@ button {
 }
 
 .app-sidebar .badge-role {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.14);
+  background: var(--surface-2);
+  border-color: var(--border);
   color: var(--sidebar-muted);
 }
 
@@ -327,7 +322,7 @@ button {
   border-left: 2px solid transparent;
   font-size: 0.875rem;
   font-weight: 500;
-  color: color-mix(in srgb, var(--sidebar-text) 78%, transparent);
+  color: var(--text-secondary);
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
@@ -339,12 +334,8 @@ button {
 .nav-link-active {
   background: var(--sidebar-active);
   border-left-color: var(--sidebar-active-border);
-  color: #fff;
+  color: var(--sidebar-text);
   font-weight: 600;
-}
-
-[data-theme="dark"] .nav-link-active {
-  color: #fff;
 }
 
 .app-sidebar-footer {
@@ -352,7 +343,7 @@ button {
   flex-direction: column;
   gap: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgb(255 255 255 / 0.08);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .app-sidebar-footer-tools {
@@ -370,7 +361,7 @@ button {
 }
 
 .app-sidebar .btn-ghost {
-  border-color: rgb(255 255 255 / 0.14);
+  border-color: var(--border);
   color: var(--sidebar-muted);
 }
 
@@ -489,9 +480,9 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--sidebar-bg-2) 0%, var(--sidebar-bg) 100%);
+  background: var(--sidebar-bg);
   color: var(--sidebar-text);
-  border-right: 1px solid color-mix(in srgb, var(--sidebar-bg) 80%, #000);
+  border-right: 1px solid var(--border);
   transform: translateX(-105%);
   transition: transform 0.2s ease;
   box-shadow: var(--shadow-md);
