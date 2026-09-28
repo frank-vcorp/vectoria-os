@@ -50,6 +50,7 @@
   --radius-lg: 12px;
 
   --sidebar-width: 15.75rem;
+  --sidebar-width-collapsed: 3.5rem;
   --topbar-height: 3.25rem;
   --tabbar-height: 3.75rem;
 
@@ -176,6 +177,61 @@ button {
   height: 100dvh;
   overflow: hidden;
   color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease;
+}
+
+.app-sidebar.is-collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.app-sidebar:not(.is-ready) {
+  transition: none;
+}
+
+.app-sidebar-toggle {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin: 0.5rem 0.5rem 0;
+  color: var(--sidebar-muted);
+}
+
+.app-sidebar.is-collapsed .app-sidebar-toggle {
+  align-self: center;
+  margin: 0.75rem auto 0;
+}
+
+.app-sidebar-toggle:hover:not(:disabled) {
+  color: var(--sidebar-text);
+  background: var(--sidebar-hover);
+}
+
+.app-sidebar-mini-logo {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding: 0 0.35rem;
+  opacity: 0.95;
+}
+
+.app-sidebar-mini-logo:hover {
+  opacity: 1;
+}
+
+.app-sidebar-mini-logo-img {
+  width: 2rem;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.app-sidebar.is-collapsed .app-sidebar-inner {
+  display: none;
+}
+
+.app-sidebar:not(.is-collapsed) .app-sidebar-inner {
+  flex: 1;
+  min-height: 0;
 }
 
 .app-sidebar-inner {

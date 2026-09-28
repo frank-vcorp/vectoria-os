@@ -45,6 +45,36 @@ function CloseIcon() {
   );
 }
 
+function SidebarExpandIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 6h16M4 12h10M4 18h16M15 9l3 3-3 3"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SidebarCollapseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 6h16M10 12h10M4 18h16M9 9l-3 3 3 3"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const SIDEBAR_COLLAPSED_KEY = "vectoria-sidebar-collapsed";
+
 export function AppShell({
   groups,
   user,
@@ -56,11 +86,36 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarReady, setSidebarReady] = useState(false);
   const roleLabel = ROLE_LABELS[user.role as RoleKey] ?? user.role;
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (stored === "0") setSidebarCollapsed(false);
+      else if (stored === "1") setSidebarCollapsed(true);
+    } catch {
+      /* ignore */
+    }
+    setSidebarReady(true);
+  }, []);
 
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
+
+  function toggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
@@ -75,7 +130,7 @@ export function AppShell({
   }
 
   const sidebar = (
-    <div className="app-sidebar-inner">
+    <>
       <div className="app-brand">
         <div className="app-logo-wrap">
           <Image src="/logo.png" alt="VectorIA" width={140} height={36} className="app-logo" priority />
@@ -108,13 +163,31 @@ export function AppShell({
         </div>
         <LogoutButton />
       </div>
-    </div>
+    </>
   );
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar desktop-only" aria-label="Menú lateral">
-        {sidebar}
+      <aside
+        className={`app-sidebar desktop-only${sidebarCollapsed ? " is-collapsed" : ""}${sidebarReady ? " is-ready" : ""}`}
+        aria-label="Menú lateral"
+        aria-expanded={!sidebarCollapsed}
+      >
+        <button
+          type="button"
+          className="app-sidebar-toggle btn btn-ghost btn-icon"
+          aria-label={sidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}
+          title={sidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}
+          onClick={toggleSidebar}
+        >
+          {sidebarCollapsed ? <SidebarExpandIcon /> : <SidebarCollapseIcon />}
+        </button>
+        {sidebarCollapsed ? (
+          <Link href="/dashboard" className="app-sidebar-mini-logo" aria-label="Inicio">
+            <Image src="/logo.png" alt="" width={32} height={32} className="app-sidebar-mini-logo-img" />
+          </Link>
+        ) : null}
+        <div className="app-sidebar-inner">{sidebar}</div>
       </aside>
 
       {drawerOpen && (
@@ -141,7 +214,7 @@ export function AppShell({
             <CloseIcon />
           </button>
         </div>
-        {sidebar}
+        <div className="app-sidebar-inner">{sidebar}</div>
       </aside>
 
       <div className="app-main-column">
