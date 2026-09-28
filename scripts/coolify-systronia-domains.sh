@@ -14,7 +14,7 @@
 set -euo pipefail
 
 APP_UUID="${COOLIFY_APP_UUID:-hokuzfiqv0y7b8w6awhlccs4}"
-NEW_FQDN="${SYSTRONIA_APP_FQDN:-https://os.systronia.com}"
+NEW_FQDN="${APP_PUBLIC_URL:-${SYSTRONIA_APP_FQDN:-https://os.vector-ia.mx}}"
 BASE="${COOLIFY_BASE_URL:-https://app.coolify.io}${COOLIFY_API_PREFIX:-/api/v1}"
 
 if [[ -z "${COOLIFY_WRITE_TOKEN:-}" || -z "${COOLIFY_READ_TOKEN:-}" ]]; then

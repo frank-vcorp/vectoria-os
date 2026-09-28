@@ -26,6 +26,6 @@ export const VECTORIA_BRAND = SYSTRONIA_BRAND;
 
 /** URL pública del logo para correos y PDFs absolutos. */
 export function brandLogoUrl(baseUrl?: string) {
-  const base = (baseUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://os.systronia.com").replace(/\/$/, "");
+  const base = (baseUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://os.vector-ia.mx").replace(/\/$/, "");
   return `${base}/logo.png`;
 }

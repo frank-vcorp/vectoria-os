@@ -2,7 +2,7 @@
 
 Sistema web interno para **SystronIA** (*Inteligencia aplicada a tu negocio*): flujo comercial, ejecución de proyectos, suscripciones, finanzas y facturación CFDI.
 
-**Producción:** https://os.systronia.com · **Contacto:** contacto@systronia.com
+**Producción:** https://os.vector-ia.mx · **Contacto:** contacto@systronia.com
 
 | | |
 |---|---|
