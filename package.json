@@ -18,7 +18,8 @@
     "db:cleanup-catalog-demo": "tsx scripts/cleanup-catalog-demo.ts",
     "bootstrap": "tsx scripts/bootstrap.ts",
     "test:plan-parser": "tsx scripts/test-plan-parser.ts",
-    "pwa:icons": "python3 scripts/generate-pwa-icons.py"
+    "pwa:icons": "python3 scripts/generate-pwa-icons.py",
+    "brand:logos": "python3 scripts/prepare-brand-logos.py"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
