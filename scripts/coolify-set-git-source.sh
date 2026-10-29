@@ -17,6 +17,11 @@ if [[ -z "${COOLIFY_WRITE_TOKEN:-}" || -z "${COOLIFY_READ_TOKEN:-}" ]]; then
     # shellcheck disable=SC1091
     source "$HOME/.config/kilo/integra.secrets.env"
     set +a
+  elif [[ -f "$HOME/.cursor/secrets.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$HOME/.cursor/secrets.env"
+    set +a
   elif [[ -f "$HOME/.cursor/bin/load-cursor-env.sh" ]]; then
     # shellcheck disable=SC1091
     source "$HOME/.cursor/bin/load-cursor-env.sh"
