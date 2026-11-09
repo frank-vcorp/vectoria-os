@@ -7,6 +7,7 @@ type MoneyInputProps = {
   valueCents: number;
   onChangeCents: (cents: number) => void;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -37,7 +38,14 @@ function parseToCents(raw: string): number {
 }
 
 /** Entrada monetaria MXN con prefijo $ (almacena centavos). */
-export function MoneyInput({ label, valueCents, onChangeCents, required, className = "" }: MoneyInputProps) {
+export function MoneyInput({
+  label,
+  valueCents,
+  onChangeCents,
+  required,
+  disabled,
+  className = "",
+}: MoneyInputProps) {
   const [text, setText] = useState(() => centsToDisplay(valueCents));
   const focused = useRef(false);
 
@@ -48,6 +56,7 @@ export function MoneyInput({ label, valueCents, onChangeCents, required, classNa
   }, [valueCents]);
 
   function handleChange(raw: string) {
+    if (disabled) return;
     const cleaned = raw.replace(/[^\d.,]/g, "");
     setText(cleaned);
     onChangeCents(parseToCents(cleaned));
@@ -64,7 +73,7 @@ export function MoneyInput({ label, valueCents, onChangeCents, required, classNa
       <div
         className={`money-input-wrap flex items-center gap-1.5 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 min-h-[2.5rem] ${
           label ? "mt-1" : ""
-        }`}
+        } ${disabled ? "opacity-60" : ""}`}
       >
         <span className="text-[var(--muted)] pointer-events-none select-none shrink-0">$</span>
         <input
@@ -72,13 +81,14 @@ export function MoneyInput({ label, valueCents, onChangeCents, required, classNa
           inputMode="decimal"
           placeholder="0.00"
           value={text}
+          disabled={disabled}
           onFocus={() => {
             focused.current = true;
           }}
           onBlur={handleBlur}
           onChange={(e) => handleChange(e.target.value)}
           required={required}
-          className="money-input-field flex-1 min-w-0 border-0 bg-transparent p-0 shadow-none outline-none tabular-nums"
+          className="money-input-field flex-1 min-w-0 border-0 bg-transparent p-0 shadow-none outline-none tabular-nums disabled:cursor-not-allowed"
         />
       </div>
     </label>

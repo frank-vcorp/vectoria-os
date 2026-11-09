@@ -8,7 +8,7 @@ export default async function MovimientosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Movimientos</h1>
-        <p className="text-[var(--muted)] mt-1">Captura de ingresos y egresos, y consulta del listado.</p>
+        <p className="text-[var(--muted)] mt-1">Captura, edición y consulta de ingresos y egresos.</p>
       </div>
       <MovementsManager />
     </div>
