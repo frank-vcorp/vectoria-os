@@ -4,6 +4,7 @@ import { requireUser, requireModule } from "@/server/auth/session";
 import { ensureDefaultBankAccount } from "@/server/services/bank-accounts";
 import { createExpense, listExpenses } from "@/server/services/financial-expenses";
 import { createManualIncome, listFinancialIncomes } from "@/server/services/financial-incomes";
+import { deleteManualMovement, MovementMutationError, updateManualMovement } from "@/server/services/financial-movements";
 import {
   getAccountsReceivable,
   getBankBalances,
@@ -140,8 +141,61 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ expense }, { status: 201 });
   } catch (e) {
-    if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
-    const msg = e instanceof Error ? e.message : "ERROR";
-    return NextResponse.json({ error: msg }, { status: msg === "UNAUTHORIZED" ? 401 : 403 });
+    return financeError(e);
   }
+}
+
+const movementSchema = z.object({
+  id: z.string().uuid(),
+  type: z.enum(["income", "expense"]),
+  concept: z.string().trim().min(1),
+  amount: z.number().int().positive(),
+  bankAccountId: z.string().uuid(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  categoryId: z.string().uuid().nullable().optional(),
+});
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await requireUser();
+    await requireModule(user, "ingresos_egresos", "write");
+    const body = movementSchema.parse(await request.json());
+    const movement = await updateManualMovement({
+      id: body.id,
+      type: body.type,
+      concept: body.concept,
+      amount: body.amount,
+      bankAccountId: body.bankAccountId,
+      date: body.date,
+      categoryId: body.categoryId ?? null,
+      userId: user.id,
+    });
+    return NextResponse.json({ movement });
+  } catch (e) {
+    return financeError(e);
+  }
+}
+
+const deleteSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await requireUser();
+    await requireModule(user, "ingresos_egresos", "write");
+    const body = deleteSchema.parse(await request.json());
+    await deleteManualMovement({ id: body.id, userId: user.id });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return financeError(e);
+  }
+}
+
+function financeError(e: unknown) {
+  if (e instanceof z.ZodError) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  if (e instanceof MovementMutationError) return NextResponse.json({ error: e.message }, { status: e.status });
+  const msg = e instanceof Error ? e.message : "ERROR";
+  const status = msg === "NOT_FOUND" ? 404 : msg === "UNAUTHORIZED" ? 401 : 403;
+  return NextResponse.json({ error: msg }, { status });
 }
